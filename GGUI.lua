@@ -1210,7 +1210,7 @@ function GGUI.Tab:new(options)
     self.isGGUI = true
 
     self.button = GGUI.Button(options.buttonOptions)
-    self.button.canBeEnabled = options.canBeEnabled or false
+    self.canBeEnabled = options.canBeEnabled or false
 
     self.content = CreateFrame("Frame", nil, options.parent)
     self.content:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
@@ -1237,6 +1237,7 @@ function GGUI.TabSystem:new(tabList)
     for _, tab in pairs(tabList) do
         tab.button.frame:SetScript("OnClick", function(self) 
             for _, otherTab in pairs(tabList) do
+                ---@type GGUI.Tab
                 otherTab.content:Hide()
                 otherTab.button:SetEnabled(otherTab.canBeEnabled)
             end
@@ -2214,17 +2215,17 @@ end
 ---@param options GGUI.InitPopupOptions
 function GGUI:InitializePopup(options)
     ---@type GGUI.Frame | GGUI.Widget
-        popupFrame = CraftSim.GGUI.Frame({
+        popupFrame = BALLoadoutReminder.GGUI.Frame({
             backdropOptions = options.backdropOptions,
             sizeX=options.sizeX or 300, sizeY=options.sizeY or 300, moveable=true, frameStrata="DIALOG", frameID=options.frameID,
             title=options.title or "", closeable=true,
         })
 
-        popupFrame.content.text = CraftSim.GGUI.Text({
+        popupFrame.content.text = BALLoadoutReminder.GGUI.Text({
             parent=popupFrame.content, anchorParent=popupFrame.title.frame, anchorA="TOP", anchorB="BOTTOM", offsetY=-20,
         })
 
-        popupFrame.content.acceptButton = CraftSim.GGUI.Button({
+        popupFrame.content.acceptButton = BALLoadoutReminder.GGUI.Button({
             parent=popupFrame.content, anchorParent=popupFrame.frame, anchorA="BOTTOMLEFT", anchorB="BOTTOMLEFT", offsetX=10, offsetY=10,
             label="Accept", clickCallback=function ()
                 if popupFrame.onAccept then
@@ -2233,7 +2234,7 @@ function GGUI:InitializePopup(options)
                 popupFrame:Hide()
             end
         })
-        popupFrame.content.declineButton = CraftSim.GGUI.Button({
+        popupFrame.content.declineButton = BALLoadoutReminder.GGUI.Button({
             parent=popupFrame.content, anchorParent=popupFrame.frame, anchorA="BOTTOMRIGHT", anchorB="BOTTOMRIGHT", offsetX=-10, offsetY=10,
             label="Decline", clickCallback=function ()
                 if popupFrame.onDecline then
@@ -2245,5 +2246,5 @@ function GGUI:InitializePopup(options)
 
         popupFrame:Hide()
 
-        CraftSim.GGUI:EnableHyperLinksForFrameAndChilds(popupFrame.content)
+        BALLoadoutReminder.GGUI:EnableHyperLinksForFrameAndChilds(popupFrame.content)
 end
