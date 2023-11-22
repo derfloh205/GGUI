@@ -10,7 +10,7 @@ local GUTIL = GGUI_GUTIL
 local Object = {}
 Object.__index = Object
 
--- GGUI.Object = Object
+GGUI.Object = Object
 
 function Object:new()
 end
@@ -65,7 +65,7 @@ end
 
 --- CLASSICS END
 
-GGUI = Object:extend()
+GGUI = GGUI.Object:extend()
 
 GGUI.numFrames = GGUI.numFrames or 0
 GGUI.frames = GGUI.frames or {}
