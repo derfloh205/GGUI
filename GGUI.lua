@@ -1063,7 +1063,8 @@ end
 ---@field adjustWidth? boolean
 ---@field clickCallback? function
 ---@field initialStatusID? string
----@field templates? string
+---@field macro? boolean
+---@field macroText? string
 
 ---@class GGUI.Button
 GGUI.Button = GGUI.Widget:extend()
@@ -1089,9 +1090,24 @@ function GGUI.Button:new(options)
     self.originalParent = options.parent or UIParent
     self.originalAnchorParent = options.anchorParent or UIParent
     self.activeStatusID = options.initialStatusID
-    self.templates = options.templates or "UIPanelButtonTemplate"
+    self.macro = options.macro or false
+    self.macroText = options.macroText or ""
 
-    local button = CreateFrame("Button", nil, options.parent, self.templates)
+    local templates = "UIPanelButtonTemplate"
+
+    if self.macro then
+        templates="SecureActionButtonTemplate,UIPanelButtonTemplate"
+    end
+
+    local button = CreateFrame("Button", nil, options.parent, templates)
+
+    if self.macro then
+        button:SetAttribute("type1", "macro")
+	    button:SetAttribute("macrotext", self.macroText)
+        -- needs to be explicitly set for macro buttons
+        button:RegisterForClicks("AnyUp", "AnyDown")
+    end
+
     GGUI.Button.super.new(self, button)
     button:SetText(options.label)
     if options.adjustWidth then
@@ -1102,13 +1118,30 @@ function GGUI.Button:new(options)
     
     button:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
 
-    self.clickCallback = options.clickCallback
+    -- to not overwrite click script if macro button
+    if not self.macro then
+        self.clickCallback = options.clickCallback
 
-    button:SetScript("OnClick", function() 
-        if self.clickCallback then
-            self.clickCallback(self)
-        end
-    end)
+        button:SetScript("OnClick", function() 
+            if self.clickCallback then
+                self.clickCallback(self)
+            end
+        end)
+    end
+end
+
+function GGUI.Button:SetAttribute(name, value)
+    self.frame:SetAttribute(name, value)
+end
+
+--- Can be used to set the macro text of the button (only available if macro option was set)
+function GGUI.Button:SetMacroText(macroText)
+    if not self.macro then
+        print("GGUI Error: Trying to set a macro text on a button without macro property set to true")
+        return
+    end
+    self.macroText = macroText
+    self:SetAttribute("macrotext", self.macroText)
 end
 
 ---@param text string
