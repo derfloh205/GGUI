@@ -1063,6 +1063,7 @@ end
 ---@field adjustWidth? boolean
 ---@field clickCallback? function
 ---@field initialStatusID? string
+---@field templates? string
 
 ---@class GGUI.Button
 GGUI.Button = GGUI.Widget:extend()
@@ -1088,8 +1089,9 @@ function GGUI.Button:new(options)
     self.originalParent = options.parent or UIParent
     self.originalAnchorParent = options.anchorParent or UIParent
     self.activeStatusID = options.initialStatusID
+    self.templates = options.templates or "UIPanelButtonTemplate"
 
-    local button = CreateFrame("Button", nil, options.parent, "UIPanelButtonTemplate")
+    local button = CreateFrame("Button", nil, options.parent, self.templates)
     GGUI.Button.super.new(self, button)
     button:SetText(options.label)
     if options.adjustWidth then
