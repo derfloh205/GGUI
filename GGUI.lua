@@ -66,6 +66,8 @@ end
 --- CLASSICS END
 
 -- GGUI CONST
+GGUI.numFrames = GGUI.numFrames or 0
+GGUI.frames = GGUI.frames or {}
 GGUI.CONST = {}
 GGUI.CONST.EMPTY_TEXTURE = "Interface\\containerframe\\bagsitemslot2x"
 
