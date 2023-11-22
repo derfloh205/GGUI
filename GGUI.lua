@@ -7,6 +7,8 @@ local GUTIL = GGUI_GUTIL
 
 local configName = nil
 
+GGUIDB = GGUIDB or {}
+
 --- CLASSICS insert
 ---@class Object
 local Object = {}
@@ -77,26 +79,26 @@ GGUI.CONST = {}
 GGUI.CONST.EMPTY_TEXTURE = "Interface\\containerframe\\bagsitemslot2x"
 
 -- GGUI Configuration Methods
-    function GGUI:SetConfigSavedVariable(variableName)
-        configName = variableName
-        _G[configName] = _G[configName] or {} 
-    end
+-- function GGUI:SetConfigSavedVariable(variableName)
+--     configName = variableName
+--     _G[configName] = _G[configName] or {} 
+-- end
 
-    function GGUI:GetConfig(key)
-        if configName then
-            return _G[configName][key]
-        else
-            error("GGUI Get Config Error: Config not set!")
-        end
-    end
+-- function GGUI:GetConfig(key)
+--     if configName then
+--         return _G[configName][key]
+--     else
+--         error("GGUI Get Config Error: Config not set!")
+--     end
+-- end
 
-    function GGUI:SaveConfig(key, value)
-        if configName then
-            _G[configName][key] = value
-        else
-            error("GGUI Set Config Error: Config not set!")
-        end
-    end
+-- function GGUI:SaveConfig(key, value)
+--     if configName then
+--         _G[configName][key] = value
+--     else
+--         error("GGUI Set Config Error: Config not set!")
+--     end
+-- end
 
 -- GGUI UTILS
 function GGUI:MakeFrameCloseable(frame, onCloseCallback)
@@ -553,7 +555,8 @@ function GGUI.Frame:GetStatus()
 end
 
 function GGUI.Frame:RestoreSavedConfig(relativeTo)
-    local savedPosInfo = GGUI:GetConfig("savedPos_" .. self.frameID)
+    --local savedPosInfo = GGUI:GetConfig("savedPos_" .. self.frameID)
+    local savedPosInfo = GGUIDB["savedPos_" .. self.frameID]
 
     if savedPosInfo then
         relativeTo = relativeTo or UIParent
@@ -562,7 +565,7 @@ function GGUI.Frame:RestoreSavedConfig(relativeTo)
     end
 
     if self.collapseable then
-        if GGUI:GetConfig("collapsed_" .. self.frameID) then
+        if GGUIDB["collapsed_" .. self.frameID] then -- GGUI:GetConfig("collapsed_" .. self.frameID) then
             self:Collapse()
         end
     end
