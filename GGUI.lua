@@ -5,16 +5,12 @@ local GGUI = LibStub:NewLibrary("GGUI", 1) or LibStub:GetLibrary("GGUI")
 
 local GUTIL = GGUI_GUTIL
 
-local configName = nil
-
-GGUIDB = GGUIDB or {}
-
 --- CLASSICS insert
 ---@class Object
 local Object = {}
 Object.__index = Object
 
-GGUI.Object = Object
+-- GGUI.Object = Object
 
 function Object:new()
 end
@@ -69,10 +65,10 @@ end
 
 --- CLASSICS END
 
+GGUI = Object:extend()
+
 GGUI.numFrames = GGUI.numFrames or 0
 GGUI.frames = GGUI.frames or {}
-
-if not GGUI then return end
 
 -- GGUI CONST
 GGUI.CONST = {}
