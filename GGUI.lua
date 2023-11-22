@@ -1,7 +1,7 @@
 
 
 ---@class GGUI
-local GGUILib = LibStub:NewLibrary("GGUI", 1) or LibStub:GetLibrary("GGUI")
+local GGUI = LibStub:NewLibrary("GGUI", 1) or LibStub:GetLibrary("GGUI")
 
 local GUTIL = GGUI_GUTIL
 
@@ -10,7 +10,7 @@ local GUTIL = GGUI_GUTIL
 local Object = {}
 Object.__index = Object
 
-GGUILib.Object = Object
+GGUI.Object = Object
 
 function Object:new()
 end
@@ -64,13 +64,6 @@ function Object:__call(...)
 end
 
 --- CLASSICS END
-
-GGUI = GGUILib.Object:extend()
-
-function GGUI:new()
-    self.numFrames =  0
-    self.frames = {}
-end
 
 -- GGUI CONST
 GGUI.CONST = {}
