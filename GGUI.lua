@@ -69,8 +69,8 @@ end
 
 --- CLASSICS END
 
-GGUI.numFrames = 0
-GGUI.frames = {}
+GGUI.numFrames = GGUI.numFrames or 0
+GGUI.frames = GGUI.frames or {}
 
 if not GGUI then return end
 
