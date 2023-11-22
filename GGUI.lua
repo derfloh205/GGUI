@@ -572,10 +572,14 @@ function GGUI.Frame:RestoreSavedConfig(relativeTo)
 end
 
 function GGUI.Frame:SavePosition(offsetX, offsetY)
-    GGUI:SaveConfig("savedPos_" .. self.frameID, {
+    -- GGUI:SaveConfig("savedPos_" .. self.frameID, {
+    --     offsetX = offsetX,
+    --     offsetY = offsetY,
+    -- })
+    GGUIDB["savedPos_" .. self.frameID] = {
         offsetX = offsetX,
         offsetY = offsetY,
-    })
+    }
 end
 
 --- GGUI Icon
