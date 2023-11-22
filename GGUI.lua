@@ -66,32 +66,8 @@ end
 --- CLASSICS END
 
 -- GGUI CONST
-GGUI.numFrames = GGUI.numFrames or 0
-GGUI.frames = GGUI.frames or {}
 GGUI.CONST = {}
 GGUI.CONST.EMPTY_TEXTURE = "Interface\\containerframe\\bagsitemslot2x"
-
--- GGUI Configuration Methods
--- function GGUI:SetConfigSavedVariable(variableName)
---     configName = variableName
---     _G[configName] = _G[configName] or {} 
--- end
-
--- function GGUI:GetConfig(key)
---     if configName then
---         return _G[configName][key]
---     else
---         error("GGUI Get Config Error: Config not set!")
---     end
--- end
-
--- function GGUI:SaveConfig(key, value)
---     if configName then
---         _G[configName][key] = value
---     else
---         error("GGUI Set Config Error: Config not set!")
---     end
--- end
 
 -- GGUI UTILS
 function GGUI:MakeFrameCloseable(frame, onCloseCallback)
@@ -264,6 +240,8 @@ end
 ---@field onCollapseOpenCallback? function
 ---@field backdropOptions GGUI.BackdropOptions
 ---@field initialStatusID? string
+---@field frameTable? table The table where your addon stores its frames for later retrieval
+---@field frameConfigTable? table The saved variable table where your addon stores any frame config like position
 
 ---@class GGUI.BackdropOptions
 ---@field colorR? number
@@ -282,13 +260,14 @@ end
 ---@field edgeFile? string
 ---@field insets? backdropInsets
 
+---@param frameTable table the table where your addon stores your frames
 ---@param frameID string The ID string you gave the frame
 ---@return GGUI.Frame | GGUI.Widget
-function GGUI:GetFrame(frameID)
-    if not GGUI.frames[frameID] then
+function GGUI:GetFrame(frameTable, frameID)
+    if not frameTable[frameID] then
         error("GGUI Error: Frame not found: " .. frameID)
     end
-    return GGUI.frames[frameID]
+    return frameTable[frameID]
 end
 
 ---@class GGUI.Frame
@@ -297,7 +276,6 @@ GGUI.Frame = GGUI.Widget:extend()
 ---@param options GGUI.FrameConstructorOptions
 function GGUI.Frame:new(options)
     options = options or {}
-    GGUI.numFrames = GGUI.numFrames + 1
     -- handle defaults
     options.title = options.title or ""
     options.anchorA = options.anchorA or "CENTER"
@@ -309,6 +287,10 @@ function GGUI.Frame:new(options)
     options.scale = options.scale or 1
     options.parent = options.parent or UIParent
     options.anchorParent = options.anchorParent or UIParent
+    options.frameTable = options.frameTable or {}
+    options.frameConfigTable = options.frameConfigTable or {}
+    local numFrames = GUTIL:Count(options.frameTable) + 1
+    self.frameConfigTable = options.frameConfigTable
     self.originalX = options.sizeX
     self.originalY = options.sizeY
     self.originalOffsetX = options.offsetX
@@ -316,7 +298,7 @@ function GGUI.Frame:new(options)
     self.originalAnchorParent = options.anchorParent
     self.originalAnchorA = options.anchorA
     self.originalAnchorB = options.anchorB
-    self.frameID = options.frameID or ("GGUIFrame" .. (GGUI.numFrames))
+    self.frameID = options.frameID or ("GGUIFrame" .. numFrames)
     self.scrollableContent = options.scrollableContent or false
     self.closeable = options.closeable or false
     self.collapseable = options.collapseable or false
@@ -338,7 +320,7 @@ function GGUI.Frame:new(options)
     frame:SetSize(options.sizeX, options.sizeY)
     frame:SetScale(options.scale)
     frame:SetFrameStrata(options.frameStrata or "HIGH")
-    frame:SetFrameLevel(GGUI.numFrames)
+    frame:SetFrameLevel(numFrames)
 
     self.title = GGUI.Text({
         parent=frame,anchorParent=frame,text=options.title,offsetY=-15,
@@ -405,7 +387,7 @@ function GGUI.Frame:new(options)
         frame.content:SetSize(options.sizeX, options.sizeY)
     end
     self.content = frame.content
-    GGUI.frames[self.frameID] = self
+    options.frameTable[self.frameID] = self
     return frame
 end
 
@@ -458,7 +440,7 @@ function GGUI.Frame:Collapse()
             self.onCollapseCallback(self)
         end
 
-        GGUI:SaveConfig("collapsed_" .. self.frameID, true)
+        self.frameConfigTable["collapsed_" .. self.frameID] = true
     end
 end
 
@@ -477,7 +459,7 @@ function GGUI.Frame:Decollapse()
             self.onCollapseOpenCallback(self)
         end
 
-        GGUI:SaveConfig("collapsed_" .. self.frameID, false)
+        self.frameConfigTable["collapsed_" .. self.frameID] = false
     end
 end
 
@@ -549,7 +531,7 @@ end
 
 function GGUI.Frame:RestoreSavedConfig(relativeTo)
     --local savedPosInfo = GGUI:GetConfig("savedPos_" .. self.frameID)
-    local savedPosInfo = GGUIDB["savedPos_" .. self.frameID]
+    local savedPosInfo = self.frameConfigTable["savedPos_" .. self.frameID]
 
     if savedPosInfo then
         relativeTo = relativeTo or UIParent
@@ -558,18 +540,14 @@ function GGUI.Frame:RestoreSavedConfig(relativeTo)
     end
 
     if self.collapseable then
-        if GGUIDB["collapsed_" .. self.frameID] then -- GGUI:GetConfig("collapsed_" .. self.frameID) then
+        if self.frameConfigTable["collapsed_" .. self.frameID] then
             self:Collapse()
         end
     end
 end
 
 function GGUI.Frame:SavePosition(offsetX, offsetY)
-    -- GGUI:SaveConfig("savedPos_" .. self.frameID, {
-    --     offsetX = offsetX,
-    --     offsetY = offsetY,
-    -- })
-    GGUIDB["savedPos_" .. self.frameID] = {
+    self.frameConfigTable["savedPos_" .. self.frameID] = {
         offsetX = offsetX,
         offsetY = offsetY,
     }
