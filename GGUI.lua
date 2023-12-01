@@ -1074,7 +1074,7 @@ function GGUI.Button:new(options)
     local templates = "UIPanelButtonTemplate"
 
     if self.macro then
-        templates="SecureActionButtonTemplate,UIPanelButtonTemplate"
+        templates="InsecureActionButtonTemplate,UIPanelButtonTemplate"
     end
 
     local button = CreateFrame("Button", nil, options.parent, templates)
