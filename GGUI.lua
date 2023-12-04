@@ -146,7 +146,7 @@ end
 
 --- GGUI Widget
 
----@class GGUI.Widget
+---@class GGUI.Widget : Object
 GGUI.Widget = GGUI.Object:extend()
 
 function GGUI.Widget:new(frame)
@@ -262,7 +262,7 @@ end
 
 ---@param frameTable table the table where your addon stores your frames
 ---@param frameID string The ID string you gave the frame
----@return GGUI.Frame | GGUI.Widget
+---@return GGUI.Frame
 function GGUI:GetFrame(frameTable, frameID)
     if not frameTable[frameID] then
         error("GGUI Error: Frame not found: " .. frameID)
@@ -270,7 +270,7 @@ function GGUI:GetFrame(frameTable, frameID)
     return frameTable[frameID]
 end
 
----@class GGUI.Frame
+---@class GGUI.Frame : GGUI.Widget
 GGUI.Frame = GGUI.Widget:extend()
 
 ---@param options GGUI.FrameConstructorOptions
@@ -568,7 +568,7 @@ end
 ---@field anchorParent? Region
 ---@field hideQualityIcon? boolean
 
----@class GGUI.Icon
+---@class GGUI.Icon : GGUI.Widget
 GGUI.Icon = GGUI.Widget:extend()
 function GGUI.Icon:new(options)
     options = options or {}
@@ -681,7 +681,7 @@ end
 ---@field offsetY? number
 ---@field initialQuality? number
 
----@class GGUI.QualityIcon
+---@class GGUI.QualityIcon : GGUI.Widget
 GGUI.QualityIcon = GGUI.Widget:extend()
 function GGUI.QualityIcon:new(options)
     options = options or {}
@@ -743,7 +743,7 @@ end
 ---@field tooltipItemLink? string
 ---@field tooltipConcatText? string
 
----@class GGUI.Dropdown
+---@class GGUI.Dropdown : GGUI.Widget
 GGUI.Dropdown = GGUI.Widget:extend()
 
 ---@param options GGUI.DropdownConstructorOptions
@@ -887,7 +887,7 @@ end
 ---@field alignH string
 ---@field alignV string
 
----@class GGUI.Text
+---@class GGUI.Text : GGUI.Widget
 GGUI.Text = GGUI.Widget:extend()
 ---@param options GGUI.TextConstructorOptions
 function GGUI.Text:new(options)
@@ -1044,7 +1044,7 @@ end
 ---@field macro? boolean
 ---@field macroText? string
 
----@class GGUI.Button
+---@class GGUI.Button : GGUI.Widget
 GGUI.Button = GGUI.Widget:extend()
 ---@param options GGUI.ButtonConstructorOptions
 function GGUI.Button:new(options)
@@ -1209,7 +1209,7 @@ end
 ---@field parent? Frame
 ---@field anchorParent? Region
 
----@class GGUI.Tab
+---@class GGUI.Tab : GGUI.Widget
 GGUI.Tab = GGUI.Object:extend()
 ---@param options GGUI.TabConstructorOptions
 function GGUI.Tab:new(options)
@@ -1236,7 +1236,7 @@ end
 
 --- GGUI.TabSystem
 
----@class GGUI.TabSystem
+---@class GGUI.TabSystem : Object
 GGUI.TabSystem = GGUI.Object:extend()
 
 ---@param tabList GGUI.Tab[]
@@ -1270,7 +1270,7 @@ function GGUI.TabSystem:EnableHyperLinksForFrameAndChilds()
 end
 
 --- GGUI.Checkbox
----@class GGUI.Checkbox
+---@class GGUI.Checkbox : GGUI.Widget
 GGUI.Checkbox = GGUI.Widget:extend()
 
 ---@class GGUI.CheckboxConstructorOptions
@@ -1341,7 +1341,7 @@ end
 ---@field highText? string
 ---@field onValueChangedCallback? function
 
----@class GGUI.Slider
+---@class GGUI.Slider : GGUI.Widget
 GGUI.Slider = GGUI.Widget:extend()
 ---@param options GGUI.SliderConstructorOptions
 function GGUI.Slider:new(options)
@@ -1389,7 +1389,7 @@ end
 ---@field offsetX? number
 ---@field offsetY? number
 
----@class GGUI.HelpIcon
+---@class GGUI.HelpIcon : GGUI.Widget
 GGUI.HelpIcon = GGUI.Widget:extend()
 
 ---@param options GGUI.HelpIconConstructorOptions
@@ -1433,7 +1433,7 @@ end
 ---@field offsetRIGHT? number
 ---@field offsetBOTTOM? number
 
----@class GGUI.ScrollFrame
+---@class GGUI.ScrollFrame : Object
 GGUI.ScrollFrame = GGUI.Object:extend()
 ---@param options GGUI.ScrollFrameConstructorOptions
 function GGUI.ScrollFrame:new(options)
@@ -1482,7 +1482,7 @@ end
 ---@field onEnterCallback? function Default: Clear Focus
 ---@field onEscapeCallback? function Default: Clear Focus
 
----@class GGUI.TextInput
+---@class GGUI.TextInput : GGUI.Widget
 GGUI.TextInput = GGUI.Widget:extend()
 ---@param options GGUI.TextInputConstructorOptions
 function GGUI.TextInput:new(options)
@@ -1559,7 +1559,7 @@ end
 ---@field borderAdjustHeight? number
 ---@field borderWidth? number
 
----@class GGUI.CurrencyInput
+---@class GGUI.CurrencyInput : Object
 GGUI.CurrencyInput = GGUI.Object:extend()
 
 ---@param options GGUI.CurrencyInputConstructorOptions
@@ -1728,7 +1728,7 @@ end
 ---@field borderAdjustHeight? number
 ---@field borderWidth? number
 
----@class GGUI.NumericInput
+---@class GGUI.NumericInput : Object
 GGUI.NumericInput = GGUI.Object:extend()
 ---@param options GGUI.NumericInputConstructorOptions
 function GGUI.NumericInput:new(options)
@@ -1876,7 +1876,7 @@ end
 
 --- GGUI.FrameList
 
----@class GGUI.FrameList
+---@class GGUI.FrameList : GGUI.Widget
 GGUI.FrameList = GGUI.Widget:extend()
 
 ---@class GGUI.FrameListConstructorOptions
@@ -2014,7 +2014,7 @@ end
 
 --- GGUI.FrameList.Row
 
----@class GGUI.FrameList.Row
+---@class GGUI.FrameList.Row : GGUI.Widget
 GGUI.FrameList.Row = GGUI.Widget:extend()
 
 ---@param rowFrame Frame
