@@ -1042,6 +1042,7 @@ end
 ---@field clickCallback? function
 ---@field initialStatusID? string
 ---@field macro? boolean
+---@field secure? boolean
 ---@field macroText? string
 
 ---@class GGUI.Button : GGUI.Widget
@@ -1069,11 +1070,12 @@ function GGUI.Button:new(options)
     self.originalAnchorParent = options.anchorParent or UIParent
     self.activeStatusID = options.initialStatusID
     self.macro = options.macro or false
+    self.secure= options.secure or false
     self.macroText = options.macroText or ""
 
     local templates = "UIPanelButtonTemplate"
 
-    if self.macro then
+    if self.macro or self.secure then
         templates="InsecureActionButtonTemplate,UIPanelButtonTemplate"
     end
 
@@ -2125,7 +2127,7 @@ function GGUI.FrameList:Remove(filterFunc, limit)
 end
 
 --- Update the list display, optionally filter then show all active rows
----@param sortFunc? function -- sortFunc(rowA, rowB) optional sorting before updating the display
+---@param sortFunc function? -- sortFunc(rowA, rowB) optional sorting before updating the display
 function GGUI.FrameList:UpdateDisplay(sortFunc)
     -- filter and show active rows and hide all inactive
     ---@type GGUI.FrameList.Row[] | GGUI.Widget[]
