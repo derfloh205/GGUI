@@ -1390,6 +1390,7 @@ end
 ---@field anchorB? FramePoint
 ---@field offsetX? number
 ---@field offsetY? number
+---@field label? string
 
 ---@class GGUI.HelpIcon : GGUI.Widget
 GGUI.HelpIcon = GGUI.Widget:extend()
@@ -1407,7 +1408,7 @@ function GGUI.HelpIcon:new(options)
     GGUI.HelpIcon.super.new(self, helpButton)
     helpButton.tooltipText = options.text
     helpButton:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)	
-    helpButton:SetText("?")
+    helpButton:SetText(options.label or "?")
     helpButton:SetSize(helpButton:GetTextWidth() + 15, 15)
 
     helpButton:SetScript("OnEnter", function(self) 
