@@ -1899,6 +1899,7 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field sizeX? number if omitted will adjust to row width
 ---@field sizeY? number
 ---@field headerOffsetX? number
+---@field scale? number
 
 ---@class GGUI.FrameList.ColumnOption
 ---@field width? number
@@ -1918,6 +1919,7 @@ function GGUI.FrameList:new(options)
     options.offsetY = options.offsetY or 0
     options.rowHeight = options.rowHeight or 25
     options.headerOffsetX = options.headerOffsetX or 5
+    options.scale = options.scale or 1
     self.rowHeight = options.rowHeight
     
     if not options.columnOptions or #options.columnOptions == 0 then
@@ -1944,6 +1946,7 @@ function GGUI.FrameList:new(options)
     local mainFrame = CreateFrame("Frame", nil, options.parent) 
     mainFrame:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
     mainFrame:SetSize(options.sizeX or (rowWidth + 10), options.sizeY)
+    mainFrame:SetScale(options.scale)
     
     ---@type GGUI.ScrollFrame
     self.scrollFrame = GGUI.ScrollFrame({
