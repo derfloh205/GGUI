@@ -2069,7 +2069,7 @@ function GGUI.FrameList:CreateRow()
 end
 
 ---Add row data into the list
----@param fillFunc? function function that receives a free row to add to the list
+---@param fillFunc? fun(row: GGUI.FrameList.Row) function that receives a free row to add to the list
 function GGUI.FrameList:Add(fillFunc)
     -- get an inactive row from the list of rows, call fillFunc on it
     local freeRow = GUTIL:Find(self.rows, function(row) return not row.active end)
