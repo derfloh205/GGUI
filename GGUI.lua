@@ -889,8 +889,8 @@ end
 ---@class GGUI.JustifyOptions
 ---@field type "H" | "V" | "HV"
 ---@field align string
----@field alignH string
----@field alignV string
+---@field alignH string?
+---@field alignV string?
 
 ---@class GGUI.Text : GGUI.Widget
 ---@overload fun(options:GGUI.TextConstructorOptions): GGUI.Text
@@ -1290,7 +1290,7 @@ GGUI.Checkbox = GGUI.Widget:extend()
 ---@field label? string
 ---@field tooltip? string
 ---@field initialValue? boolean
----@field clickCallback? function
+---@field clickCallback? fun(checkbox:GGUI.Checkbox, checked:boolean)
 ---@field parent? Frame
 ---@field anchorParent? Region
 ---@field anchorA? FramePoint
@@ -1739,8 +1739,8 @@ end
 ---@field maxValue? number
 ---@field autoFocus? boolean
 ---@field font? string
----@field onNumberValidCallback? function
----@field onValidationChangedCallback? function
+---@field onNumberValidCallback? fun(input:GGUI.NumericInput)
+---@field onValidationChangedCallback? fun(valid:boolean)
 ---@field incrementOneButtons? boolean
 ---@field incrementFiveButtons? boolean
 ---@field borderAdjustWidth? number
