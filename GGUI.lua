@@ -270,7 +270,9 @@ function GGUI:GetFrame(frameTable, frameID)
     return frameTable[frameID]
 end
 
+
 ---@class GGUI.Frame : GGUI.Widget
+---@overload fun(options:GGUI.FrameConstructorOptions)
 GGUI.Frame = GGUI.Widget:extend()
 
 ---@param options GGUI.FrameConstructorOptions
@@ -569,6 +571,7 @@ end
 ---@field hideQualityIcon? boolean
 
 ---@class GGUI.Icon : GGUI.Widget
+---@overload fun(options:GGUI.IconConstructorOptions)
 GGUI.Icon = GGUI.Widget:extend()
 function GGUI.Icon:new(options)
     options = options or {}
@@ -682,6 +685,7 @@ end
 ---@field initialQuality? number
 
 ---@class GGUI.QualityIcon : GGUI.Widget
+---@overload fun(options:GGUI.QualityIconConstructorOptions)
 GGUI.QualityIcon = GGUI.Widget:extend()
 function GGUI.QualityIcon:new(options)
     options = options or {}
@@ -744,6 +748,7 @@ end
 ---@field tooltipConcatText? string
 
 ---@class GGUI.Dropdown : GGUI.Widget
+---@overload fun(options:GGUI.DropdownConstructorOptions)
 GGUI.Dropdown = GGUI.Widget:extend()
 
 ---@param options GGUI.DropdownConstructorOptions
@@ -888,6 +893,7 @@ end
 ---@field alignV string
 
 ---@class GGUI.Text : GGUI.Widget
+---@overload fun(options:GGUI.TextConstructorOptions)
 GGUI.Text = GGUI.Widget:extend()
 ---@param options GGUI.TextConstructorOptions
 function GGUI.Text:new(options)
@@ -956,6 +962,7 @@ end
 ---@field justifyOptions? GGUI.JustifyOptions
 
 ---@class GGUI.ScrollingMessageFrame
+---@overload fun(options:GGUI.ScrollingMessageFrameConstructorOptions)
 GGUI.ScrollingMessageFrame = GGUI.Widget:extend()
 ---@param options GGUI.ScrollingMessageFrameConstructorOptions
 function GGUI.ScrollingMessageFrame:new(options)
@@ -1046,6 +1053,7 @@ end
 ---@field macroText? string
 
 ---@class GGUI.Button : GGUI.Widget
+---@overload fun(options:GGUI.ButtonConstructorOptions)
 GGUI.Button = GGUI.Widget:extend()
 ---@param options GGUI.ButtonConstructorOptions
 function GGUI.Button:new(options)
@@ -1212,6 +1220,7 @@ end
 ---@field anchorParent? Region
 
 ---@class GGUI.Tab : GGUI.Widget
+---@overload fun(options:GGUI.TabConstructorOptions)
 GGUI.Tab = GGUI.Object:extend()
 ---@param options GGUI.TabConstructorOptions
 function GGUI.Tab:new(options)
@@ -1239,6 +1248,7 @@ end
 --- GGUI.TabSystem
 
 ---@class GGUI.TabSystem : Object
+---@overload fun(tabs:GGUI.Tab[])
 GGUI.TabSystem = GGUI.Object:extend()
 
 ---@param tabList GGUI.Tab[]
@@ -1273,6 +1283,7 @@ end
 
 --- GGUI.Checkbox
 ---@class GGUI.Checkbox : GGUI.Widget
+---@overload fun(options:GGUI.CheckboxConstructorOptions)
 GGUI.Checkbox = GGUI.Widget:extend()
 
 ---@class GGUI.CheckboxConstructorOptions
@@ -1344,6 +1355,7 @@ end
 ---@field onValueChangedCallback? function
 
 ---@class GGUI.Slider : GGUI.Widget
+---@overload fun(options:GGUI.SliderConstructorOptions)
 GGUI.Slider = GGUI.Widget:extend()
 ---@param options GGUI.SliderConstructorOptions
 function GGUI.Slider:new(options)
@@ -1437,6 +1449,7 @@ end
 ---@field offsetBOTTOM? number
 
 ---@class GGUI.ScrollFrame : Object
+---@overload fun(options:GGUI.ScrollFrameConstructorOptions)
 GGUI.ScrollFrame = GGUI.Object:extend()
 ---@param options GGUI.ScrollFrameConstructorOptions
 function GGUI.ScrollFrame:new(options)
@@ -1486,6 +1499,7 @@ end
 ---@field onEscapeCallback? function Default: Clear Focus
 
 ---@class GGUI.TextInput : GGUI.Widget
+---@overload fun(options:GGUI.TextInputConstructorOptions)
 GGUI.TextInput = GGUI.Widget:extend()
 ---@param options GGUI.TextInputConstructorOptions
 function GGUI.TextInput:new(options)
@@ -1563,6 +1577,7 @@ end
 ---@field borderWidth? number
 
 ---@class GGUI.CurrencyInput : Object
+---@overload fun(options:GGUI.CurrencyInputConstructorOptions)
 GGUI.CurrencyInput = GGUI.Object:extend()
 
 ---@param options GGUI.CurrencyInputConstructorOptions
@@ -1732,6 +1747,7 @@ end
 ---@field borderWidth? number
 
 ---@class GGUI.NumericInput : Object
+---@overload fun(options:GGUI.NumericInputConstructorOptions)
 GGUI.NumericInput = GGUI.Object:extend()
 ---@param options GGUI.NumericInputConstructorOptions
 function GGUI.NumericInput:new(options)
@@ -1880,6 +1896,7 @@ end
 --- GGUI.FrameList
 
 ---@class GGUI.FrameList : GGUI.Widget
+---@overload fun(options:GGUI.FrameListConstructorOptions)
 GGUI.FrameList = GGUI.Widget:extend()
 
 ---@class GGUI.FrameListConstructorOptions
@@ -2021,11 +2038,12 @@ end
 --- GGUI.FrameList.Row
 
 ---@class GGUI.FrameList.Row : GGUI.Widget
+---@overload fun(rowFrame: Frame, columns: Frame[], rowConstructor:fun(columns: Frame[]))
 GGUI.FrameList.Row = GGUI.Widget:extend()
 
 ---@param rowFrame Frame
 ---@param columns Frame[]
----@param rowConstructor function
+---@param rowConstructor fun(columns: Frame[])
 function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor)
     GGUI.FrameList.Row.super.new(self, rowFrame)
     self.columns = columns
@@ -2084,8 +2102,8 @@ function GGUI.FrameList:Add(fillFunc)
     freeRow.active = true
 end
 
----@param updateFunc function -- receives the found row as parameter
----@param filterFunc function -- receives a row as parameter to filter
+---@param updateFunc fun(row:GGUI.FrameList.Row)
+---@param filterFunc fun(row:GGUI.FrameList.Row)
 ---@param limit? number -- optional limit of max updates
 function GGUI.FrameList:UpdateRows(updateFunc, filterFunc, limit)
     local count = 0
@@ -2103,6 +2121,8 @@ function GGUI.FrameList:UpdateRows(updateFunc, filterFunc, limit)
     end
 end
 
+---@param filterFunc fun(row:GGUI.FrameList.Row)
+---@return GGUI.FrameList.Row | nil row
 function GGUI.FrameList:GetRow(filterFunc)
     for _, row in pairs(self.rows) do
         if row.active and filterFunc(row) then
@@ -2112,7 +2132,7 @@ function GGUI.FrameList:GetRow(filterFunc)
 end
 
 --- removes all (up to the limit) rows where filterFunc is true from the list
----@param filterFunc? function -- param: row
+---@param filterFunc? fun(row:GGUI.FrameList.Row)
 ---@param limit? number
 function GGUI.FrameList:Remove(filterFunc, limit)
     local currentRemoveCount = 0
@@ -2131,7 +2151,7 @@ function GGUI.FrameList:Remove(filterFunc, limit)
 end
 
 --- Update the list display, optionally filter then show all active rows
----@param sortFunc function? -- sortFunc(rowA, rowB) optional sorting before updating the display
+---@param sortFunc fun(rowA:GGUI.FrameList.Row, rowB:GGUI.FrameList.Row)? optional sorting before updating the display
 function GGUI.FrameList:UpdateDisplay(sortFunc)
     -- filter and show active rows and hide all inactive
     ---@type GGUI.FrameList.Row[] | GGUI.Widget[]
