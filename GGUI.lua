@@ -272,7 +272,7 @@ end
 
 
 ---@class GGUI.Frame : GGUI.Widget
----@overload fun(options:GGUI.FrameConstructorOptions)
+---@overload fun(options:GGUI.FrameConstructorOptions): GGUI.Frame
 GGUI.Frame = GGUI.Widget:extend()
 
 ---@param options GGUI.FrameConstructorOptions
@@ -571,7 +571,7 @@ end
 ---@field hideQualityIcon? boolean
 
 ---@class GGUI.Icon : GGUI.Widget
----@overload fun(options:GGUI.IconConstructorOptions)
+---@overload fun(options:GGUI.IconConstructorOptions): GGUI.Icon
 GGUI.Icon = GGUI.Widget:extend()
 function GGUI.Icon:new(options)
     options = options or {}
@@ -685,7 +685,7 @@ end
 ---@field initialQuality? number
 
 ---@class GGUI.QualityIcon : GGUI.Widget
----@overload fun(options:GGUI.QualityIconConstructorOptions)
+---@overload fun(options:GGUI.QualityIconConstructorOptions): GGUI.QualityIcon
 GGUI.QualityIcon = GGUI.Widget:extend()
 function GGUI.QualityIcon:new(options)
     options = options or {}
@@ -748,7 +748,7 @@ end
 ---@field tooltipConcatText? string
 
 ---@class GGUI.Dropdown : GGUI.Widget
----@overload fun(options:GGUI.DropdownConstructorOptions)
+---@overload fun(options:GGUI.DropdownConstructorOptions): GGUI.Dropdown
 GGUI.Dropdown = GGUI.Widget:extend()
 
 ---@param options GGUI.DropdownConstructorOptions
@@ -893,7 +893,7 @@ end
 ---@field alignV string
 
 ---@class GGUI.Text : GGUI.Widget
----@overload fun(options:GGUI.TextConstructorOptions)
+---@overload fun(options:GGUI.TextConstructorOptions): GGUI.Text
 GGUI.Text = GGUI.Widget:extend()
 ---@param options GGUI.TextConstructorOptions
 function GGUI.Text:new(options)
@@ -962,7 +962,7 @@ end
 ---@field justifyOptions? GGUI.JustifyOptions
 
 ---@class GGUI.ScrollingMessageFrame
----@overload fun(options:GGUI.ScrollingMessageFrameConstructorOptions)
+---@overload fun(options:GGUI.ScrollingMessageFrameConstructorOptions): GGUI.ScrollingMessageFrame
 GGUI.ScrollingMessageFrame = GGUI.Widget:extend()
 ---@param options GGUI.ScrollingMessageFrameConstructorOptions
 function GGUI.ScrollingMessageFrame:new(options)
@@ -1053,7 +1053,7 @@ end
 ---@field macroText? string
 
 ---@class GGUI.Button : GGUI.Widget
----@overload fun(options:GGUI.ButtonConstructorOptions)
+---@overload fun(options:GGUI.ButtonConstructorOptions): GGUI.Button
 GGUI.Button = GGUI.Widget:extend()
 ---@param options GGUI.ButtonConstructorOptions
 function GGUI.Button:new(options)
@@ -1220,7 +1220,7 @@ end
 ---@field anchorParent? Region
 
 ---@class GGUI.Tab : GGUI.Widget
----@overload fun(options:GGUI.TabConstructorOptions)
+---@overload fun(options:GGUI.TabConstructorOptions): GGUI.Tab
 GGUI.Tab = GGUI.Object:extend()
 ---@param options GGUI.TabConstructorOptions
 function GGUI.Tab:new(options)
@@ -1248,7 +1248,7 @@ end
 --- GGUI.TabSystem
 
 ---@class GGUI.TabSystem : Object
----@overload fun(tabs:GGUI.Tab[])
+---@overload fun(tabs:GGUI.Tab[]): GGUI.TabSystem
 GGUI.TabSystem = GGUI.Object:extend()
 
 ---@param tabList GGUI.Tab[]
@@ -1283,7 +1283,7 @@ end
 
 --- GGUI.Checkbox
 ---@class GGUI.Checkbox : GGUI.Widget
----@overload fun(options:GGUI.CheckboxConstructorOptions)
+---@overload fun(options:GGUI.CheckboxConstructorOptions): GGUI.Checkbox
 GGUI.Checkbox = GGUI.Widget:extend()
 
 ---@class GGUI.CheckboxConstructorOptions
@@ -1355,7 +1355,7 @@ end
 ---@field onValueChangedCallback? function
 
 ---@class GGUI.Slider : GGUI.Widget
----@overload fun(options:GGUI.SliderConstructorOptions)
+---@overload fun(options:GGUI.SliderConstructorOptions): GGUI.Slider
 GGUI.Slider = GGUI.Widget:extend()
 ---@param options GGUI.SliderConstructorOptions
 function GGUI.Slider:new(options)
@@ -1405,6 +1405,7 @@ end
 ---@field label? string
 
 ---@class GGUI.HelpIcon : GGUI.Widget
+---@overload fun(options:GGUI.HelpIconConstructorOptions): GGUI.HelpIcon
 GGUI.HelpIcon = GGUI.Widget:extend()
 
 ---@param options GGUI.HelpIconConstructorOptions
@@ -1449,7 +1450,7 @@ end
 ---@field offsetBOTTOM? number
 
 ---@class GGUI.ScrollFrame : Object
----@overload fun(options:GGUI.ScrollFrameConstructorOptions)
+---@overload fun(options:GGUI.ScrollFrameConstructorOptions): GGUI.ScrollFrame
 GGUI.ScrollFrame = GGUI.Object:extend()
 ---@param options GGUI.ScrollFrameConstructorOptions
 function GGUI.ScrollFrame:new(options)
@@ -1499,7 +1500,7 @@ end
 ---@field onEscapeCallback? function Default: Clear Focus
 
 ---@class GGUI.TextInput : GGUI.Widget
----@overload fun(options:GGUI.TextInputConstructorOptions)
+---@overload fun(options:GGUI.TextInputConstructorOptions): GGUI.TextInput
 GGUI.TextInput = GGUI.Widget:extend()
 ---@param options GGUI.TextInputConstructorOptions
 function GGUI.TextInput:new(options)
@@ -1577,7 +1578,7 @@ end
 ---@field borderWidth? number
 
 ---@class GGUI.CurrencyInput : Object
----@overload fun(options:GGUI.CurrencyInputConstructorOptions)
+---@overload fun(options:GGUI.CurrencyInputConstructorOptions): GGUI.CurrencyInput
 GGUI.CurrencyInput = GGUI.Object:extend()
 
 ---@param options GGUI.CurrencyInputConstructorOptions
@@ -1747,7 +1748,7 @@ end
 ---@field borderWidth? number
 
 ---@class GGUI.NumericInput : Object
----@overload fun(options:GGUI.NumericInputConstructorOptions)
+---@overload fun(options:GGUI.NumericInputConstructorOptions): GGUI.NumericInput
 GGUI.NumericInput = GGUI.Object:extend()
 ---@param options GGUI.NumericInputConstructorOptions
 function GGUI.NumericInput:new(options)
@@ -1893,10 +1894,14 @@ function GGUI.NumericInput:new(options)
     self.validationBorder = validationBorder
 end
 
+function GGUI.NumericInput:SetVisible(visible)
+    self.textInput:SetVisible(visible)
+end
+
 --- GGUI.FrameList
 
 ---@class GGUI.FrameList : GGUI.Widget
----@overload fun(options:GGUI.FrameListConstructorOptions)
+---@overload fun(options:GGUI.FrameListConstructorOptions): GGUI.FrameList
 GGUI.FrameList = GGUI.Widget:extend()
 
 ---@class GGUI.FrameListConstructorOptions
@@ -2038,7 +2043,7 @@ end
 --- GGUI.FrameList.Row
 
 ---@class GGUI.FrameList.Row : GGUI.Widget
----@overload fun(rowFrame: Frame, columns: Frame[], rowConstructor:fun(columns: Frame[]))
+---@overload fun(rowFrame: Frame, columns: Frame[], rowConstructor:fun(columns: Frame[])): GGUI.FrameList.Row
 GGUI.FrameList.Row = GGUI.Widget:extend()
 
 ---@param rowFrame Frame
