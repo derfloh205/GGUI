@@ -736,7 +736,7 @@ end
 ---@field offsetY? number
 ---@field width? number
 ---@field initialData? GGUI.DropdownData[]
----@field clickCallback? function
+---@field clickCallback? fun(self:any, label:string, value:any)
 ---@field initialValue? any
 ---@field initialLabel? string
 
