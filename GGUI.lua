@@ -2048,17 +2048,20 @@ end
 --- GGUI.FrameList.Row
 
 ---@class GGUI.FrameList.Row : GGUI.Widget
----@overload fun(rowFrame: Frame, columns: Frame[], rowConstructor:fun(columns: Frame[])): GGUI.FrameList.Row
+---@overload fun(rowFrame: Frame, columns: Frame[], rowConstructor:fun(columns: Frame[]), frameList: GGUI.FrameList): GGUI.FrameList.Row
 GGUI.FrameList.Row = GGUI.Widget:extend()
 
 ---@param rowFrame Frame
 ---@param columns Frame[]
 ---@param rowConstructor fun(columns: Frame[])
-function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor)
+---@param frameList GGUI.FrameList
+function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     GGUI.FrameList.Row.super.new(self, rowFrame)
     self.columns = columns
     self.active=false
-    if self.selectableRows then
+    self.frameList = frameList
+    if frameList.selectableRows then
+        print("set row scripts..")
         rowFrame:SetScript("OnEnter", function()
             print("GGUI:Row Entered")
         end)
@@ -2101,7 +2104,7 @@ function GGUI.FrameList:CreateRow()
         lastColumn = columnFrame
     end
 
-    local newRow = GGUI.FrameList.Row(rowFrame, columns, self.rowConstructor)
+    local newRow = GGUI.FrameList.Row(rowFrame, columns, self.rowConstructor, self)
 
     table.insert(self.rows, newRow)
 
