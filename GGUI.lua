@@ -1908,7 +1908,7 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field parent? Frame
 ---@field rowHeight? number
 ---@field columnOptions GGUI.FrameList.ColumnOption[]
----@field rowConstructor function used to construct the rows and fill the column frames with content, columns are forwarded as params (...)
+---@field rowConstructor fun(columns: Frame[]) used to construct the rows and fill the column frames with content, columns are forwarded as params (...)
 ---@field showHeaderLine? boolean
 ---@field showBorder? boolean
 ---@field headerLineRGBA? table
@@ -1922,6 +1922,10 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field sizeY? number
 ---@field headerOffsetX? number
 ---@field scale? number
+---@field selectableRows? boolean
+---@field selectionCallback? fun(row: GGUI.FrameList.Row)
+---@field selectionColorRGB? table
+---@field selectionHoverColorRGB? table
 
 ---@class GGUI.FrameList.ColumnOption
 ---@field width? number
@@ -1943,6 +1947,7 @@ function GGUI.FrameList:new(options)
     options.headerOffsetX = options.headerOffsetX or 5
     options.scale = options.scale or 1
     self.rowHeight = options.rowHeight
+    self.selectableRows = options.selectableRows
     
     if not options.columnOptions or #options.columnOptions == 0 then
         error("GGUI Error: FrameList needs a least one column! (columnOptions)")
@@ -2053,6 +2058,18 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor)
     GGUI.FrameList.Row.super.new(self, rowFrame)
     self.columns = columns
     self.active=false
+    if self.selectableRows then
+        rowFrame:SetScript("OnEnter", function()
+            print("GGUI:Row Entered")
+        end)
+        rowFrame:SetScript("OnLeave", function()
+            print("GGUI:Row Left")
+        end)
+        -- OnMouseDown handler - Mouse click
+        rowFrame:SetScript("OnMouseDown", function()
+            print("GGUI: Row clicked")
+        end)
+    end
     rowConstructor(self.columns)
     self:Hide()
 end
@@ -2156,7 +2173,7 @@ function GGUI.FrameList:Remove(filterFunc, limit)
 end
 
 --- Update the list display, optionally filter then show all active rows
----@param sortFunc fun(rowA:GGUI.FrameList.Row, rowB:GGUI.FrameList.Row)? optional sorting before updating the display
+---@param sortFunc? fun(rowA:GGUI.FrameList.Row, rowB:GGUI.FrameList.Row) optional sorting before updating the display
 function GGUI.FrameList:UpdateDisplay(sortFunc)
     -- filter and show active rows and hide all inactive
     ---@type GGUI.FrameList.Row[] | GGUI.Widget[]
