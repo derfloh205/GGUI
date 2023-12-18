@@ -262,10 +262,10 @@ end
 
 ---@param frameTable table the table where your addon stores your frames
 ---@param frameID string The ID string you gave the frame
----@return GGUI.Frame
+---@return GGUI.Frame | nil
 function GGUI:GetFrame(frameTable, frameID)
     if not frameTable[frameID] then
-        error("GGUI Error: Frame not found: " .. frameID)
+        return nil
     end
     return frameTable[frameID]
 end
