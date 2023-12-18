@@ -888,7 +888,7 @@ end
 
 ---@class GGUI.JustifyOptions
 ---@field type "H" | "V" | "HV"
----@field align string
+---@field align string?
 ---@field alignH string?
 ---@field alignV string?
 
@@ -1051,6 +1051,7 @@ end
 ---@field macro? boolean
 ---@field secure? boolean
 ---@field macroText? string
+---@field scale? number
 
 ---@class GGUI.Button : GGUI.Widget
 ---@overload fun(options:GGUI.ButtonConstructorOptions): GGUI.Button
@@ -1062,6 +1063,7 @@ function GGUI.Button:new(options)
     options.label = options.label or ""
     options.anchorA = options.anchorA or "CENTER"
     options.anchorB = options.anchorB or "CENTER"
+    options.scale = options.scale or 1
     self.originalAnchorA = options.anchorA
     self.originalAnchorB = options.anchorB
     options.offsetX = options.offsetX or 0
@@ -1088,6 +1090,7 @@ function GGUI.Button:new(options)
     end
 
     local button = CreateFrame("Button", nil, options.parent, templates)
+    button:SetScale(options.scale)
 
     if self.macro then
         button:SetAttribute("type1", "macro")
@@ -1475,6 +1478,10 @@ function GGUI.ScrollFrame:new(options)
 
     self.scrollFrame = scrollFrame
     self.content = scrollChild
+end
+
+function GGUI.ScrollFrame:ScrollDown()
+    self.scrollFrame:SetVerticalScroll(self.scrollFrame:GetVerticalScrollRange())
 end
 
 function GGUI.ScrollFrame:EnableHyperLinksForFrameAndChilds()
@@ -1924,8 +1931,9 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field scale? number
 ---@field selectableRows? boolean
 ---@field selectionCallback? fun(row: GGUI.FrameList.Row)
----@field selectionColorRGB? table
----@field selectionHoverColorRGB? table
+---@field selectionColorRGBA? table
+---@field selectionHoverColorRGBA? table
+---@field rowScale? number
 
 ---@class GGUI.FrameList.ColumnOption
 ---@field width? number
@@ -1946,8 +1954,15 @@ function GGUI.FrameList:new(options)
     options.rowHeight = options.rowHeight or 25
     options.headerOffsetX = options.headerOffsetX or 5
     options.scale = options.scale or 1
+    options.rowScale = options.rowScale or 1
+    self.rowScale = options.rowScale
     self.rowHeight = options.rowHeight
     self.selectableRows = options.selectableRows
+    self.selectionHoverColorRGBA = options.selectionHoverColorRGBA or {0, 1, 0, 0.3}
+    self.selectionColorRGBA = options.selectionColorRGBA or {0, 1, 0, 0.6}
+    self.selectionCallback = options.selectionCallback or function() end
+    ---@type GGUI.FrameList.Row
+    self.selectedRow = nil
     
     if not options.columnOptions or #options.columnOptions == 0 then
         error("GGUI Error: FrameList needs a least one column! (columnOptions)")
@@ -1984,7 +1999,10 @@ function GGUI.FrameList:new(options)
         offsetBOTTOM=5,
     })
     
+    ---@type GGUI.FrameList.Row
     self.rows = {}
+    ---@type GGUI.FrameList.Row
+    self.activeRows = {}
     
     local header = CreateFrame("Frame", nil, mainFrame)
     header:SetPoint("BOTTOMLEFT", mainFrame, "TOPLEFT")
@@ -2045,6 +2063,10 @@ function GGUI.FrameList:new(options)
     GGUI.FrameList.super.new(self, mainFrame)
 end
 
+function GGUI.FrameList:ScrollDown()
+    self.scrollFrame:ScrollDown()
+end
+
 --- GGUI.FrameList.Row
 
 ---@class GGUI.FrameList.Row : GGUI.Widget
@@ -2061,26 +2083,62 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     self.active=false
     self.frameList = frameList
     if frameList.selectableRows then
-        print("set row scripts..")
+        self.Select = function ()
+            if self ~= frameList.selectedRow then
+                rowFrame:SetBackdropColor(frameList.selectionColorRGBA[1], frameList.selectionColorRGBA[2], frameList.selectionColorRGBA[3], frameList.selectionColorRGBA[4])
+                if frameList.selectedRow then
+                    -- revert color
+                    frameList.selectedRow.frame:SetBackdropColor(0, 0, 0, 0)
+                end
+                frameList.selectedRow = self
+
+                frameList.selectionCallback(self)
+            end
+        end
+        rowFrame:SetBackdrop({
+            bgFile = "Interface\\Buttons\\WHITE8x8", -- You can use any texture here or a solid color
+            --edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", -- Optional: border texture
+            --edgeSize = 12, -- Optional: size of the border
+            --insets = { left = 3, right = 3, top = 3, bottom = 3 } -- Optional: spacing inside the border
+        })
+        rowFrame:SetBackdropColor(0, 0, 0, 0) -- make colorless
+
         rowFrame:SetScript("OnEnter", function()
-            print("GGUI:Row Entered")
+            if self ~= frameList.selectedRow then
+                rowFrame:SetBackdropColor(frameList.selectionHoverColorRGBA[1], frameList.selectionHoverColorRGBA[2], frameList.selectionHoverColorRGBA[3], frameList.selectionHoverColorRGBA[4])
+            end
         end)
         rowFrame:SetScript("OnLeave", function()
-            print("GGUI:Row Left")
+            if self ~= frameList.selectedRow then
+                rowFrame:SetBackdropColor(0, 0, 0, 0)
+            end
         end)
         -- OnMouseDown handler - Mouse click
         rowFrame:SetScript("OnMouseDown", function()
-            print("GGUI: Row clicked")
+            self:Select()
         end)
     end
     rowConstructor(self.columns)
     self:Hide()
 end
 
+---@param index number
+function GGUI.FrameList:SelectRow(index)
+    if not self.selectableRows then
+        return
+    end
+    local row = self.activeRows[index]
+
+    if row and row.active then
+        row:Select()
+    end
+end
+
 function GGUI.FrameList:CreateRow()
 
-    local rowFrame = CreateFrame("Frame", nil, self.scrollFrame.content)
+    local rowFrame = CreateFrame("Frame", nil, self.scrollFrame.content, "BackdropTemplate")
     rowFrame:SetSize(self.rowWidth, self.rowHeight)
+    rowFrame:SetScale(self.rowScale)
     if #self.rows == 0 then
         rowFrame:SetPoint("TOPLEFT", self.scrollFrame.content, "TOPLEFT")
     else
@@ -2176,11 +2234,10 @@ function GGUI.FrameList:Remove(filterFunc, limit)
 end
 
 --- Update the list display, optionally filter then show all active rows
----@param sortFunc? fun(rowA:GGUI.FrameList.Row, rowB:GGUI.FrameList.Row) optional sorting before updating the display
+---@param sortFunc? fun(rowA:GGUI.FrameList.Row, rowB:GGUI.FrameList.Row): boolean optional sorting before updating the display
 function GGUI.FrameList:UpdateDisplay(sortFunc)
     -- filter and show active rows and hide all inactive
-    ---@type GGUI.FrameList.Row[] | GGUI.Widget[]
-    local activeRows = GUTIL:Filter(self.rows, function(row) 
+    self.activeRows = GUTIL:Filter(self.rows, function(row) 
         if row.active then
             row:Show()
             return true
@@ -2190,20 +2247,22 @@ function GGUI.FrameList:UpdateDisplay(sortFunc)
         end
     end)
 
-    if #activeRows == 0 then
+    if #self.activeRows == 0 then
         return
     end
 
-    if #activeRows > 1 and sortFunc then
-        activeRows = GUTIL:Sort(activeRows, sortFunc)
+    if #self.activeRows > 1 and sortFunc then
+        self.activeRows = GUTIL:Sort(self.activeRows, sortFunc)
     end
 
     local lastRow = nil
-    for index, row in pairs(activeRows) do
+    for index, row in pairs(self.activeRows) do
         if index == 1 then
             row:SetPoint("TOPLEFT", self.scrollFrame.content, "TOPLEFT")
         else
-            row:SetPoint("TOPLEFT", lastRow.frame, "BOTTOMLEFT")
+            if lastRow then
+                row:SetPoint("TOPLEFT", lastRow.frame, "BOTTOMLEFT")
+            end
         end
         lastRow = row
     end
