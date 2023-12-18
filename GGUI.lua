@@ -1750,6 +1750,7 @@ end
 ---@field onValidationChangedCallback? fun(valid:boolean)
 ---@field incrementOneButtons? boolean
 ---@field incrementFiveButtons? boolean
+---@field buttonsScale? number
 ---@field borderAdjustWidth? number
 ---@field borderAdjustHeight? number
 ---@field borderWidth? number
@@ -1773,6 +1774,7 @@ function GGUI.NumericInput:new(options)
     options.font = options.font or "ChatFontNormal"
     options.incrementOneButtons = options.incrementOneButtons or false
     options.incrementFiveButtons = options.incrementFiveButtons or false
+    options.buttonsScale = options.buttonsScale or 1
     options.borderAdjustWidth = options.borderAdjustWidth or 1
     options.borderAdjustHeight = options.borderAdjustHeight or 1
     options.borderWidth = options.borderWidth or 25
@@ -1832,6 +1834,7 @@ function GGUI.NumericInput:new(options)
             sizeX=buttonWidth,
             sizeY=buttonHeight,
             adjustWidth=true,
+            scale=options.buttonsScale,
             clickCallback=function ()
                 local input = tonumber(numericInput.textInput:GetText())
                 if input then
@@ -1860,6 +1863,7 @@ function GGUI.NumericInput:new(options)
             sizeX=buttonWidth,
             sizeY=buttonHeight,
             adjustWidth=true,
+            scale=options.buttonsScale,
             clickCallback=function ()
                 local input = tonumber(numericInput.textInput:GetText())
                 if input then
