@@ -1933,11 +1933,14 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field sizeY? number
 ---@field headerOffsetX? number
 ---@field scale? number
----@field selectableRows? boolean
----@field selectionCallback? fun(row: GGUI.FrameList.Row)
----@field selectionColorRGBA? table
----@field selectionHoverColorRGBA? table
 ---@field rowScale? number
+---@field selectionOptions? GGUI.FrameList.SelectionOptions
+
+---@class GGUI.FrameList.SelectionOptions
+---@field noSelectionColor boolean?
+---@field hoverRGBA? table<number>
+---@field selectedRGBA? table<number>
+---@field selectionCallback? fun(row: GGUI.FrameList.Row)
 
 ---@class GGUI.FrameList.ColumnOption
 ---@field width? number
@@ -1961,10 +1964,12 @@ function GGUI.FrameList:new(options)
     options.rowScale = options.rowScale or 1
     self.rowScale = options.rowScale
     self.rowHeight = options.rowHeight
-    self.selectableRows = options.selectableRows
-    self.selectionHoverColorRGBA = options.selectionHoverColorRGBA or {0, 1, 0, 0.3}
-    self.selectionColorRGBA = options.selectionColorRGBA or {0, 1, 0, 0.6}
-    self.selectionCallback = options.selectionCallback or function() end
+    self.selectionOptions = options.selectionOptions
+    if self.selectionOptions then
+        self.selectionOptions.hoverRGBA = self.selectionOptions.hoverRGBA or {0, 1, 0, 0.3}
+        self.selectionOptions.selectedRGBA = self.selectionOptions.selectedRGBA or {0, 1, 0, 0.6}
+        self.selectionOptions.selectionCallback = self.selectionOptions.selectionCallback or function() end
+    end
     ---@type GGUI.FrameList.Row
     self.selectedRow = nil
     
@@ -2086,17 +2091,19 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     self.columns = columns
     self.active=false
     self.frameList = frameList
-    if frameList.selectableRows then
+    if frameList.selectionOptions then
         self.Select = function ()
             if self ~= frameList.selectedRow then
-                rowFrame:SetBackdropColor(frameList.selectionColorRGBA[1], frameList.selectionColorRGBA[2], frameList.selectionColorRGBA[3], frameList.selectionColorRGBA[4])
-                if frameList.selectedRow then
-                    -- revert color
-                    frameList.selectedRow.frame:SetBackdropColor(0, 0, 0, 0)
+                if not frameList.selectionOptions.noSelectionColor then
+                    rowFrame:SetBackdropColor(frameList.selectionOptions.selectedRGBA[1], frameList.selectionOptions.selectedRGBA[2], frameList.selectionOptions.selectedRGBA[3], frameList.selectionOptions.selectedRGBA[4])
+                    if frameList.selectedRow then
+                        -- revert color
+                        frameList.selectedRow.frame:SetBackdropColor(0, 0, 0, 0)
+                    end
                 end
                 frameList.selectedRow = self
 
-                frameList.selectionCallback(self)
+                frameList.selectionOptions.selectionCallback(self)
             end
         end
         rowFrame:SetBackdrop({
@@ -2109,7 +2116,7 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
 
         rowFrame:SetScript("OnEnter", function()
             if self ~= frameList.selectedRow then
-                rowFrame:SetBackdropColor(frameList.selectionHoverColorRGBA[1], frameList.selectionHoverColorRGBA[2], frameList.selectionHoverColorRGBA[3], frameList.selectionHoverColorRGBA[4])
+                rowFrame:SetBackdropColor(frameList.selectionOptions.hoverRGBA[1], frameList.selectionOptions.hoverRGBA[2], frameList.selectionOptions.hoverRGBA[3], frameList.selectionOptions.hoverRGBA[4])
             end
         end)
         rowFrame:SetScript("OnLeave", function()
