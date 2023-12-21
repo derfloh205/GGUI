@@ -2115,12 +2115,12 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
         rowFrame:SetBackdropColor(0, 0, 0, 0) -- make colorless
 
         rowFrame:SetScript("OnEnter", function()
-            if self ~= frameList.selectedRow then
+            if self ~= frameList.selectedRow or frameList.selectionOptions.noSelectionColor then
                 rowFrame:SetBackdropColor(frameList.selectionOptions.hoverRGBA[1], frameList.selectionOptions.hoverRGBA[2], frameList.selectionOptions.hoverRGBA[3], frameList.selectionOptions.hoverRGBA[4])
             end
         end)
         rowFrame:SetScript("OnLeave", function()
-            if self ~= frameList.selectedRow then
+            if self ~= frameList.selectedRow or frameList.selectionOptions.noSelectionColor then
                 rowFrame:SetBackdropColor(0, 0, 0, 0)
             end
         end)
