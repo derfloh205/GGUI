@@ -314,6 +314,7 @@ function GGUI.Frame:new(options)
     self.onCollapseCallback = options.onCollapseCallback
     self.onCollapseOpenCallback = options.onCollapseOpenCallback
     self.closeOnClickOutside = options.closeOnClickOutside or false
+    self.onCloseCallback = options.onCloseCallback
 
     local hookFrame = CreateFrame("frame", nil, options.parent)
     hookFrame:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
@@ -328,23 +329,13 @@ function GGUI.Frame:new(options)
 
     if self.closeOnClickOutside then
         -- Check for clicks outside the scaled frame
-        UIParent:HookScript("OnMouseDown", function(self, button)
-            if button == "LeftButton" and frame:IsShown() then
-                local x, y = GetCursorPosition()
-                local frameScale = frame:GetEffectiveScale()
-                local left, bottom, width, height = frame:GetRect()
-
-                left = left * frameScale
-                bottom = bottom * frameScale
-                width = width * frameScale
-                height = height * frameScale
-
-                local cursorScale = UIParent:GetEffectiveScale()
-                x = x / cursorScale
-                y = y / cursorScale
-
-                if x < left or x > left + width or y < bottom or y > bottom + height then
+        frame:HookScript("OnUpdate", function()
+            if IsMouseButtonDown("LeftButton") and frame:IsShown() then
+                if not frame:IsMouseOver() then
                     frame:Hide()
+                    if self.onCloseCallback then
+                        self.onCloseCallback()
+                    end
                 end
             end
         end)
@@ -2119,7 +2110,7 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     self.frameList = frameList
     if frameList.selectionOptions then
         self.Select = function ()
-            if self ~= frameList.selectedRow then
+            if self ~= frameList.selectedRow or frameList.selectionOptions.noSelectionColor then
                 if not frameList.selectionOptions.noSelectionColor then
                     rowFrame:SetBackdropColor(frameList.selectionOptions.selectedRGBA[1], frameList.selectionOptions.selectedRGBA[2], frameList.selectionOptions.selectedRGBA[3], frameList.selectionOptions.selectedRGBA[4])
                     if frameList.selectedRow then
