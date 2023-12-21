@@ -242,6 +242,7 @@ end
 ---@field initialStatusID? string
 ---@field frameTable? table The table where your addon stores its frames for later retrieval
 ---@field frameConfigTable? table The saved variable table where your addon stores any frame config like position
+---@field closeOnClickOutside? boolean
 
 ---@class GGUI.BackdropOptions
 ---@field colorR? number
@@ -312,6 +313,7 @@ function GGUI.Frame:new(options)
     self.statusList = {}
     self.onCollapseCallback = options.onCollapseCallback
     self.onCollapseOpenCallback = options.onCollapseOpenCallback
+    self.closeOnClickOutside = options.closeOnClickOutside or false
 
     local hookFrame = CreateFrame("frame", nil, options.parent)
     hookFrame:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
@@ -323,6 +325,30 @@ function GGUI.Frame:new(options)
     frame:SetScale(options.scale)
     frame:SetFrameStrata(options.frameStrata or "HIGH")
     frame:SetFrameLevel(numFrames)
+
+    if self.closeOnClickOutside then
+        -- Check for clicks outside the scaled frame
+        UIParent:HookScript("OnMouseDown", function(self, button)
+            if button == "LeftButton" and frame:IsShown() then
+                local x, y = GetCursorPosition()
+                local frameScale = frame:GetEffectiveScale()
+                local left, bottom, width, height = frame:GetRect()
+
+                left = left * frameScale
+                bottom = bottom * frameScale
+                width = width * frameScale
+                height = height * frameScale
+
+                local cursorScale = UIParent:GetEffectiveScale()
+                x = x / cursorScale
+                y = y / cursorScale
+
+                if x < left or x > left + width or y < bottom or y > bottom + height then
+                    frame:Hide()
+                end
+            end
+        end)
+    end
 
     self.title = GGUI.Text({
         parent=frame,anchorParent=frame,text=options.title,offsetY=-15,
