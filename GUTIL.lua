@@ -273,6 +273,7 @@ function GUTIL:ColorizeText(text, color)
   return startLine .. color .. text .. endLine
 end
 
+---@enum GUTIL.COLORS
 GUTIL.COLORS = {
   GREEN = "ff00FF00",
   RED = "ffFF0000",
@@ -288,7 +289,18 @@ GUTIL.COLORS = {
   SILVER = "ffdadada",
   COPPER = "ffc9803c",
   PATREON = "ffff424D",
+  WHISPER = "ffff80ff",
+  WHITE = "ffffffff",
 }
+
+-- Thanks to arkinventory
+function GUTIL:StripColor(text)
+    local text = text or ""
+    text = string.gsub( text, "|c%x%x%x%x%x%x%x%x", "" )
+    text = string.gsub( text, "|c%x%x %x%x%x%x%x", "" ) -- the trading parts colour has a space instead of a zero for some weird reason
+    text = string.gsub( text, "|r", "" )
+    return text
+end
 
 function GUTIL:FormatMoney(copperValue, useColor, percentRelativeTo)
   local absValue = abs(copperValue)

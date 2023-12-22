@@ -586,6 +586,7 @@ end
 ---@field anchorB? FramePoint
 ---@field anchorParent? Region
 ---@field hideQualityIcon? boolean
+---@field isAtlas? boolean
 
 ---@class GGUI.Icon : GGUI.Widget
 ---@overload fun(options:GGUI.IconConstructorOptions): GGUI.Icon
@@ -594,7 +595,7 @@ function GGUI.Icon:new(options)
     options = options or {}
     options.offsetX = options.offsetX or 0
     options.offsetY = options.offsetY or 0
-    options.texturePath = options.texturePath or GGUI.CONST.EMPTY_TEXTURE -- empty slot texture
+    self.defaultTexture = options.texturePath or GGUI.CONST.EMPTY_TEXTURE
     options.sizeX = options.sizeX or 40
     options.sizeY = options.sizeY or 40
     options.anchorA = options.anchorA or "CENTER"
@@ -603,6 +604,7 @@ function GGUI.Icon:new(options)
     self.hideQualityIcon = options.hideQualityIcon or false
     ---@type ItemMixin?
     self.item = nil
+    self.isAtlas = options.isAtlas or false
 
     local newIcon = CreateFrame("Button", nil, options.parent, "GameMenuButtonTemplate")
     GGUI.Icon.super.new(self, newIcon)
@@ -610,7 +612,11 @@ function GGUI.Icon:new(options)
 	newIcon:SetSize(options.sizeX, options.sizeY)
 	newIcon:SetNormalFontObject("GameFontNormalLarge")
 	newIcon:SetHighlightFontObject("GameFontHighlightLarge")
-	newIcon:SetNormalTexture(options.texturePath)
+    if self.isAtlas then
+        newIcon:SetNormalAtlas(self.defaultTexture)
+    else
+        newIcon:SetNormalTexture(self.defaultTexture)
+    end
     newIcon.qualityIcon = GGUI.QualityIcon({
         parent=self.frame,
         sizeX=options.sizeX*0.50*options.qualityIconScale,
@@ -649,7 +655,11 @@ function GGUI.Icon:SetItem(idLinkOrMixin, options)
         gIcon.frame:SetScript("OnLeave", nil)
         gIcon.qualityIcon:Hide()
         GGUI:SetItemTooltip(gIcon.frame, nil)
-        gIcon.frame:SetNormalTexture(GGUI.CONST.EMPTY_TEXTURE)
+        if self.isAtlas then
+            gIcon.frame:SetNormalAtlas(self.defaultTexture)
+        else
+            gIcon.frame:SetNormalTexture(self.defaultTexture)
+        end
         return
     end
     local item = nil
@@ -2425,9 +2435,11 @@ end
 ---@field label? string
 ---@field initialItems? ItemMixin[]
 ---@field initialItem? ItemMixin
----@field onSelectCallback? fun(selectedItem: ItemMixin)
+---@field onSelectCallback? fun(itemSelector: GGUI.ItemSelector, selectedItem: ItemMixin)
 ---@field selectedItem? ItemMixin
 ---@field selectionFrameColumns? number
+---@field emptyIcon? string
+---@field isAtlas? boolean
 
 
 ---@class GGUI.ItemSelector : GGUI.Widget
@@ -2452,11 +2464,12 @@ function GGUI.ItemSelector:new(options)
     self.onSelectCallback = options.onSelectCallback or function() end
     ---@type ItemMixin?
     self.selectedItem = nil
+    self.emptyIcon = options.emptyIcon or GGUI.CONST.EMPTY_TEXTURE
 
     self.icon = GGUI.Icon{
         parent=options.parent, anchorParent=options.anchorParent, anchorA=options.anchorA, anchorB=options.anchorB,
         offsetX=options.offsetX, offsetY=options.offsetY, qualityIconScale=options.qualityIconScale,
-        sizeX=options.sizeX, sizeY=options.sizeY
+        sizeX=options.sizeX, sizeY=options.sizeY, texturePath = self.emptyIcon, isAtlas = options.isAtlas
     }
 
     if options.label then
@@ -2536,8 +2549,8 @@ function GGUI.ItemSelector:AddSlotIcon(item)
     icon.frame:SetScript("OnClick", function ()
         self.selectedItem = icon.item
         self.selectionFrame:Hide()
-        self.icon:SetItem(item)
-        self.onSelectCallback(item)
+        self.icon:SetItem(icon.item)
+        self.onSelectCallback(self, icon.item)
     end)
 
 
