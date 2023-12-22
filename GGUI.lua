@@ -960,7 +960,8 @@ end
 
 ---@param color GUTIL.COLORS
 function GGUI.Text:SetColor(color)
-    self:SetText(GUTIL:ColorizeText(self:GetText(), color))
+    local text = GUTIL:StripColor(self:GetText())
+    self:SetText(GUTIL:ColorizeText(text, color))
 end
 
 function GGUI.Text:EnableHyperLinksForFrameAndChilds()
