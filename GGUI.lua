@@ -639,6 +639,7 @@ end
 ---@field overrideQuality? number
 
 ---@param idLinkOrMixin number | string | ItemMixin
+---@param options GGUI.IconSetItemOptions?
 function GGUI.Icon:SetItem(idLinkOrMixin, options)
     options = options or {}
 
@@ -950,11 +951,16 @@ function GGUI.Text:new(options)
 end
 
 function GGUI.Text:GetText()
-    self.frame:GetText()
+    return self.frame:GetText() or ""
 end
 
 function GGUI.Text:SetText(text)
     self.frame:SetText(text)
+end
+
+---@param color GUTIL.COLORS
+function GGUI.Text:SetColor(color)
+    self:SetText(GUTIL:ColorizeText(self:GetText(), color))
 end
 
 function GGUI.Text:EnableHyperLinksForFrameAndChilds()
@@ -2398,4 +2404,174 @@ function GGUI:InitializePopup(options)
         popupFrame:Hide()
 
         GGUI:EnableHyperLinksForFrameAndChilds(popupFrame.content)
+end
+
+--- GGUI.IconSelector
+---@class GGUI.ItemSelector
+
+---@class GGUI.ItemSelectorConstructorOptions
+---@field parent? Frame
+---@field anchorParent? Frame
+---@field anchorA? FramePoint
+---@field anchorB? FramePoint
+---@field offsetX? number
+---@field offsetY? number
+---@field sizeX? number
+---@field sizeY? number
+---@field scale? number
+---@field qualityIconScale? number
+---@field selectionFrameOptions? GGUI.FrameConstructorOptions
+---@field label? string
+---@field initialItems? ItemMixin[]
+---@field initialItem? ItemMixin
+---@field onSelectCallback? fun(selectedItem: ItemMixin)
+---@field selectedItem? ItemMixin
+---@field selectionFrameColumns? number
+
+
+---@class GGUI.ItemSelector : GGUI.Widget
+---@overload fun(options:GGUI.ItemSelectorConstructorOptions): GGUI.ItemSelector
+GGUI.ItemSelector = GGUI.Widget:extend()
+
+---@param options GGUI.ItemSelectorConstructorOptions
+function GGUI.ItemSelector:new(options)
+    options = options or {}
+    options.parent = options.parent or UIParent
+    options.anchorParent = options.anchorParent or UIParent
+    options.sizeX = options.sizeX or 50
+    options.sizeY = options.sizeY or 50
+    options.anchorA = options.anchorA or "CENTER"
+    options.anchorB = options.anchorB or "CENTER"
+    options.offsetX = options.offsetX or 0
+    options.offsetY = options.offsetY or 0
+    options.scale = options.scale or 1
+    options.qualityIconScale = options.qualityIconScale or 1
+    options.selectionFrameOptions = options.selectionFrameOptions or {}
+    self.selectionFrameColumns = options.selectionFrameColumns or 3
+    self.onSelectCallback = options.onSelectCallback or function() end
+    ---@type ItemMixin?
+    self.selectedItem = nil
+
+    self.icon = GGUI.Icon{
+        parent=options.parent, anchorParent=options.anchorParent, anchorA=options.anchorA, anchorB=options.anchorB,
+        offsetX=options.offsetX, offsetY=options.offsetY, qualityIconScale=options.qualityIconScale,
+        sizeX=options.sizeX, sizeY=options.sizeY
+    }
+
+    if options.label then
+        GGUI.Text{
+            parent=options.parent, anchorParent=self.icon.frame, anchorA="BOTTOM", anchorB="TOP",
+            text=options.label
+        }
+    end
+
+    options.selectionFrameOptions.parent = options.selectionFrameOptions.parent or options.parent
+    options.selectionFrameOptions.anchorParent = options.selectionFrameOptions.anchorParent or self.icon.frame
+    options.selectionFrameOptions.anchorA = options.selectionFrameOptions.anchorA or "TOPLEFT"
+    options.selectionFrameOptions.anchorB = options.selectionFrameOptions.anchorB or "TOPRIGHT"
+    options.selectionFrameOptions.offsetX = options.selectionFrameOptions.offsetX or 5
+    options.selectionFrameOptions.offsetY = options.selectionFrameOptions.offsetY or 5
+    options.selectionFrameOptions.closeOnClickOutside = true
+    options.selectionFrameOptions.frameConfigTable = options.selectionFrameOptions.frameConfigTable or {}
+    local numFrames = GUTIL:Count(options.selectionFrameOptions.frameTable or {}) + 1
+    options.selectionFrameOptions.frameID = options.selectionFrameOptions.frameID or ("GGUIIconSelectorFrame " .. numFrames)
+    options.selectionFrameOptions.frameStrata = options.parent:GetFrameStrata()
+    options.selectionFrameOptions.scrollableContent = true
+    options.selectionFrameOptions.title = options.selectionFrameOptions.title or ""
+    options.selectionFrameOptions.sizeX = options.selectionFrameOptions.sizeX or 150
+    options.selectionFrameOptions.sizeY = options.selectionFrameOptions.sizeY or 150
+
+    ---@class GGUI.ItemSelector.SelectionFrame : GGUI.Frame
+    self.selectionFrame = GGUI.Frame(options.selectionFrameOptions)
+    self.selectionFrame:Hide()
+
+    self.selectionFrame:SetFrameLevel(options.parent:GetFrameLevel()+10)
+
+    self.icon.frame:SetScript("OnClick", function ()
+        if not self.selectionFrame:IsVisible() then
+            self.selectionFrame:Show()
+        end
+    end)
+
+    ---@type GGUI.Icon[]
+    self.selectionFrame.itemSlots = {}
+    self.selectionFrame.currentRow = 1
+    self.selectionFrame.currentColumn = 1
+
+    self:AddSlotIcon(nil)
+
+    -- add initial item data to selectionFrame
+    for _, item in pairs(options.initialItems or {}) do
+        self:AddSlotIcon(item)
+    end
+
+    GGUI.ItemSelector.super.new(self, self.icon)
+end
+
+---@param item ItemMixin?
+---@return GGUI.Icon
+function GGUI.ItemSelector:AddSlotIcon(item)
+    local iconSizeX = 25
+    local iconSizeY = 25
+
+    local baseOffsetX = 0
+    local baseOffsetY = 0
+    local spacingX = iconSizeX + 5
+    local spacingY = (iconSizeY + 5) * -1
+    local offsetX = baseOffsetX + spacingX * (self.selectionFrame.currentColumn-1)
+    local offsetY = baseOffsetY + spacingY * (self.selectionFrame.currentRow-1)
+
+    local icon = GGUI.Icon{
+        parent=self.selectionFrame.content, anchorParent=self.selectionFrame.content, anchorA="TOPLEFT", 
+        anchorB="TOPLEFT", offsetX = offsetX, offsetY=offsetY, sizeX=25, sizeY=25
+    }
+
+    if item then
+        icon:SetItem(item)
+        table.insert(self.selectionFrame.itemSlots, icon)
+    end
+
+
+    icon.frame:SetScript("OnClick", function ()
+        self.selectedItem = icon.item
+        self.selectionFrame:Hide()
+        self.icon:SetItem(item)
+        self.onSelectCallback(item)
+    end)
+
+
+    self.selectionFrame.currentColumn = self.selectionFrame.currentColumn + 1
+
+    if self.selectionFrame.currentColumn > self.selectionFrameColumns then
+        self.selectionFrame.currentColumn = 1
+        self.selectionFrame.currentRow = self.selectionFrame.currentRow + 1
+    end
+
+    return icon
+end
+
+---@param items ItemMixin[]
+function GGUI.ItemSelector:SetItems(items)
+    local itemSlots = self.selectionFrame.itemSlots
+
+    local maxSlots = math.max(#items, #itemSlots)
+    for i = 1, maxSlots do
+        local itemSlot = itemSlots[i]
+        local item = items[i]
+        if not itemSlot and item then
+            itemSlot = self:AddSlotIcon(item)
+            itemSlot:SetItem(item)
+        elseif item then
+            itemSlot:SetItem(item)
+            itemSlot:Show()
+        elseif itemSlot then
+            itemSlot:Hide()
+        end
+    end
+end
+
+---@param item ItemMixin?
+function GGUI.ItemSelector:SetSelectedItem(item)
+    self.selectedItem = item
+    self.icon:SetItem(item)
 end
