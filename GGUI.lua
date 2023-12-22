@@ -1864,7 +1864,7 @@ function GGUI.NumericInput:new(options)
                     local valid = GUTIL:ValidateNumberString(tostring(input + 1), self.minValue, self.maxValue, self.allowDecimals)   
                     
                     if valid then
-                        numericInput.currentValue = input
+                        numericInput.currentValue = input + 1
                         numericInput.textInput:SetText(input + 1)
                         if numericInput.onNumberValidCallback then
                             numericInput.onNumberValidCallback(numericInput)
@@ -1893,7 +1893,7 @@ function GGUI.NumericInput:new(options)
                     local valid = GUTIL:ValidateNumberString(tostring(input - 1), self.minValue, self.maxValue, self.allowDecimals)   
                     
                     if valid then
-                        numericInput.currentValue = input
+                        numericInput.currentValue = input - 1
                         numericInput.textInput:SetText(input - 1)
                         if numericInput.onNumberValidCallback then
                             numericInput.onNumberValidCallback(numericInput)
