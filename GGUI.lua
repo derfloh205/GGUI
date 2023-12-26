@@ -238,7 +238,7 @@ end
 ---@field onCloseCallback? function
 ---@field onCollapseCallback? function
 ---@field onCollapseOpenCallback? function
----@field backdropOptions GGUI.BackdropOptions
+---@field backdropOptions? GGUI.BackdropOptions
 ---@field initialStatusID? string
 ---@field frameTable? table The table where your addon stores its frames for later retrieval
 ---@field frameConfigTable? table The saved variable table where your addon stores any frame config like position
