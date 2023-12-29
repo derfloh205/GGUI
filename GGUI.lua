@@ -1,7 +1,7 @@
 
 
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 2)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 3)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -252,6 +252,8 @@ end
 ---@field colorA? number
 ---@field bgFile? string
 ---@field borderOptions? GGUI.BorderOptions
+---@field tile? boolean
+---@field tileSize? number
 
 ---@class GGUI.BorderOptions
 ---@field colorR? number
@@ -355,6 +357,8 @@ function GGUI.Frame:new(options)
         backdropOptions.colorG = backdropOptions.colorG or 0
         backdropOptions.colorB = backdropOptions.colorB or 0
         backdropOptions.colorA = backdropOptions.colorA or 1
+        backdropOptions.tile = backdropOptions.tile or false
+        backdropOptions.tileSize = backdropOptions.tileSize or 32
         backdropOptions.borderOptions = backdropOptions.borderOptions or {}
         local borderOptions = backdropOptions.borderOptions
         borderOptions.colorR = borderOptions.colorR or 0
@@ -369,6 +373,8 @@ function GGUI.Frame:new(options)
             edgeFile = borderOptions.edgeFile,
             edgeSize = borderOptions.edgeSize,
             insets = borderOptions.insets,
+            tile = backdropOptions.tile,
+            tileSize = backdropOptions.tileSize,
         })    
         frame:SetBackdropColor(backdropOptions.colorR, backdropOptions.colorG, backdropOptions.colorB, backdropOptions.colorA)
     end
@@ -2211,6 +2217,8 @@ function GGUI.FrameList:CreateRow()
                 edgeFile = borderOptions.edgeFile,
                 edgeSize = borderOptions.edgeSize,
                 insets = borderOptions.insets,
+                tile = columnOption.backdropOptions.tile,
+                tileSize = columnOption.backdropOptions.tileSize,
             })    
             columnFrame:SetBackdropColor(columnOption.backdropOptions.colorR or 0, columnOption.backdropOptions.colorG or 0, columnOption.backdropOptions.colorB or 0, columnOption.backdropOptions.colorA or 1)
             columnFrame:SetBackdropBorderColor(borderOptions.colorR or 0, borderOptions.colorG or 0, borderOptions.colorB or 0, borderOptions.colorA or 1)
@@ -2602,4 +2610,186 @@ end
 function GGUI.ItemSelector:SetSelectedItem(item)
     self.selectedItem = item
     self.icon:SetItem(item)
+end
+
+--- GGUI ClassIcon
+
+---@enum GGUI.Class
+GGUI.CONST.CLASSES = {
+    WARRIOR = "WARRIOR",
+    ARMS = "ARMS",
+    FURY = "FURY",
+    PROTECTION = "PROTECTION",
+
+    PALADIN = "PALADIN",
+    HOLY = "HOLY",
+    RETRIBUTION = "RETRIBUTION",
+    PROTECTION_PALADIN = "PROTECTION_PALADIN",
+
+    HUNTER = "HUNTER",
+    BEAST_MASTERY = "BEAST_MASTERY",
+    MARKSMANSHIP = "MARKSMANSHIP",
+    SURVIVAL = "SURVIVAL",
+
+    ROGUE = "ROGUE",
+    ASSASSINATION = "ASSASSINATION",
+    OUTLAW = "OUTLAW",
+    SUBTLETY = "SUBTLETY",
+
+    PRIEST = "PRIEST",
+    DISCIPLINE = "DISCIPLINE",
+    HOLY_PRIEST = "HOLY_PRIEST",
+    SHADOW = "SHADOW",
+
+    DEATHKNIGHT = "DEATHKNIGHT",
+    BLOOD = "BLOOD",
+    FROST = "FROST",
+    UNHOLY = "UNHOLY",
+
+    SHAMAN = "SHAMAN",
+    ELEMENTAL = "ELEMENTAL",
+    ENHANCEMENT = "ENHANCEMENT",
+    RESTORATION = "RESTORATION",
+
+    MAGE = "MAGE",
+    ARCANE = "ARCANE",
+    FIRE = "FIRE",
+    FROST_MAGE = "FROST_MAGE",
+
+    WARLOCK = "WARLOCK",
+    AFFLICTION = "AFFLICTION",
+    DEMONOLOGY = "DEMONOLOGY",
+    DESTRUCTION = "DESTRUCTION",
+
+    MONK = "MONK",
+    BREWMASTER = "BREWMASTER",
+    MISTWEAVER = "MISTWEAVER",
+    WINDWALKER = "WINDWALKER",
+
+    DRUID = "DRUID",
+    BALANCE = "BALANCE",
+    FERAL = "FERAL",
+    GUARDIAN = "GUARDIAN",
+    RESTORATION_DRUID = "RESTORATION_DRUID",
+
+    DEMONHUNTER = "DEMONHUNTER",
+    HAVOC = "HAVOC",
+    VENGEANCE = "VENGEANCE",
+}
+---@type table<GGUI.Class, string>
+GGUI.CONST.CLASS_ICONS = {
+    WARRIOR = "Interface\\Icons\\ClassIcon_Warrior",
+    ARMS = "Interface\\Icons\\Ability_Warrior_SavageBlow",
+    FURY = "Interface\\Icons\\Ability_Warrior_InnerRage",
+    PROTECTION = "Interface\\Icons\\Ability_Warrior_DefensiveStance",
+
+    PALADIN = "Interface\\Icons\\ClassIcon_Paladin",
+    HOLY = "Interface\\Icons\\Spell_Holy_HolyBolt",
+    RETRIBUTION = "Interface\\Icons\\Spell_Holy_AuraOfLight",
+    PROTECTION_PALADIN = "Interface\\Icons\\Ability_Paladin_ShieldoftheTemplar",
+
+    HUNTER = "Interface\\Icons\\ClassIcon_Hunter",
+    BEAST_MASTERY = "Interface\\Icons\\ability_hunter_bestialdiscipline",
+    MARKSMANSHIP = "Interface\\Icons\\ability_marksmanship",
+    SURVIVAL = "Interface\\Icons\\ability_hunter_camouflage",
+
+    ROGUE = "Interface\\Icons\\ClassIcon_Rogue",
+    ASSASSINATION = "Interface\\Icons\\Ability_Rogue_Eviscerate",
+    OUTLAW = "Interface\\Icons\\Ability_Rogue_Waylay",
+    SUBTLETY = "Interface\\Icons\\Ability_Stealth",
+
+    PRIEST = "Interface\\Icons\\ClassIcon_Priest",
+    DISCIPLINE = "Interface\\Icons\\Spell_Holy_PowerWordShield",
+    HOLY_PRIEST = "Interface\\Icons\\Spell_Holy_GuardianSpirit",
+    SHADOW = "Interface\\Icons\\Spell_Shadow_ShadowWordPain",
+
+    DEATHKNIGHT = "Interface\\Icons\\ClassIcon_DeathKnight",
+    BLOOD = "Interface\\Icons\\Spell_DeathKnight_BloodPresence",
+    FROST = "Interface\\Icons\\Spell_DeathKnight_FrostPresence",
+    UNHOLY = "Interface\\Icons\\Spell_DeathKnight_UnholyPresence",
+
+    SHAMAN = "Interface\\Icons\\ClassIcon_Shaman",
+    ELEMENTAL = "Interface\\Icons\\Spell_Nature_Lightning",
+    ENHANCEMENT = "Interface\\Icons\\Spell_Shaman_ImprovedStormstrike",
+    RESTORATION = "Interface\\Icons\\Spell_Nature_MagicImmunity",
+
+    MAGE = "Interface\\Icons\\ClassIcon_Mage",
+    ARCANE = "Interface\\Icons\\Spell_Holy_MagicalSentry",
+    FIRE = "Interface\\Icons\\Spell_Fire_FireBolt02",
+    FROST_MAGE = "Interface\\Icons\\Spell_Frost_FrostBolt02",
+
+    WARLOCK = "Interface\\Icons\\ClassIcon_Warlock",
+    AFFLICTION = "Interface\\Icons\\Spell_Shadow_DeathCoil",
+    DEMONOLOGY = "Interface\\Icons\\Spell_Shadow_Metamorphosis",
+    DESTRUCTION = "Interface\\Icons\\Spell_Shadow_RainOfFire",
+
+    MONK = "Interface\\Icons\\ClassIcon_Monk",
+    BREWMASTER = "Interface\\Icons\\Spell_Monk_Brewmaster_Spec",
+    MISTWEAVER = "Interface\\Icons\\Ability_Monk_SoothingMists",
+    WINDWALKER = "Interface\\Icons\\spell_monk_windwalker_spec",
+
+    DRUID = "Interface\\Icons\\ClassIcon_Druid",
+    BALANCE = "Interface\\Icons\\Spell_Nature_Starfall",
+    FERAL = "Interface\\Icons\\Ability_Druid_CatForm",
+    GUARDIAN = "Interface\\Icons\\Ability_Racial_BearForm",
+    RESTORATION_DRUID = "Interface\\Icons\\Spell_Nature_HealingTouch",
+
+    DEMONHUNTER = "Interface\\Icons\\ClassIcon_DemonHunter",
+    HAVOC = "Interface\\Icons\\Ability_DemonHunter_SpecDPS",
+    VENGEANCE = "Interface\\Icons\\Ability_DemonHunter_SpecTank",
+}
+
+---@class GGUI.ClassIconConstructorOptions
+---@field parent? Frame
+---@field offsetX? number
+---@field offsetY? number
+---@field initialClass? GGUI.Class
+---@field sizeX? number
+---@field sizeY? number
+---@field anchorA? FramePoint
+---@field anchorB? FramePoint
+---@field anchorParent? Region
+---@field enableMouse? boolean
+---@field clickCallback? fun(GGUI.ClassIcon)
+
+---@class GGUI.ClassIcon : GGUI.Widget
+---@overload fun(options:GGUI.ClassIconConstructorOptions): GGUI.ClassIcon
+GGUI.ClassIcon = GGUI.Widget:extend()
+function GGUI.ClassIcon:new(options)
+    options = options or {}
+    options.offsetX = options.offsetX or 0
+    options.offsetY = options.offsetY or 0
+    options.sizeX = options.sizeX or 40
+    options.sizeY = options.sizeY or 40
+    options.anchorA = options.anchorA or "CENTER"
+    options.anchorB = options.anchorB or "CENTER"
+
+
+    self.icon = CreateFrame("Button", nil, options.parent, "GameMenuButtonTemplate")
+    GGUI.Icon.super.new(self, self.icon)
+    self.icon:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
+	self.icon:SetSize(options.sizeX, options.sizeY)
+
+    local texture = GGUI.CONST.CLASS_ICONS[options.initialClass]
+    if texture then
+        self.icon:SetNormalTexture(texture)
+    end
+
+    if options.enableMouse ~= nil and options.enableMouse == false then
+        self.icon:EnableMouse(false)
+    else
+        self.icon:SetScript("OnClick", function ()
+            if options.clickCallback then
+                options.clickCallback(self)
+            end
+        end)
+    end
+end
+
+---@param class GGUI.Class
+function GGUI.ClassIcon:SetClass(class)
+    local texture = GGUI.CONST.CLASS_ICONS[class]
+    if texture then
+        self.icon:SetNormalTexture(texture)
+    end
 end
