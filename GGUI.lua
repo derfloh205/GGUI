@@ -1,7 +1,7 @@
 
 
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 1)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 2)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -1981,6 +1981,7 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field width? number
 ---@field label? string
 ---@field justifyOptions? GGUI.JustifyOptions
+---@field backdropOptions? GGUI.BackdropOptions
 
 function GGUI.FrameList:new(options)
     self.isGGUI = true
@@ -2194,13 +2195,25 @@ function GGUI.FrameList:CreateRow()
     local columns = {}
     local lastColumn = nil
     for index, columnOption in pairs(self.columnOptions) do
-        local columnFrame = CreateFrame("Frame", nil, rowFrame)
+        local columnFrame = CreateFrame("Frame", nil, rowFrame, "BackdropTemplate")
         columnFrame:SetSize(columnOption.width, self.rowHeight)
 
         if index == 1 then
             columnFrame:SetPoint("TOPLEFT", rowFrame, "TOPLEFT", 0, 0)
         else
             columnFrame:SetPoint("LEFT", lastColumn, "RIGHT")
+        end
+
+        if columnOption.backdropOptions then
+            local borderOptions = columnOption.backdropOptions.borderOptions or {}
+            columnFrame:SetBackdrop({
+                bgFile = columnOption.backdropOptions.bgFile,
+                edgeFile = borderOptions.edgeFile,
+                edgeSize = borderOptions.edgeSize,
+                insets = borderOptions.insets,
+            })    
+            columnFrame:SetBackdropColor(columnOption.backdropOptions.colorR or 0, columnOption.backdropOptions.colorG or 0, columnOption.backdropOptions.colorB or 0, columnOption.backdropOptions.colorA or 1)
+            columnFrame:SetBackdropBorderColor(borderOptions.colorR or 0, borderOptions.colorG or 0, borderOptions.colorB or 0, borderOptions.colorA or 1)
         end
 
         table.insert(columns, columnFrame)
