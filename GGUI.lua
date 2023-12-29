@@ -1,7 +1,7 @@
 
 
 ---@class GGUI
-local GGUI = LibStub:NewLibrary("GGUI", 1) or LibStub:GetLibrary("GGUI")
+local GGUI = LibStub:NewLibrary("GGUI", 2.0)
 
 local GUTIL = GGUI_GUTIL
 
