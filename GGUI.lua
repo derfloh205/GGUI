@@ -1,7 +1,7 @@
 
 
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 4)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 5)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -2784,4 +2784,106 @@ function GGUI.ClassIcon:SetClass(class)
     if texture then
         self.icon:SetNormalTexture(texture)
     end
+end
+
+--- GGUI.BlizzardTabSystem
+
+---@class GGUI.BlizzardTabSystem : Object
+---@overload fun(tabs:GGUI.BlizzardTab[]): GGUI.BlizzardTabSystem
+GGUI.BlizzardTabSystem = GGUI.Object:extend()
+
+---@param tabList GGUI.BlizzardTab[]
+function GGUI.BlizzardTabSystem:new(tabList)
+    self.isGGUI = true
+    self.tabs = tabList
+    if #tabList == 0 then
+        return
+    end
+    -- show first tab in list
+    for _, tab in pairs(tabList) do
+        tab.button:SetScript("OnClick", function(self) 
+            for _, otherTab in pairs(tabList) do
+                ---@type GGUI.BlizzardTab
+                otherTab.content:Hide()
+                PanelTemplates_DeselectTab(otherTab.button)
+            end
+            tab.content:Show()
+            PanelTemplates_SelectTab(tab.button)
+        end)
+        tab.content:Hide()
+    end
+
+    if GGUI_GUTIL:Count(tabList, function(tab) return tab.initialTab end) ~= 1 then
+        error("GGUI Error: BlizzardTabSystem needs exactly one tab with property initialTab = true")
+    end
+    
+    for _, tab in pairs(tabList) do
+        if tab.initialTab then
+            tab.content:Show()
+            PanelTemplates_SelectTab(tab.button)
+        else
+            tab.content:Hide()
+            PanelTemplates_DeselectTab(tab.button)
+        end
+    end
+end
+
+function GGUI.BlizzardTabSystem:EnableHyperLinksForFrameAndChilds()
+    table.foreach(self.tabs, function (_, tab)
+        GGUI:EnableHyperLinksForFrameAndChilds(tab.content)
+    end)
+end
+
+--- GGUI.BlizzardTab
+
+---@class GGUI.BlizzardTabButtonOptions
+---@field sizeX? number
+---@field sizeY? number
+---@field offsetX? number
+---@field offsetY? number
+---@field anchorA? FramePoint
+---@field anchorB? FramePoint
+---@field parent? Frame
+---@field anchorParent? Region
+---@field label string
+
+---@class GGUI.BlizzardTabConstructorOptions
+---@field buttonOptions GGUI.BlizzardTabButtonOptions
+---@field sizeX? number
+---@field sizeY? number
+---@field offsetX? number
+---@field offsetY? number
+---@field anchorA? FramePoint
+---@field anchorB? FramePoint
+---@field parent? Frame
+---@field anchorParent? Region
+---@field initialTab? boolean
+
+---@class GGUI.BlizzardTab : GGUI.Widget
+---@overload fun(options:GGUI.BlizzardTabConstructorOptions): GGUI.BlizzardTab
+GGUI.BlizzardTab = GGUI.Object:extend()
+---@param options GGUI.BlizzardTabConstructorOptions
+function GGUI.BlizzardTab:new(options)
+    options = options or {}
+    options.sizeX = options.sizeX or 100
+    options.sizeY = options.sizeY or 100
+    options.offsetX = options.offsetX or 0
+    options.offsetY = options.offsetY or 0
+    options.anchorA = options.anchorA or "CENTER"
+    options.anchorB = options.anchorB or "CENTER"
+    self.isGGUI = true
+    self.initialTab = options.initialTab or false
+    local buttonOptions = options.buttonOptions or {}
+
+    self.button = CreateFrame("Button", nil, options.parent, "CharacterFrameTabTemplate")
+	self.button:SetPoint(buttonOptions.anchorA or "TOPLEFT", buttonOptions.anchorParent or options.parent, buttonOptions.anchorB or "BOTTOMLEFT", buttonOptions.offsetX or 0, buttonOptions.offsetY or 0)
+	self.button:SetText(buttonOptions.label)
+
+    self.content = CreateFrame("Frame", nil, options.parent)
+    self.content:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
+    self.content:SetSize(options.sizeX, options.sizeY)
+end
+
+function GGUI.BlizzardTab:EnableHyperLinksForFrameAndChilds()
+    GGUI:EnableHyperLinksForFrameAndChilds(self.content)
 end
