@@ -1523,7 +1523,7 @@ function GGUI.ScrollFrame:new(options)
 
         -- separator between scroll bar and content
         local separatorFrame = CreateFrame("Frame", nil, options.parent, "BackdropTemplate")
-        separatorFrame:SetSize(5 , options.parent:GetHeight())
+        separatorFrame:SetSize(5 , options.parent:GetHeight()+0.5)
         separatorFrame:SetPoint("TOPRIGHT", options.parent, "TOPRIGHT", 0, 0)
         separatorFrame:SetBackdrop({
             edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
@@ -1986,7 +1986,6 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field rowHeight? number
 ---@field columnOptions GGUI.FrameList.ColumnOption[]
 ---@field rowConstructor fun(columns: Frame[]) used to construct the rows and fill the column frames with content, columns are forwarded as params (...)
----@field showHeaderLine? boolean
 ---@field showBorder? boolean
 ---@field headerLineRGBA? table
 ---@field borderLinesRGBA? table
@@ -2103,41 +2102,6 @@ function GGUI.FrameList:new(options)
         
         lastHeaderColumn = headerColumn
     end
-    --[[
-       if options.showHeaderLine or options.showBorder then
-        local headerRGBA = options.headerLineRGBA or {1, 1, 1, 1} -- Default: white
-        local left = mainFrame:CreateLine()
-        left:SetColorTexture(headerRGBA[1],headerRGBA[2],headerRGBA[3],headerRGBA[4]) -- TODO: create option
-        left:SetThickness(1) -- TODO: as option
-        left:SetStartPoint("TOPLEFT", 0, 0)
-        left:SetEndPoint("TOPRIGHT", 0, 0)
-    end
-
-    if options.showBorder then
-        local borderRGBA = options.borderLinesRGBA or {1, 1, 1, 1} -- Default: white
-        -- left
-        local left = mainFrame:CreateLine()
-        left:SetColorTexture(borderRGBA[1],borderRGBA[2],borderRGBA[3],borderRGBA[4]) -- TODO: create option
-        left:SetThickness(1) -- TODO: as option
-        left:SetStartPoint("TOPLEFT", 0, 0)
-        left:SetEndPoint("BOTTOMLEFT", 0, 0)
-
-        -- right
-        local right = mainFrame:CreateLine()
-        right:SetColorTexture(borderRGBA[1],borderRGBA[2],borderRGBA[3],borderRGBA[4]) -- TODO: create option
-        right:SetThickness(1) -- TODO: as option
-        right:SetStartPoint("TOPRIGHT", 0, 0)
-        right:SetEndPoint("BOTTOMRIGHT", 0, 0)
-
-        -- bottom
-        local right = mainFrame:CreateLine()
-        right:SetColorTexture(borderRGBA[1],borderRGBA[2],borderRGBA[3],borderRGBA[4]) -- TODO: create option
-        right:SetThickness(1) -- TODO: as option
-        right:SetStartPoint("BOTTOMLEFT", 0, 0)
-        right:SetEndPoint("BOTTOMRIGHT", 0, 0)
-    end 
-    ]]
-    
 
     GGUI.FrameList.super.new(self, mainFrame)
 end
