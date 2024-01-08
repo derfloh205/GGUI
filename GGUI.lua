@@ -4,6 +4,7 @@
 local GGUI = LibStub:NewLibrary("GGUI-2.0", 6)
 if not GGUI then return end -- if version already exists
 
+---@type GUTIL
 local GUTIL = GGUI_GUTIL
 
 --- CLASSICS insert
@@ -2731,6 +2732,68 @@ GGUI.CONST.CLASS_ICONS = {
     VENGEANCE = "Interface\\Icons\\Ability_DemonHunter_SpecTank",
 }
 
+GGUI.CONST.CLASS_COLORS_RGBA = {
+    WARRIOR = {0.7804, 0.6118, 0.4314, 1},       -- #C79C6E
+    ARMS = {0.7804, 0.6118, 0.4314, 1},          -- Warrior
+    FURY = {0.7804, 0.6118, 0.4314, 1},          -- Warrior
+    PROTECTION = {0.7804, 0.6118, 0.4314, 1},    -- Warrior
+
+    PALADIN = {0.9569, 0.549, 0.7294, 1},        -- #F58CBA
+    HOLY = {0.9569, 0.549, 0.7294, 1},           -- Paladin
+    RETRIBUTION = {0.9569, 0.549, 0.7294, 1},    -- Paladin
+    PROTECTION_PALADIN = {0.9569, 0.549, 0.7294, 1}, -- Paladin
+
+    HUNTER = {0.6706, 0.8353, 0.4509, 1},        -- #ABD473
+    BEAST_MASTERY = {0.6706, 0.8353, 0.4509, 1}, -- Hunter
+    MARKSMANSHIP = {0.6706, 0.8353, 0.4509, 1},  -- Hunter
+    SURVIVAL = {0.6706, 0.8353, 0.4509, 1},      -- Hunter
+
+    ROGUE = {1, 0.9608, 0.4118, 1},              -- #FFF569
+    ASSASSINATION = {1, 0.9608, 0.4118, 1},      -- Rogue
+    OUTLAW = {1, 0.9608, 0.4118, 1},             -- Rogue
+    SUBTLETY = {1, 0.9608, 0.4118, 1},           -- Rogue
+
+    PRIEST = {1, 1, 1, 1},                       -- #FFFFFF
+    DISCIPLINE = {1, 1, 1, 1},                   -- Priest
+    HOLY_PRIEST = {1, 1, 1, 1},                  -- Priest
+    SHADOW = {1, 1, 1, 1},                       -- Priest
+
+    DEATHKNIGHT = {0.7686, 0.1216, 0.2314, 1},   -- #C41F3B
+    BLOOD = {0.7686, 0.1216, 0.2314, 1},         -- Death Knight
+    FROST = {0.7686, 0.1216, 0.2314, 1},         -- Death Knight
+    UNHOLY = {0.7686, 0.1216, 0.2314, 1},        -- Death Knight
+
+    SHAMAN = {0, 0.4392, 0.8706, 1},             -- #0070DE
+    ELEMENTAL = {0, 0.4392, 0.8706, 1},          -- Shaman
+    ENHANCEMENT = {0, 0.4392, 0.8706, 1},        -- Shaman
+    RESTORATION = {0, 0.4392, 0.8706, 1},        -- Shaman
+
+    MAGE = {0.4157, 0.8, 0.9412, 1},             -- #69CCF0
+    ARCANE = {0.4157, 0.8, 0.9412, 1},           -- Mage
+    FIRE = {0.4157, 0.8, 0.9412, 1},             -- Mage
+    FROST_MAGE = {0.4157, 0.8, 0.9412, 1},       -- Mage
+
+    WARLOCK = {0.5804, 0.5098, 0.7882, 1},       -- #9482C9
+    AFFLICTION = {0.5804, 0.5098, 0.7882, 1},    -- Warlock
+    DEMONOLOGY = {0.5804, 0.5098, 0.7882, 1},    -- Warlock
+    DESTRUCTION = {0.5804, 0.5098, 0.7882, 1},   -- Warlock
+
+    MONK = {0, 1, 0.5882, 1},                    -- #00FF96
+    BREWMASTER = {0, 1, 0.5882, 1},              -- Monk
+    MISTWEAVER = {0, 1, 0.5882, 1},              -- Monk
+    WINDWALKER = {0, 1, 0.5882, 1},              -- Monk
+
+    DRUID = {1, 0.4902, 0.0392, 1},              -- #FF7D0A
+    BALANCE = {1, 0.4902, 0.0392, 1},            -- Druid
+    FERAL = {1, 0.4902, 0.0392, 1},              -- Druid
+    GUARDIAN = {1, 0.4902, 0.0392, 1},           -- Druid
+    RESTORATION_DRUID = {1, 0.4902, 0.0392, 1},  -- Druid
+
+    DEMONHUNTER = {0.6392, 0.2078, 0.9333, 1},   -- #A330C9
+    HAVOC = {0.6392, 0.2078, 0.9333, 1},         -- Demon Hunter
+    VENGEANCE = {0.6392, 0.2078, 0.9333, 1},     -- Demon Hunter
+}
+
 ---@class GGUI.ClassIconConstructorOptions
 ---@field parent? Frame
 ---@field offsetX? number
@@ -2742,6 +2805,8 @@ GGUI.CONST.CLASS_ICONS = {
 ---@field anchorB? FramePoint
 ---@field anchorParent? Region
 ---@field enableMouse? boolean
+---@field showBorder? boolean
+---@field borderSize? number
 ---@field clickCallback? fun(GGUI.ClassIcon)
 
 ---@class GGUI.ClassIcon : GGUI.Widget
@@ -2755,12 +2820,35 @@ function GGUI.ClassIcon:new(options)
     options.sizeY = options.sizeY or 40
     options.anchorA = options.anchorA or "CENTER"
     options.anchorB = options.anchorB or "CENTER"
+    self.showBorder = options.showBorder or false
+
+    self.class = options.initialClass
 
 
     self.icon = CreateFrame("Button", nil, options.parent, "GameMenuButtonTemplate")
     GGUI.Icon.super.new(self, self.icon)
     self.icon:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
 	self.icon:SetSize(options.sizeX, options.sizeY)
+
+    if options.showBorder then
+        local borderSize = options.borderSize or 10
+        self.borderFrame = CreateFrame("Frame", nil, options.parent, "BackdropTemplate")
+        self.borderFrame:SetSize(options.sizeX + borderSize, options.sizeY + borderSize)
+        self.borderFrame:SetPoint("CENTER", self.icon, "CENTER")
+        self.borderFrame:SetBackdrop{
+            -- bgFile = "Interface\\Buttons\\WHITE8X8",
+            edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+            edgeSize = 20,
+        }
+        self.borderFrame:SetFrameLevel(self.icon:GetFrameLevel()+10)
+        if self.class then
+            local initialColor = GGUI.CONST.CLASS_COLORS_RGBA[self.class]
+            if initialColor then
+                self.borderFrame:SetBackdropBorderColor(initialColor[1], initialColor[2], initialColor[3], initialColor[4])
+            end
+        end
+    end
+
 
     local texture = GGUI.CONST.CLASS_ICONS[options.initialClass]
     if texture then
@@ -2781,8 +2869,16 @@ end
 ---@param class GGUI.Class
 function GGUI.ClassIcon:SetClass(class)
     local texture = GGUI.CONST.CLASS_ICONS[class]
+    self.class = class
     if texture then
         self.icon:SetNormalTexture(texture)
+    end
+
+    if self.showBorder then
+        local color = GGUI.CONST.CLASS_COLORS_RGBA[self.class]
+        if color then
+            self.borderFrame:SetBackdropBorderColor(color[1], color[2], color[3], color[4])
+        end
     end
 end
 
