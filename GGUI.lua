@@ -1,7 +1,7 @@
 
 
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 5)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 6)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -2858,6 +2858,7 @@ end
 ---@field parent? Frame
 ---@field anchorParent? Region
 ---@field initialTab? boolean
+---@field top? boolean
 
 ---@class GGUI.BlizzardTab : GGUI.Widget
 ---@overload fun(options:GGUI.BlizzardTabConstructorOptions): GGUI.BlizzardTab
@@ -2871,12 +2872,19 @@ function GGUI.BlizzardTab:new(options)
     options.offsetY = options.offsetY or 0
     options.anchorA = options.anchorA or "CENTER"
     options.anchorB = options.anchorB or "CENTER"
+    self.top = options.top or false
     self.isGGUI = true
     self.initialTab = options.initialTab or false
     local buttonOptions = options.buttonOptions or {}
 
-    self.button = CreateFrame("Button", nil, options.parent, "CharacterFrameTabTemplate")
-	self.button:SetPoint(buttonOptions.anchorA or "TOPLEFT", buttonOptions.anchorParent or options.parent, buttonOptions.anchorB or "BOTTOMLEFT", buttonOptions.offsetX or 0, buttonOptions.offsetY or 0)
+    if self.top then
+        self.button = CreateFrame("Button", nil, options.parent, "PanelTopTabButtonTemplate")
+        self.button:SetPoint(buttonOptions.anchorA or "BOTTOMLEFT", buttonOptions.anchorParent or options.parent, buttonOptions.anchorB or "TOPLEFT", buttonOptions.offsetX or 0, buttonOptions.offsetY or 0)
+    else
+        self.button = CreateFrame("Button", nil, options.parent, "PanelTabButtonTemplate")
+        self.button:SetPoint(buttonOptions.anchorA or "TOPLEFT", buttonOptions.anchorParent or options.parent, buttonOptions.anchorB or "BOTTOMLEFT", buttonOptions.offsetX or 0, buttonOptions.offsetY or 0)
+    end
+
 	self.button:SetText(buttonOptions.label)
 
     self.content = CreateFrame("Frame", nil, options.parent)
