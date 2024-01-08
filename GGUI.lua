@@ -2808,6 +2808,7 @@ GGUI.CONST.CLASS_COLORS_RGBA = {
 ---@field showBorder? boolean
 ---@field borderSize? number
 ---@field clickCallback? fun(GGUI.ClassIcon)
+---@field desaturate? boolean
 
 ---@class GGUI.ClassIcon : GGUI.Widget
 ---@overload fun(options:GGUI.ClassIconConstructorOptions): GGUI.ClassIcon
@@ -2821,6 +2822,7 @@ function GGUI.ClassIcon:new(options)
     options.anchorA = options.anchorA or "CENTER"
     options.anchorB = options.anchorB or "CENTER"
     self.showBorder = options.showBorder or false
+    self.desaturate = options.desaturate or false
 
     self.class = options.initialClass
 
@@ -2836,7 +2838,6 @@ function GGUI.ClassIcon:new(options)
         self.borderFrame:SetSize(options.sizeX + borderSize, options.sizeY + borderSize)
         self.borderFrame:SetPoint("CENTER", self.icon, "CENTER")
         self.borderFrame:SetBackdrop{
-            -- bgFile = "Interface\\Buttons\\WHITE8X8",
             edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
             edgeSize = 20,
         }
@@ -2852,7 +2853,14 @@ function GGUI.ClassIcon:new(options)
 
     local texture = GGUI.CONST.CLASS_ICONS[options.initialClass]
     if texture then
-        self.icon:SetNormalTexture(texture)
+        local buttonTexture = self.icon:CreateTexture(nil, "BACKGROUND")
+        buttonTexture:SetAllPoints()
+        buttonTexture:SetTexture(texture)
+        self.icon:SetNormalTexture(buttonTexture)
+
+        if self.desaturate then
+            self:Desaturate()
+        end
     end
 
     if options.enableMouse ~= nil and options.enableMouse == false then
@@ -2864,6 +2872,15 @@ function GGUI.ClassIcon:new(options)
             end
         end)
     end
+end
+
+function GGUI.ClassIcon:Desaturate()
+    self.frame:GetNormalTexture():SetVertexColor(0.2, 0.2, 0.2)
+    self.desaturate = true
+end
+function GGUI.ClassIcon:Saturate()
+    self.frame:GetNormalTexture():SetVertexColor(1, 1, 1)
+    self.desaturate = false
 end
 
 ---@param class GGUI.Class
