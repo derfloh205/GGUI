@@ -264,6 +264,7 @@ end
 ---@field edgeSize? number
 ---@field edgeFile? string
 ---@field insets? backdropInsets
+---@field edgeInsets? backdropInsets
 
 ---@param frameTable table the table where your addon stores your frames
 ---@param frameID string The ID string you gave the frame
@@ -374,6 +375,7 @@ function GGUI.Frame:new(options)
             edgeFile = borderOptions.edgeFile,
             edgeSize = borderOptions.edgeSize,
             insets = borderOptions.insets,
+            edgeInsets = borderOptions.edgeInsets,
             tile = backdropOptions.tile,
             tileSize = backdropOptions.tileSize,
         })    
