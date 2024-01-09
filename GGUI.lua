@@ -2687,6 +2687,11 @@ GGUI.CONST.CLASSES = {
     DEMONHUNTER = "DEMONHUNTER",
     HAVOC = "HAVOC",
     VENGEANCE = "VENGEANCE",
+
+    EVOKER = "EVOKER",
+    AUGMENTATION = "AUGMENTATION",
+    DEVASTATION = "DEVASTATION",
+    PRESERVATION = "PRESERVATION",
 }
 ---@type table<GGUI.Class, string>
 GGUI.CONST.CLASS_ICONS = {
@@ -2749,6 +2754,11 @@ GGUI.CONST.CLASS_ICONS = {
     DEMONHUNTER = "Interface\\Icons\\ClassIcon_DemonHunter",
     HAVOC = "Interface\\Icons\\Ability_DemonHunter_SpecDPS",
     VENGEANCE = "Interface\\Icons\\Ability_DemonHunter_SpecTank",
+
+    EVOKER = "Interface\\Icons\\classicon_evoker",
+    AUGMENTATION = "Interface\\Icons\\classicon_evoker_augmentation",
+    DEVASTATION = "Interface\\Icons\\classicon_evoker_devastation",
+    PRESERVATION = "Interface\\Icons\\classicon_evoker_preservation",
 }
 
 GGUI.CONST.CLASS_COLORS_RGBA = {
@@ -2811,6 +2821,11 @@ GGUI.CONST.CLASS_COLORS_RGBA = {
     DEMONHUNTER = {0.6392, 0.2078, 0.9333, 1},   -- #A330C9
     HAVOC = {0.6392, 0.2078, 0.9333, 1},         -- Demon Hunter
     VENGEANCE = {0.6392, 0.2078, 0.9333, 1},     -- Demon Hunter
+
+    EVOKER = {0.2, 0.58, 0.5, 1},   -- #33937F
+    AUGMENTATION = {0.6392, 0.2078, 0.9333, 1},     -- Evoker
+    DEVASTATION = {0.6392, 0.2078, 0.9333, 1},         -- Evoker
+    PRESERVATION = {0.6392, 0.2078, 0.9333, 1},     -- Evoker
 }
 
 ---@class GGUI.ClassIconConstructorOptions

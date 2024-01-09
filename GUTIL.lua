@@ -292,6 +292,73 @@ GUTIL.COLORS = {
   WHISPER = "ffff80ff",
   WHITE = "ffffffff",
 }
+---@enum GUTIL.CLASS_COLORS
+GUTIL.CLASS_COLORS = {
+  WARRIOR = "ffc79c6e",       -- #C79C6E
+  ARMS = "ffc79c6e",          
+  FURY = "ffc79c6e",          
+  PROTECTION = "ffc79c6e",    
+
+  PALADIN = "fff58cba",       -- #F58CBA
+  HOLY = "fff58cba",           
+  RETRIBUTION = "fff58cba",    
+  PROTECTION_PALADIN = "fff58cba", 
+
+  HUNTER = "ffabd473",        -- #ABD473
+  BEAST_MASTERY = "ffabd473", 
+  MARKSMANSHIP = "ffabd473",  
+  SURVIVAL = "ffabd473",      
+
+  ROGUE = "fffff569",         -- #FFF569
+  ASSASSINATION = "fffff569", 
+  OUTLAW = "fffff569",        
+  SUBTLETY = "fffff569",      
+
+  PRIEST = "ffffffff",        -- #FFFFFF
+  DISCIPLINE = "ffffffff",    
+  HOLY_PRIEST = "ffffffff",   
+  SHADOW = "ffffffff",        
+
+  DEATHKNIGHT = "ffc41f3b",   -- #C41F3B
+  BLOOD = "ffc41f3b",        
+  FROST = "ffc41f3b",         
+  UNHOLY = "ffc41f3b",        
+
+  SHAMAN = "ff0070de",        -- #0070DE
+  ELEMENTAL = "ff0070de",    
+  ENHANCEMENT = "ff0070de",  
+  RESTORATION = "ff0070de",  
+
+  MAGE = "ff69ccf0",          -- #69CCF0
+  ARCANE = "ff69ccf0",       
+  FIRE = "ff69ccf0",         
+  FROST_MAGE = "ff69ccf0",   
+
+  WARLOCK = "ff9482c9",       -- #9482C9
+  AFFLICTION = "ff9482c9",    
+  DEMONOLOGY = "ff9482c9",   
+  DESTRUCTION = "ff9482c9",  
+
+  MONK = "ff00ff96",          -- #00FF96
+  BREWMASTER = "ff00ff96",   
+  MISTWEAVER = "ff00ff96",   
+  WINDWALKER = "ff00ff96",   
+
+  DRUID = "ffff7d0a",         -- #FF7D0A
+  BALANCE = "ffff7d0a",      
+  FERAL = "ffff7d0a",        
+  GUARDIAN = "ffff7d0a",     
+  RESTORATION_DRUID = "ffff7d0a", 
+
+  DEMONHUNTER = "ffa330c9",   -- #A330C9
+  HAVOC = "ffa330c9",        
+  VENGEANCE = "ffa330c9",    
+
+  EVOKER = "ff33937f",        -- #33937F
+  AUGMENTATION = "ff33937f",     
+  DEVASTATION = "ff33937f",        
+  PRESERVATION = "ff33937f",     
+}
 
 -- Thanks to arkinventory
 function GUTIL:StripColor(text)
