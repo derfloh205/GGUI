@@ -3027,3 +3027,54 @@ end
 function GGUI.BlizzardTab:EnableHyperLinksForFrameAndChilds()
     GGUI:EnableHyperLinksForFrameAndChilds(self.content)
 end
+
+--- GGUI Texture
+
+---@class GGUI.TextureConstructorOptions
+---@field parent? Frame
+---@field offsetX? number
+---@field offsetY? number
+---@field texture? string
+---@field atlas? string
+---@field sizeX? number
+---@field sizeY? number
+---@field anchorA? FramePoint
+---@field anchorB? FramePoint
+---@field anchorParent? Region
+
+---@class GGUI.Texture : GGUI.Widget
+---@overload fun(options:GGUI.TextureConstructorOptions): GGUI.Texture
+GGUI.Texture = GGUI.Widget:extend()
+function GGUI.Texture:new(options)
+    options = options or {}
+    options.offsetX = options.offsetX or 0
+    options.offsetY = options.offsetY or 0
+    self.texture = options.texture
+    self.atlas = options.atlas
+    options.sizeX = options.sizeX or 40
+    options.sizeY = options.sizeY or 40
+    options.anchorA = options.anchorA or "CENTER"
+    options.anchorB = options.anchorB or "CENTER"
+
+    local textureButton = CreateFrame("Button", nil, options.parent)
+    GGUI.Texture.super.new(self, textureButton)
+    textureButton:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
+	textureButton:SetSize(options.sizeX, options.sizeY)
+    if self.atlas then
+        textureButton:SetNormalAtlas(self.atlas)
+    elseif self.texture then
+        textureButton:SetNormalTexture(self.texture)
+    end
+
+    textureButton:EnableMouse(false)
+end
+
+function GGUI.Texture:SetAtlas(atlas)
+    self.atlas = atlas
+    self.frame:SetNormalAtlas(self.atlas)
+end
+
+function GGUI.Texture:SetTexture(texture)
+    self.texture = texture
+    self.frame:SetNormalTexture(self.texture)
+end
