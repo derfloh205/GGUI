@@ -1,7 +1,7 @@
 
 
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 6)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 7)
 if not GGUI then return end -- if version already exists
 
 ---@type GUTIL
@@ -2003,6 +2003,7 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field scale? number
 ---@field rowScale? number
 ---@field selectionOptions? GGUI.FrameList.SelectionOptions
+---@field rowBackdrops? GGUI.BackdropOptions[] rows will alternate backdroplist
 
 ---@class GGUI.FrameList.SelectionOptions
 ---@field noSelectionColor boolean?
@@ -2031,6 +2032,7 @@ function GGUI.FrameList:new(options)
     options.headerOffsetX = options.headerOffsetX or 5
     options.scale = options.scale or 1
     options.rowScale = options.rowScale or 1
+    self.rowBackdrops = options.rowBackdrops 
     self.rowScale = options.rowScale
     self.rowHeight = options.rowHeight
     self.selectionOptions = options.selectionOptions
@@ -2325,6 +2327,21 @@ function GGUI.FrameList:UpdateDisplay(sortFunc)
             if lastRow then
                 row:SetPoint("TOPLEFT", lastRow.frame, "BOTTOMLEFT")
             end
+        end
+        if self.rowBackdrops and #self.rowBackdrops > 0 then
+            local backdropOptions = self.rowBackdrops[#self.rowBackdrops - (index % #self.rowBackdrops)]
+            local borderOptions = backdropOptions.borderOptions or {}
+            row.frame:SetBackdrop({
+                bgFile = backdropOptions.bgFile,
+                edgeFile = borderOptions.edgeFile,
+                edgeSize = borderOptions.edgeSize,
+                insets = borderOptions.insets,
+                tile = backdropOptions.tile,
+                tileSize = backdropOptions.tileSize,
+            })    
+            row.frame:SetBackdropColor(backdropOptions.colorR or 1, backdropOptions.colorG or 1, backdropOptions.colorB or 1, backdropOptions.colorA or 1)
+            row.frame:SetBackdropBorderColor(borderOptions.colorR or 1, borderOptions.colorG or 1, borderOptions.colorB or 1, borderOptions.colorA or 1)
+
         end
         lastRow = row
     end
