@@ -130,6 +130,28 @@ function GGUI:SetItemTooltip(frame, itemLink, owner, anchor)
         frame:SetScript("OnLeave", nil)
     end
 end
+function GGUI:SetSpellTooltip(frame, spellID, owner, anchor)
+    local function onEnter()
+        local _, currentSpellID = GameTooltip:GetSpell()
+        GameTooltip:SetOwner(owner, anchor);
+
+        if currentSpellID ~= spellID then
+            -- to not set it again and hide the tooltip..
+            GameTooltip:SetSpellByID(spellID)
+        end
+        GameTooltip:Show();
+    end
+    local function onLeave()
+        GameTooltip:Hide();
+    end
+    if spellID then
+        frame:SetScript("OnEnter", onEnter)
+        frame:SetScript("OnLeave", onLeave)
+    else
+        frame:SetScript("OnEnter", nil)
+        frame:SetScript("OnLeave", nil)
+    end
+end
 
 function GGUI:EnableHyperLinksForFrameAndChilds(frame)
     if type(frame) == "table" and frame.SetHyperlinksEnabled and not frame.enabledLinks then -- prevent inf loop by references
@@ -2930,6 +2952,89 @@ function GGUI.ClassIcon:SetClass(class)
         if color then
             self.borderFrame:SetBackdropBorderColor(color[1], color[2], color[3], color[4])
         end
+    end
+end
+
+---@class GGUI.SpellIconConstructorOptions
+---@field parent? Frame
+---@field offsetX? number
+---@field offsetY? number
+---@field initialSpellID? number
+---@field sizeX? number
+---@field sizeY? number
+---@field anchorA? FramePoint
+---@field anchorB? FramePoint
+---@field anchorParent? Region
+---@field enableMouse? boolean
+---@field clickCallback? fun(GGUI.SpellIcon)
+---@field desaturate? boolean
+
+---@class GGUI.SpellIcon : GGUI.Widget
+---@overload fun(options:GGUI.SpellIconConstructorOptions): GGUI.SpellIcon
+GGUI.SpellIcon = GGUI.Widget:extend()
+function GGUI.SpellIcon:new(options)
+    options = options or {}
+    options.offsetX = options.offsetX or 0
+    options.offsetY = options.offsetY or 0
+    options.sizeX = options.sizeX or 40
+    options.sizeY = options.sizeY or 40
+    options.anchorA = options.anchorA or "CENTER"
+    options.anchorB = options.anchorB or "CENTER"
+    self.showBorder = options.showBorder or false
+    self.desaturate = options.desaturate or false
+
+    self.spellID = options.initialSpellID
+
+
+    self.icon = CreateFrame("Button", nil, options.parent)
+    GGUI.Icon.super.new(self, self.icon)
+    self.icon:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
+	self.icon:SetSize(options.sizeX, options.sizeY)
+
+    local texture = GetSpellTexture(self.spellID)
+    if texture then
+        local buttonTexture = self.icon:CreateTexture(nil, "BACKGROUND")
+        buttonTexture:SetAllPoints()
+        buttonTexture:SetTexture(texture)
+        self.icon:SetNormalTexture(buttonTexture)
+
+        GGUI:SetSpellTooltip(self.frame, self.spellID, self.icon, "ANCHOR_RIGHT")
+
+        if self.desaturate then
+            self:Desaturate()
+        end
+    end
+
+    if options.enableMouse ~= nil and options.enableMouse == false then
+        self.icon:EnableMouse(false)
+    else
+        self.icon:SetScript("OnClick", function ()
+            if options.clickCallback then
+                options.clickCallback(self)
+            end
+        end)
+    end
+end
+
+function GGUI.SpellIcon:Desaturate()
+    self.frame:GetNormalTexture():SetVertexColor(0.2, 0.2, 0.2)
+    self.desaturate = true
+end
+function GGUI.SpellIcon:Saturate()
+    self.frame:GetNormalTexture():SetVertexColor(1, 1, 1)
+    self.desaturate = false
+end
+
+---@param spellID number
+function GGUI.SpellIcon:SetSpell(spellID)
+    local texture = GetSpellTexture(spellID)
+    self.spellID = spellID
+    if texture then
+        self.icon:SetNormalTexture(texture)
+
+        GGUI:SetSpellTooltip(self.icon, spellID, self.icon, "ANCHOR_RIGHT")
+    else
+        GGUI:SetSpellTooltip(self.icon, nil)
     end
 end
 
