@@ -2545,7 +2545,7 @@ function GGUI.ItemSelector:new(options)
     options.selectionFrameOptions.frameConfigTable = options.selectionFrameOptions.frameConfigTable or {}
     local numFrames = GUTIL:Count(options.selectionFrameOptions.frameTable or {}) + 1
     options.selectionFrameOptions.frameID = options.selectionFrameOptions.frameID or ("GGUIIconSelectorFrame " .. numFrames)
-    options.selectionFrameOptions.frameStrata = options.parent:GetFrameStrata()
+    options.selectionFrameOptions.frameStrata = options.selectionFrameOptions.frameStrata or "FULLSCREEN"
     options.selectionFrameOptions.scrollableContent = true
     options.selectionFrameOptions.title = options.selectionFrameOptions.title or ""
     options.selectionFrameOptions.sizeX = options.selectionFrameOptions.sizeX or 150
@@ -2620,8 +2620,9 @@ function GGUI.ItemSelector:AddSlotIcon(item)
     return icon
 end
 
----@param items ItemMixin[]
+---@param items? ItemMixin[]
 function GGUI.ItemSelector:SetItems(items)
+    items = items or {}
     local itemSlots = self.selectionFrame.itemSlots
 
     local maxSlots = math.max(#items, #itemSlots)
