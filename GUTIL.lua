@@ -1,5 +1,5 @@
 
----@class GUTIL
+---@class GGUI_GUTIL
 GGUI_GUTIL = {}
 
 local GUTIL = GGUI_GUTIL

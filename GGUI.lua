@@ -4,7 +4,6 @@
 local GGUI = LibStub:NewLibrary("GGUI-2.0", 8)
 if not GGUI then return end -- if version already exists
 
----@type GUTIL
 local GUTIL = GGUI_GUTIL
 
 --- CLASSICS insert
@@ -108,6 +107,11 @@ function GGUI:MakeFrameMoveable(gFrame)
             gFrame:SavePosition(offsetX, offsetY)
     end)
 end
+
+---@param frame Frame
+---@param itemLink string
+---@param owner Frame
+---@param anchor TooltipAnchor
 function GGUI:SetItemTooltip(frame, itemLink, owner, anchor)
     local function onEnter()
         local _, ItemLink = GameTooltip:GetItem()
@@ -130,6 +134,11 @@ function GGUI:SetItemTooltip(frame, itemLink, owner, anchor)
         frame:SetScript("OnLeave", nil)
     end
 end
+
+---@param frame Frame
+---@param spellID number
+---@param owner Frame
+---@param anchor TooltipAnchor
 function GGUI:SetSpellTooltip(frame, spellID, owner, anchor)
     local function onEnter()
         local _, currentSpellID = GameTooltip:GetSpell()
@@ -1003,7 +1012,9 @@ end
 ---@param color GUTIL.COLORS
 function GGUI.Text:SetColor(color)
     local text = GUTIL:StripColor(self:GetText())
-    self:SetText(GUTIL:ColorizeText(text, color))
+    if color then
+        self:SetText(GUTIL:ColorizeText(text, color))
+    end
 end
 
 function GGUI.Text:EnableHyperLinksForFrameAndChilds()
@@ -1371,6 +1382,7 @@ GGUI.Checkbox = GGUI.Widget:extend()
 function GGUI.Checkbox:new(options)
     options = options or {}
     options.label = options.label or ""
+    self.label = options.label
     options.initialValue = options.initialValue or false
     options.anchorA = options.anchorA or "CENTER"
     options.anchorB = options.anchorB or "CENTER"
@@ -1382,6 +1394,8 @@ function GGUI.Checkbox:new(options)
 
     local checkBox = CreateFrame("CheckButton", nil, options.parent, "ChatConfigCheckButtonTemplate")
     GGUI.Checkbox.super.new(self, checkBox)
+    ---@type ChatConfigCheckButtonTemplate|CheckButton
+    self.frame = self.frame
     checkBox:SetHitRectInsets(0, 0, 0, 0); -- see https://wowpedia.fandom.com/wiki/API_Frame_SetHitRectInsets
 	checkBox:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
 	checkBox.Text:SetText(options.label)
@@ -1400,6 +1414,11 @@ function GGUI.Checkbox:GetChecked()
 end
 function GGUI.Checkbox:SetChecked(value)
     return self.frame:SetChecked(value)
+end
+
+---@param label? string
+function GGUI.Checkbox:SetLabel(label)
+    self.frame.Text:SetText(label or "")
 end
 
 
@@ -2012,8 +2031,6 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field columnOptions GGUI.FrameList.ColumnOption[]
 ---@field rowConstructor fun(columns: Frame[]) used to construct the rows and fill the column frames with content, columns are forwarded as params (...)
 ---@field showBorder? boolean
----@field headerLineRGBA? table
----@field borderLinesRGBA? table
 ---@field anchorParent? Frame
 ---@field anchorA? FramePoint
 ---@field anchorB? FramePoint
@@ -2152,6 +2169,40 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     self.columns = columns
     self.active=false
     self.frameList = frameList
+    ---@class GGUI.FrameList.Row.TooltipOptions?
+    ---@field spellID number?
+    ---@field owner Frame
+    ---@field anchor TooltipAnchor
+    ---@field text string?
+    self.tooltipOptions = nil
+
+    ---@type function
+    local onEnterSelectableRow = nil
+    ---@type function
+    local onLeaveSelectableRow = nil
+
+    local function handleTooltipOnEnter()
+        if not self.tooltipOptions then return end
+
+        if self.tooltipOptions.spellID then
+            local _, currentSpellID = GameTooltip:GetSpell()
+            GameTooltip:SetOwner(self.tooltipOptions.owner, self.tooltipOptions.anchor);
+
+            if currentSpellID ~= self.tooltipOptions.spellID then
+                -- to not set it again and hide the tooltip..
+                GameTooltip:SetSpellByID(self.tooltipOptions.spellID)
+            end
+        elseif self.tooltipOptions.text then
+            GameTooltip:SetOwner(self.tooltipOptions.owner, self.tooltipOptions.anchor);
+            GameTooltip:SetText(self.tooltipOptions.text)
+        end
+
+        GameTooltip:Show();
+    end
+    local function handleTooltipOnLeave()
+        if not self.tooltipOptions then return end
+        GameTooltip:Hide();
+    end
     if frameList.selectionOptions then
         self.Select = function ()
             if self ~= frameList.selectedRow or frameList.selectionOptions.noSelectionColor then
@@ -2175,21 +2226,35 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
         })
         rowFrame:SetBackdropColor(0, 0, 0, 0) -- make colorless
 
-        rowFrame:SetScript("OnEnter", function()
-            if self ~= frameList.selectedRow or frameList.selectionOptions.noSelectionColor then
-                rowFrame:SetBackdropColor(frameList.selectionOptions.hoverRGBA[1], frameList.selectionOptions.hoverRGBA[2], frameList.selectionOptions.hoverRGBA[3], frameList.selectionOptions.hoverRGBA[4])
+        onEnterSelectableRow = 
+            function()
+                if self ~= frameList.selectedRow or frameList.selectionOptions.noSelectionColor then
+                    rowFrame:SetBackdropColor(frameList.selectionOptions.hoverRGBA[1], frameList.selectionOptions.hoverRGBA[2], frameList.selectionOptions.hoverRGBA[3], frameList.selectionOptions.hoverRGBA[4])
+                end
             end
-        end)
-        rowFrame:SetScript("OnLeave", function()
-            if self ~= frameList.selectedRow or frameList.selectionOptions.noSelectionColor then
-                rowFrame:SetBackdropColor(0, 0, 0, 0)
+        onLeaveSelectableRow = 
+            function()
+                if self ~= frameList.selectedRow or frameList.selectionOptions.noSelectionColor then
+                    rowFrame:SetBackdropColor(0, 0, 0, 0)
+                end
             end
-        end)
         -- OnMouseDown handler - Mouse click
         rowFrame:SetScript("OnMouseDown", function()
             self:Select()
         end)
     end
+    rowFrame:SetScript("OnEnter", function ()
+        handleTooltipOnEnter()
+        if onEnterSelectableRow then
+            onEnterSelectableRow()
+        end
+    end)
+    rowFrame:SetScript("OnLeave", function ()
+        handleTooltipOnLeave()
+        if onLeaveSelectableRow then
+            onLeaveSelectableRow()
+        end
+    end)
     rowConstructor(self.columns)
     self:Hide()
 end
@@ -2473,7 +2538,7 @@ function GGUI:InitializePopup(options)
         GGUI:EnableHyperLinksForFrameAndChilds(popupFrame.content)
 end
 
---- GGUI.IconSelector
+--- GGUI.ItemSelector
 ---@class GGUI.ItemSelector
 
 ---@class GGUI.ItemSelectorConstructorOptions
@@ -2645,6 +2710,141 @@ end
 function GGUI.ItemSelector:SetSelectedItem(item)
     self.selectedItem = item
     self.icon:SetItem(item)
+end
+
+--- GGUI.CheckboxSelector
+---@class GGUI.CheckboxSelector
+
+---@class GGUI.CheckboxSelector.CheckboxItem
+---@field name string
+---@field savedVariableProperty? string
+---@field initialValue? boolean
+---@field tooltip? string
+
+---@class GGUI.CheckboxSelectorConstructorOptions
+---@field buttonOptions? GGUI.ButtonConstructorOptions
+---@field selectionFrameOptions? GGUI.FrameConstructorOptions
+---@field initialItems? GGUI.CheckboxSelector.CheckboxItem[]
+---@field savedVariablesTable? table
+---@field onSelectCallback? fun(CheckboxSelector: GGUI.CheckboxSelector, selectedItem: string, selectedValue: boolean)
+---@field selectedValues? GGUI.CheckboxSelector.CheckboxItem[]
+
+
+---@class GGUI.CheckboxSelector : GGUI.Widget
+---@overload fun(options:GGUI.CheckboxSelectorConstructorOptions): GGUI.CheckboxSelector
+GGUI.CheckboxSelector = GGUI.Widget:extend()
+
+---@param options GGUI.CheckboxSelectorConstructorOptions
+function GGUI.CheckboxSelector:new(options)
+    options = options or {}
+    options.selectionFrameOptions = options.selectionFrameOptions or {}
+    self.onSelectCallback = options.onSelectCallback or function() end
+    ---@type table<string, boolean>
+    self.selectedValues = {}
+
+    self.savedVariablesTable = options.savedVariablesTable
+
+    options.buttonOptions = options.buttonOptions or {}
+
+    options.buttonOptions.clickCallback = function ()
+        if not self.selectionFrame:IsVisible() then
+            self.selectionFrame:Show()
+        end
+    end
+
+    self.button = GGUI.Button(options.buttonOptions)
+
+    options.selectionFrameOptions.parent = options.selectionFrameOptions.parent or options.buttonOptions.parent
+    options.selectionFrameOptions.anchorParent = options.selectionFrameOptions.anchorParent or self.button.frame
+    options.selectionFrameOptions.anchorA = options.selectionFrameOptions.anchorA or "TOPLEFT"
+    options.selectionFrameOptions.anchorB = options.selectionFrameOptions.anchorB or "BOTTOMRIGHT"
+    options.selectionFrameOptions.offsetX = options.selectionFrameOptions.offsetX or 0
+    options.selectionFrameOptions.offsetY = options.selectionFrameOptions.offsetY or 0
+    options.selectionFrameOptions.closeOnClickOutside = true
+    options.selectionFrameOptions.frameConfigTable = options.selectionFrameOptions.frameConfigTable or {}
+    local numFrames = GUTIL:Count(options.selectionFrameOptions.frameTable or {}) + 1
+    options.selectionFrameOptions.frameID = options.selectionFrameOptions.frameID or ("GGUICheckboxSelectorFrame " .. numFrames)
+    options.selectionFrameOptions.frameStrata = options.selectionFrameOptions.frameStrata or "FULLSCREEN"
+    options.selectionFrameOptions.scrollableContent = true
+    options.selectionFrameOptions.title = options.selectionFrameOptions.title or ""
+    options.selectionFrameOptions.sizeX = options.selectionFrameOptions.sizeX or 150
+    options.selectionFrameOptions.sizeY = options.selectionFrameOptions.sizeY or 150
+
+    ---@class GGUI.CheckboxSelector.SelectionFrame : GGUI.Frame
+    self.selectionFrame = GGUI.Frame(options.selectionFrameOptions)
+    self.selectionFrame:Hide()
+
+    self.selectionFrame:SetFrameLevel(options.selectionFrameOptions.parent:GetFrameLevel()+10)
+
+    ---@type GGUI.Checkbox[]
+    self.selectionFrame.checkboxSlots = {}
+    self.selectionFrame.currentRow = 1
+
+    -- add initial checkboxes to selectionFrame
+    for _, checkboxItem in pairs(options.initialItems or {}) do
+        self:AddSlotCheckbox(checkboxItem)
+    end
+
+    GGUI.CheckboxSelector.super.new(self, self.button)
+end
+
+---@param checkboxItem GGUI.CheckboxSelector.CheckboxItem
+---@return GGUI.Checkbox
+function GGUI.CheckboxSelector:AddSlotCheckbox(checkboxItem)
+    local baseOffsetY = 0
+    local spacingY = 25
+    local offsetY = baseOffsetY + spacingY * (#self.selectionFrame.checkboxSlots)
+
+    local checkbox = GGUI.Checkbox{
+        parent=self.selectionFrame.content, anchorParent=self.selectionFrame.content, anchorA="TOPLEFT", 
+        anchorB="TOPLEFT", offsetX = 0, offsetY=offsetY, sizeX=25, sizeY=25,
+        clickCallback = function (checkbox, checked)
+                if self.savedVariablesTable and checkboxItem.savedVariableProperty then
+                    self.savedVariablesTable[checkboxItem.savedVariableProperty] = checked
+                end
+                self.onSelectCallback(self, checkbox.label, checked)
+                self.selectedValues[checkbox.label] = checked
+        end
+    }
+
+    if checkboxItem.initialValue ~= nil then
+        checkbox:SetChecked(checkboxItem.initialValue)
+    elseif self.savedVariablesTable and checkboxItem.savedVariableProperty then
+        checkbox:SetChecked(self.savedVariablesTable[checkboxItem.savedVariableProperty])
+    end
+
+    self.selectedValues[checkboxItem.name] = checkbox:GetChecked()
+
+    return checkbox
+end
+
+---@param checkboxItems? GGUI.CheckboxSelector.CheckboxItem[]
+function GGUI.CheckboxSelector:SetItems(checkboxItems)
+    checkboxItems = checkboxItems or {}
+    local checkboxes = self.selectionFrame.checkboxSlots
+
+    local maxSlots = math.max(#checkboxItems, #checkboxes)
+    for i = 1, maxSlots do
+        local checkbox = checkboxes[i]
+        local checkboxItem = checkboxItems[i]
+        if not checkbox and checkboxItem then
+            checkbox = self:AddSlotCheckbox(checkboxItem)
+        elseif checkboxItem then
+            checkbox:SetLabel(checkboxItem.name)
+            checkbox.clickCallback = function (checkbox, checked)
+                if self.savedVariablesTable and checkboxItem.savedVariableProperty then
+                    self.savedVariablesTable[checkboxItem.savedVariableProperty] = checked
+                end
+                self.onSelectCallback(self, checkbox.label, checked)
+                self.selectedValues[checkbox.label] = checked
+            end
+            checkbox:Show()
+        elseif checkbox then
+            checkbox:Hide()
+            checkbox:SetLabel()
+            checkbox.clickCallback = function () end
+        end
+    end
 end
 
 --- GGUI ClassIcon
@@ -3018,11 +3218,17 @@ function GGUI.SpellIcon:new(options)
 end
 
 function GGUI.SpellIcon:Desaturate()
-    self.frame:GetNormalTexture():SetVertexColor(0.2, 0.2, 0.2)
+    local texture = self.frame:GetNormalTexture()
+    if texture then
+        texture:SetVertexColor(0.2, 0.2, 0.2)
+    end
     self.desaturate = true
 end
 function GGUI.SpellIcon:Saturate()
-    self.frame:GetNormalTexture():SetVertexColor(1, 1, 1)
+    local texture = self.frame:GetNormalTexture()
+    if texture then
+        texture:SetVertexColor(1, 1, 1)
+    end
     self.desaturate = false
 end
 
