@@ -2792,12 +2792,12 @@ end
 ---@return GGUI.Checkbox
 function GGUI.CheckboxSelector:AddSlotCheckbox(checkboxItem)
     local baseOffsetY = 0
-    local spacingY = 25
+    local spacingY = -20
     local offsetY = baseOffsetY + spacingY * (#self.selectionFrame.checkboxSlots)
 
     local checkbox = GGUI.Checkbox{
         parent=self.selectionFrame.content, anchorParent=self.selectionFrame.content, anchorA="TOPLEFT", 
-        anchorB="TOPLEFT", offsetX = 0, offsetY=offsetY, sizeX=25, sizeY=25,
+        anchorB="TOPLEFT", offsetX = 0, offsetY=offsetY, sizeX=25, sizeY=25, label=checkboxItem.name,
         clickCallback = function (checkbox, checked)
                 if self.savedVariablesTable and checkboxItem.savedVariableProperty then
                     self.savedVariablesTable[checkboxItem.savedVariableProperty] = checked
@@ -2806,6 +2806,8 @@ function GGUI.CheckboxSelector:AddSlotCheckbox(checkboxItem)
                 self.selectedValues[checkbox.label] = checked
         end
     }
+
+    table.insert(self.selectionFrame.checkboxSlots, checkbox)
 
     if checkboxItem.initialValue ~= nil then
         checkbox:SetChecked(checkboxItem.initialValue)
@@ -2829,6 +2831,7 @@ function GGUI.CheckboxSelector:SetItems(checkboxItems)
         local checkboxItem = checkboxItems[i]
         if not checkbox and checkboxItem then
             checkbox = self:AddSlotCheckbox(checkboxItem)
+            checkbox:Show()
         elseif checkboxItem then
             checkbox:SetLabel(checkboxItem.name)
             checkbox.clickCallback = function (checkbox, checked)
@@ -2836,7 +2839,7 @@ function GGUI.CheckboxSelector:SetItems(checkboxItems)
                     self.savedVariablesTable[checkboxItem.savedVariableProperty] = checked
                 end
                 self.onSelectCallback(self, checkbox.label, checked)
-                self.selectedValues[checkbox.label] = checked
+                self.selectedValues[checkbox.label] = checked   
             end
             checkbox:Show()
         elseif checkbox then
