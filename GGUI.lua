@@ -2189,6 +2189,7 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     ---@field owner Frame
     ---@field anchor TooltipAnchor
     ---@field text string?
+    ---@field textWrap? boolean
     self.tooltipOptions = nil
 
     ---@type function
@@ -2209,7 +2210,7 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
             end
         elseif self.tooltipOptions.text then
             GameTooltip:SetOwner(self.tooltipOptions.owner, self.tooltipOptions.anchor);
-            GameTooltip:SetText(self.tooltipOptions.text)
+            GameTooltip:SetText(self.tooltipOptions.text, nil, nil, nil, nil, self.tooltipOptions.textWrap)
         end
 
         GameTooltip:Show();
