@@ -1,7 +1,7 @@
 
 
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 8)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 9)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -2717,6 +2717,7 @@ end
 
 ---@class GGUI.CheckboxSelector.CheckboxItem
 ---@field name string
+---@field selectionID any the key under what the status of the checkbox is saved in the selectedValues property of the selector
 ---@field savedVariableProperty? string
 ---@field initialValue? boolean
 ---@field tooltip? string
@@ -2802,8 +2803,8 @@ function GGUI.CheckboxSelector:AddSlotCheckbox(checkboxItem)
                 if self.savedVariablesTable and checkboxItem.savedVariableProperty then
                     self.savedVariablesTable[checkboxItem.savedVariableProperty] = checked
                 end
-                self.onSelectCallback(self, checkbox.label, checked)
-                self.selectedValues[checkbox.label] = checked
+                self.onSelectCallback(self, checkboxItem.selectionID, checked)
+                self.selectedValues[checkboxItem.selectionID] = checked
         end
     }
 
