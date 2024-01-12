@@ -1,7 +1,7 @@
 
 
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 11)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 12)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -1490,7 +1490,8 @@ end
 ---@field anchorB? FramePoint
 ---@field offsetX? number
 ---@field offsetY? number
----@field label? string
+---@field sizeX? number
+---@field sizeY? number
 
 ---@class GGUI.HelpIcon : GGUI.Widget
 ---@overload fun(options:GGUI.HelpIconConstructorOptions): GGUI.HelpIcon
@@ -1505,12 +1506,13 @@ function GGUI.HelpIcon:new(options)
     options.offsetX = options.offsetX or 0
     options.offsetY = options.offsetY or 0
 
-    local helpButton = CreateFrame("Button", nil, options.parent, "UIPanelButtonTemplate")
+    local helpButton = CreateFrame("Button", nil, options.parent)
     GGUI.HelpIcon.super.new(self, helpButton)
     helpButton.tooltipText = options.text
+    helpButton:SetNormalTexture("Interface\\common\\help-i")
+    helpButton:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight", "ADD")
     helpButton:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)	
-    helpButton:SetText(options.label or "?")
-    helpButton:SetSize(helpButton:GetTextWidth() + 15, 15)
+    helpButton:SetSize(options.sizeX or 30,options.sizeY or 30)
 
     helpButton:SetScript("OnEnter", function(self) 
         GameTooltip:SetOwner(helpButton, "ANCHOR_RIGHT")
