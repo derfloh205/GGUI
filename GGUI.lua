@@ -1,7 +1,7 @@
 
 
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 9)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 10)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -1537,6 +1537,7 @@ end
 ---@field offsetRIGHT? number
 ---@field offsetBOTTOM? number
 ---@field showBorder? boolean
+---@field hideScrollbar? boolean
 
 ---@class GGUI.ScrollFrame : Object
 ---@overload fun(options:GGUI.ScrollFrameConstructorOptions): GGUI.ScrollFrame
@@ -1551,29 +1552,41 @@ function GGUI.ScrollFrame:new(options)
     options.offsetBOTTOM = options.offsetBOTTOM or 0
 
     local scrollFrame = CreateFrame("ScrollFrame", nil, options.parent, "UIPanelScrollFrameTemplate, BackdropTemplate")
+    if options.hideScrollbar then
+        scrollFrame.ScrollBar:Hide()
+    end
     if options.showBorder then
         -- border around scrollframe
         local borderFrame = CreateFrame("Frame", nil, options.parent, "BackdropTemplate")
         borderFrame:SetSize(options.parent:GetWidth() , options.parent:GetHeight())
-        borderFrame:SetPoint("TOP", options.parent, "TOP", 0, options.offsetTOP + 5)
-        borderFrame:SetPoint("LEFT", options.parent, "LEFT", options.offsetLEFT - 5, 0)
-        borderFrame:SetPoint("RIGHT", options.parent, "RIGHT", options.offsetRIGHT + 26, 0)
-        borderFrame:SetPoint("BOTTOM", options.parent, "BOTTOM", 0, options.offsetBOTTOM - 6)
+        if options.hideScrollbar then
+            borderFrame:SetPoint("TOP", options.parent, "TOP", 0, options.offsetTOP)
+            borderFrame:SetPoint("LEFT", options.parent, "LEFT", options.offsetLEFT, 0)
+            borderFrame:SetPoint("RIGHT", options.parent, "RIGHT", options.offsetRIGHT, 0)
+            borderFrame:SetPoint("BOTTOM", options.parent, "BOTTOM", 0, options.offsetBOTTOM)
+        else
+            borderFrame:SetPoint("TOP", options.parent, "TOP", 0, options.offsetTOP + 5)
+            borderFrame:SetPoint("LEFT", options.parent, "LEFT", options.offsetLEFT - 5, 0)
+            borderFrame:SetPoint("RIGHT", options.parent, "RIGHT", options.offsetRIGHT + 26, 0)
+            borderFrame:SetPoint("BOTTOM", options.parent, "BOTTOM", 0, options.offsetBOTTOM - 6)
+        end
         borderFrame:SetBackdrop({
             edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
             edgeSize = 16,
         })
         borderFrame:SetFrameLevel(scrollFrame:GetFrameLevel()+1)
 
-        -- separator between scroll bar and content
-        local separatorFrame = CreateFrame("Frame", nil, options.parent, "BackdropTemplate")
-        separatorFrame:SetSize(5 , options.parent:GetHeight()+0.5)
-        separatorFrame:SetPoint("TOPRIGHT", options.parent, "TOPRIGHT", 0, 0)
-        separatorFrame:SetBackdrop({
-            edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
-            edgeSize = 16,
-        })
-        separatorFrame:SetFrameLevel(scrollFrame:GetFrameLevel()+1)
+        if not options.hideScrollbar then
+            -- separator between scroll bar and content
+            local separatorFrame = CreateFrame("Frame", nil, options.parent, "BackdropTemplate")
+            separatorFrame:SetSize(5 , options.parent:GetHeight()+0.5)
+            separatorFrame:SetPoint("TOPRIGHT", options.parent, "TOPRIGHT", 0, 0)
+            separatorFrame:SetBackdrop({
+                edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+                edgeSize = 16,
+            })
+            separatorFrame:SetFrameLevel(scrollFrame:GetFrameLevel()+1)
+        end
     end
     scrollFrame.scrollChild = CreateFrame("frame")
     local scrollChild = scrollFrame.scrollChild
@@ -2043,6 +2056,7 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field rowScale? number
 ---@field selectionOptions? GGUI.FrameList.SelectionOptions
 ---@field rowBackdrops? GGUI.BackdropOptions[] rows will alternate backdroplist
+---@field hideScrollbar? boolean
 
 ---@class GGUI.FrameList.SelectionOptions
 ---@field noSelectionColor boolean?
@@ -2117,6 +2131,7 @@ function GGUI.FrameList:new(options)
         offsetRIGHT=-5,
         offsetBOTTOM=5,
         showBorder = options.showBorder,
+        hideScrollbar = options.hideScrollbar
     })
     
     ---@type GGUI.FrameList.Row
