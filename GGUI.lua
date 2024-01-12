@@ -2728,7 +2728,6 @@ end
 ---@field initialItems? GGUI.CheckboxSelector.CheckboxItem[]
 ---@field savedVariablesTable? table
 ---@field onSelectCallback? fun(CheckboxSelector: GGUI.CheckboxSelector, selectedItem: string, selectedValue: boolean)
----@field selectedValues? GGUI.CheckboxSelector.CheckboxItem[]
 
 
 ---@class GGUI.CheckboxSelector : GGUI.Widget
@@ -2740,7 +2739,7 @@ function GGUI.CheckboxSelector:new(options)
     options = options or {}
     options.selectionFrameOptions = options.selectionFrameOptions or {}
     self.onSelectCallback = options.onSelectCallback or function() end
-    ---@type table<string, boolean>
+    ---@type table<any, boolean>
     self.selectedValues = {}
 
     self.savedVariablesTable = options.savedVariablesTable
@@ -2803,8 +2802,8 @@ function GGUI.CheckboxSelector:AddSlotCheckbox(checkboxItem)
                 if self.savedVariablesTable and checkboxItem.savedVariableProperty then
                     self.savedVariablesTable[checkboxItem.savedVariableProperty] = checked
                 end
-                self.onSelectCallback(self, checkboxItem.selectionID, checked)
                 self.selectedValues[checkboxItem.selectionID] = checked
+                self.onSelectCallback(self, checkboxItem.selectionID, checked)
         end
     }
 
@@ -2816,7 +2815,7 @@ function GGUI.CheckboxSelector:AddSlotCheckbox(checkboxItem)
         checkbox:SetChecked(self.savedVariablesTable[checkboxItem.savedVariableProperty])
     end
 
-    self.selectedValues[checkboxItem.name] = checkbox:GetChecked()
+    self.selectedValues[checkboxItem.selectionID] = checkbox:GetChecked()
 
     return checkbox
 end
@@ -2839,8 +2838,8 @@ function GGUI.CheckboxSelector:SetItems(checkboxItems)
                 if self.savedVariablesTable and checkboxItem.savedVariableProperty then
                     self.savedVariablesTable[checkboxItem.savedVariableProperty] = checked
                 end
-                self.onSelectCallback(self, checkbox.label, checked)
-                self.selectedValues[checkbox.label] = checked   
+                self.selectedValues[checkboxItem.selectionID] = checked   
+                self.onSelectCallback(self, checkboxItem.selectionID, checked)
             end
             checkbox:Show()
         elseif checkbox then
