@@ -75,7 +75,8 @@ function GGUI:MakeFrameCloseable(frame, onCloseCallback)
     frame.closeButton = GGUI.Button({
         parent=frame,anchorParent=frame,offsetX=-20,offsetY=-10,label="X",
         anchorA="TOP",anchorB="TOPRIGHT",
-        sizeX=15,sizeY=20,adjustWidth=true,
+        sizeX=25,sizeY=20, 
+        -- atlasTextureOptions={normalAtlas="128-RedButton-Exit", pushedAtlas="128-RedButton-Exit-Pressed"},
         clickCallback=function ()
             frame:Hide()
             if onCloseCallback then
@@ -83,6 +84,8 @@ function GGUI:MakeFrameCloseable(frame, onCloseCallback)
             end
         end
     })
+
+    
 end
 function GGUI:MakeFrameMoveable(gFrame)
     gFrame.frame.hookFrame:SetMovable(true)
@@ -1129,6 +1132,12 @@ end
 ---@field secure? boolean
 ---@field macroText? string
 ---@field scale? number
+---@field atlasTextureOptions? GGUI.AtlasTextureOptions
+
+---@class GGUI.AtlasTextureOptions
+---@field highlightAtlas? string
+---@field normalAtlas? string
+---@field pushedAtlas? string
 
 ---@class GGUI.Button : GGUI.Widget
 ---@overload fun(options:GGUI.ButtonConstructorOptions): GGUI.Button
@@ -1160,14 +1169,31 @@ function GGUI.Button:new(options)
     self.secure= options.secure or false
     self.macroText = options.macroText or ""
 
+    ---@type string?
     local templates = "UIPanelButtonTemplate"
 
+    -- if options.atlasTexture then
+    --     templates = nil
+    -- end
+
     if self.macro or self.secure then
-        templates="InsecureActionButtonTemplate,UIPanelButtonTemplate"
+        templates="InsecureActionButtonTemplate"
     end
 
     local button = CreateFrame("Button", nil, options.parent, templates)
     button:SetScale(options.scale)
+    
+    if options.atlasTextureOptions then
+        if options.atlasTextureOptions.normalAtlas then
+            button:SetNormalAtlas(options.atlasTextureOptions.normalAtlas)
+        end
+        if options.atlasTextureOptions.pushedAtlas then
+            button:SetPushedAtlas(options.atlasTextureOptions.pushedAtlas)
+        end
+        if options.atlasTextureOptions.highlightAtlas then
+            button:SetHighlightAtlas(options.atlasTextureOptions.highlightAtlas, "ADD")
+        end
+    end
 
     if self.macro then
         button:SetAttribute("type1", "macro")
