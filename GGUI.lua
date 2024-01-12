@@ -1552,16 +1552,20 @@ function GGUI.ScrollFrame:new(options)
     options.offsetLEFT = options.offsetLEFT or 0
     options.offsetRIGHT = options.offsetRIGHT or 0
     options.offsetBOTTOM = options.offsetBOTTOM or 0
+    self.hideScrollbar = options.hideScrollbar or false
 
     local scrollFrame = CreateFrame("ScrollFrame", nil, options.parent, "UIPanelScrollFrameTemplate, BackdropTemplate")
-    if options.hideScrollbar then
-        scrollFrame.ScrollBar:Hide()
-    end
+    
+    scrollFrame.ScrollBar:HookScript("OnShow", function ()
+        if self.hideScrollbar then
+            scrollFrame.ScrollBar:Hide();
+        end
+    end)
     if options.showBorder then
         -- border around scrollframe
         local borderFrame = CreateFrame("Frame", nil, options.parent, "BackdropTemplate")
         borderFrame:SetSize(options.parent:GetWidth() , options.parent:GetHeight())
-        if options.hideScrollbar then
+        if self.hideScrollbar then
             borderFrame:SetPoint("TOP", options.parent, "TOP", 0, options.offsetTOP)
             borderFrame:SetPoint("LEFT", options.parent, "LEFT", options.offsetLEFT, 0)
             borderFrame:SetPoint("RIGHT", options.parent, "RIGHT", options.offsetRIGHT, 0)
@@ -1578,7 +1582,7 @@ function GGUI.ScrollFrame:new(options)
         })
         borderFrame:SetFrameLevel(scrollFrame:GetFrameLevel()+1)
 
-        if not options.hideScrollbar then
+        if not self.hideScrollbar then
             -- separator between scroll bar and content
             local separatorFrame = CreateFrame("Frame", nil, options.parent, "BackdropTemplate")
             separatorFrame:SetSize(5 , options.parent:GetHeight()+0.5)
