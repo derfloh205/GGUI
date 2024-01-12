@@ -1582,11 +1582,14 @@ function GGUI.ScrollFrame:new(options)
 
     local scrollFrame = CreateFrame("ScrollFrame", nil, options.parent, "UIPanelScrollFrameTemplate, BackdropTemplate")
     
-    scrollFrame.ScrollBar:HookScript("OnShow", function ()
-        if self.hideScrollbar then
-            scrollFrame.ScrollBar:Hide();
-        end
-    end)
+    -- scrollFrame.ScrollBar:HookScript("OnShow", function ()
+    --     if self.hideScrollbar then
+    --         scrollFrame.ScrollBar:Hide();
+    --     end
+    -- end)
+    if self.hideScrollbar then
+        scrolLFrame.Scrollbar:ClearAllPoints() -- hack much
+    end
     if options.showBorder then
         -- border around scrollframe
         local borderFrame = CreateFrame("Frame", nil, options.parent, "BackdropTemplate")
