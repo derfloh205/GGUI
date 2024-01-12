@@ -1588,7 +1588,7 @@ function GGUI.ScrollFrame:new(options)
     --     end
     -- end)
     if self.hideScrollbar then
-        scrollFrame.Scrollbar:ClearAllPoints() -- hack much
+        scrollFrame.ScrollBar:ClearAllPoints() -- hack much
     end
     if options.showBorder then
         -- border around scrollframe
