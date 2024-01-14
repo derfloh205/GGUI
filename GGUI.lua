@@ -1,5 +1,3 @@
-
-
 ---@class GGUI-2.0
 local GGUI = LibStub:NewLibrary("GGUI-2.0", 15)
 if not GGUI then return end -- if version already exists
@@ -17,51 +15,47 @@ function Object:new()
 end
 
 function Object:extend()
-  local cls = {}
-  for k, v in pairs(self) do
-    if k:find("__") == 1 then
-      cls[k] = v
+    local cls = {}
+    for k, v in pairs(self) do
+        if k:find("__") == 1 then
+            cls[k] = v
+        end
     end
-  end
-  cls.__index = cls
-  cls.super = self
-  setmetatable(cls, self)
-  return cls
+    cls.__index = cls
+    cls.super = self
+    setmetatable(cls, self)
+    return cls
 end
-
 
 function Object:implement(...)
-  for _, cls in pairs({...}) do
-    for k, v in pairs(cls) do
-      if self[k] == nil and type(v) == "function" then
-        self[k] = v
-      end
+    for _, cls in pairs({ ... }) do
+        for k, v in pairs(cls) do
+            if self[k] == nil and type(v) == "function" then
+                self[k] = v
+            end
+        end
     end
-  end
 end
-
 
 function Object:is(T)
-  local mt = getmetatable(self)
-  while mt do
-    if mt == T then
-      return true
+    local mt = getmetatable(self)
+    while mt do
+        if mt == T then
+            return true
+        end
+        mt = getmetatable(mt)
     end
-    mt = getmetatable(mt)
-  end
-  return false
+    return false
 end
-
 
 function Object:__tostring()
-  return "Object"
+    return "Object"
 end
 
-
 function Object:__call(...)
-  local obj = setmetatable({}, self)
-  obj:new(...)
-  return obj
+    local obj = setmetatable({}, self)
+    obj:new(...)
+    return obj
 end
 
 --- CLASSICS END
@@ -73,41 +67,46 @@ GGUI.CONST.EMPTY_TEXTURE = "Interface\\containerframe\\bagsitemslot2x"
 -- GGUI UTILS
 function GGUI:MakeFrameCloseable(frame, onCloseCallback)
     frame.closeButton = GGUI.Button({
-        parent=frame,anchorParent=frame,offsetX=-20,offsetY=-10,label="X",
-        anchorA="TOP",anchorB="TOPRIGHT",
-        sizeX=25,sizeY=20, 
+        parent = frame,
+        anchorParent = frame,
+        offsetX = -20,
+        offsetY = -10,
+        label = "X",
+        anchorA = "TOP",
+        anchorB = "TOPRIGHT",
+        sizeX = 25,
+        sizeY = 20,
         -- atlasTextureOptions={normalAtlas="128-RedButton-Exit", pushedAtlas="128-RedButton-Exit-Pressed"},
-        clickCallback=function ()
+        clickCallback = function()
             frame:Hide()
             if onCloseCallback then
                 onCloseCallback(frame)
             end
         end
     })
-
-    
 end
+
 function GGUI:MakeFrameMoveable(gFrame)
     gFrame.frame.hookFrame:SetMovable(true)
     gFrame.frame:SetScript("OnMouseDown", function(self, button)
         local anchorParent = select(2, gFrame.frame.hookFrame:GetPoint())
         gFrame.preMoveAnchorParent = anchorParent
         gFrame.frame.hookFrame:StartMoving()
-        end)
-        gFrame.frame:SetScript("OnMouseUp", function(self, button)
-            gFrame.frame.hookFrame:StopMovingOrSizing()
-            local x, y = gFrame.frame.hookFrame:GetCenter()
-            local relativeX, relativeY = gFrame.preMoveAnchorParent:GetCenter()
-        
-            -- Calculate the offset between the original anchor parent and the new position
-            local offsetX = x - relativeX
-            local offsetY = y - relativeY
-    
-            -- Reapply the anchor point with the offset
-            gFrame.frame.hookFrame:ClearAllPoints()
-            gFrame.frame.hookFrame:SetPoint("CENTER", gFrame.preMoveAnchorParent, "CENTER", offsetX, offsetY)
+    end)
+    gFrame.frame:SetScript("OnMouseUp", function(self, button)
+        gFrame.frame.hookFrame:StopMovingOrSizing()
+        local x, y = gFrame.frame.hookFrame:GetCenter()
+        local relativeX, relativeY = gFrame.preMoveAnchorParent:GetCenter()
 
-            gFrame:SavePosition(offsetX, offsetY)
+        -- Calculate the offset between the original anchor parent and the new position
+        local offsetX = x - relativeX
+        local offsetY = y - relativeY
+
+        -- Reapply the anchor point with the offset
+        gFrame.frame.hookFrame:ClearAllPoints()
+        gFrame.frame.hookFrame:SetPoint("CENTER", gFrame.preMoveAnchorParent, "CENTER", offsetX, offsetY)
+
+        gFrame:SavePosition(offsetX, offsetY)
     end)
 end
 
@@ -186,25 +185,31 @@ end
 GGUI.Widget = GGUI.Object:extend()
 
 function GGUI.Widget:new(frame)
-    self.frame=frame
+    self.frame = frame
     self.isGGUI = true
 end
+
 --- forward common frame/region methods to original frame
 function GGUI.Widget:SetScript(...)
     self.frame:SetScript(...)
 end
+
 function GGUI.Widget:HookScript(...)
     self.frame:HookScript(...)
 end
+
 function GGUI.Widget:Show()
     self.frame:Show()
 end
+
 function GGUI.Widget:Hide()
     self.frame:Hide()
 end
+
 function GGUI.Widget:SetEnabled(enabled)
     self.frame:SetEnabled(enabled)
 end
+
 function GGUI.Widget:SetVisible(visible)
     if visible then
         self:Show()
@@ -212,27 +217,35 @@ function GGUI.Widget:SetVisible(visible)
         self:Hide()
     end
 end
+
 function GGUI.Widget:GetHeight()
     return self.frame:GetHeight()
 end
+
 function GGUI.Widget:GetWidth()
     return self.frame:GetWidth()
 end
+
 function GGUI.Widget:SetTransparency(transparency)
-    self.frame:SetBackdropColor(0, 0, 0 , transparency) -- TODO: with current color
+    self.frame:SetBackdropColor(0, 0, 0, transparency) -- TODO: with current color
 end
+
 function GGUI.Widget:IsVisible()
     return self.frame:IsVisible()
 end
+
 function GGUI.Widget:SetPoint(...)
     return self.frame:SetPoint(...)
 end
+
 function GGUI.Widget:Raise()
     self.frame:Raise()
 end
+
 function GGUI.Widget:Lower()
     self.frame:Lower()
 end
+
 function GGUI.Widget:SetFrameLevel(...)
     self.frame:SetFrameLevel(...)
 end
@@ -310,7 +323,6 @@ function GGUI:GetFrame(frameTable, frameID)
     return frameTable[frameID]
 end
 
-
 ---@class GGUI.Frame : GGUI.Widget
 ---@overload fun(options:GGUI.FrameConstructorOptions): GGUI.Frame
 GGUI.Frame = GGUI.Widget:extend()
@@ -381,11 +393,15 @@ function GGUI.Frame:new(options)
     end
 
     self.title = GGUI.Text({
-        parent=frame,anchorParent=frame,text=options.title,offsetY=-15,
-        anchorA="TOP",anchorB="TOP"
+        parent = frame,
+        anchorParent = frame,
+        text = options.title,
+        offsetY = -15,
+        anchorA = "TOP",
+        anchorB = "TOP"
     })
-    
-    frame:SetPoint("TOP",  hookFrame, "TOP", 0, 0)
+
+    frame:SetPoint("TOP", hookFrame, "TOP", 0, 0)
 
     if options.backdropOptions then
         local backdropOptions = options.backdropOptions
@@ -403,7 +419,8 @@ function GGUI.Frame:new(options)
         borderOptions.colorA = borderOptions.colorA or 1
         borderOptions.edgeSize = borderOptions.edgeSize or 16
         borderOptions.insets = borderOptions.insets or { left = 8, right = 6, top = 8, bottom = 8 }
-        frame:SetBackdropBorderColor(borderOptions.colorR, borderOptions.colorG, borderOptions.colorB, borderOptions.colorA)
+        frame:SetBackdropBorderColor(borderOptions.colorR, borderOptions.colorG, borderOptions.colorB,
+            borderOptions.colorA)
         frame:SetBackdrop({
             bgFile = backdropOptions.bgFile,
             edgeFile = borderOptions.edgeFile,
@@ -412,8 +429,9 @@ function GGUI.Frame:new(options)
             edgeInsets = borderOptions.edgeInsets,
             tile = backdropOptions.tile,
             tileSize = backdropOptions.tileSize,
-        })    
-        frame:SetBackdropColor(backdropOptions.colorR, backdropOptions.colorG, backdropOptions.colorB, backdropOptions.colorA)
+        })
+        frame:SetBackdropColor(backdropOptions.colorR, backdropOptions.colorG, backdropOptions.colorB,
+            backdropOptions.colorA)
     end
 
     if self.closeable then
@@ -423,7 +441,7 @@ function GGUI.Frame:new(options)
     if self.collapseable then
         GGUI:MakeFrameCollapsable(self)
     end
-    
+
     if self.moveable then
         GGUI:MakeFrameMoveable(self)
     end
@@ -434,7 +452,7 @@ function GGUI.Frame:new(options)
         frame.scrollFrame.scrollChild = CreateFrame("frame")
         local scrollFrame = frame.scrollFrame
         local scrollChild = scrollFrame.scrollChild
-        scrollFrame:SetSize(frame:GetWidth() , frame:GetHeight())
+        scrollFrame:SetSize(frame:GetWidth(), frame:GetHeight())
         scrollFrame:SetPoint("TOP", frame, "TOP", 0, -30)
         scrollFrame:SetPoint("LEFT", frame, "LEFT", 20, 0)
         scrollFrame:SetPoint("RIGHT", frame, "RIGHT", -35, 0)
@@ -457,7 +475,7 @@ end
 function GGUI.Frame:SetSize(x, y)
     self.frame:SetSize(x, y)
     if self.frame.scrollFrame then
-        self.frame.scrollFrame:SetSize(self.frame:GetWidth() , self.frame:GetHeight())
+        self.frame.scrollFrame:SetSize(self.frame:GetWidth(), self.frame:GetHeight())
         self.frame.scrollFrame:SetPoint("TOP", self.frame, "TOP", 0, -30)
         self.frame.scrollFrame:SetPoint("LEFT", self.frame, "LEFT", 20, 0)
         self.frame.scrollFrame:SetPoint("RIGHT", self.frame, "RIGHT", -35, 0)
@@ -476,9 +494,17 @@ function GGUI:MakeFrameCollapsable(gFrame)
     local offsetX = frame.closeButton and -43 or -23
 
     frame.collapseButton = GGUI.Button({
-        parent=frame,anchorParent=frame,anchorA="TOP",anchorB="TOPRIGHT",offsetX=offsetX,offsetY=-10,
-        label=" - ", sizeX=12,sizeY=20,adjustWidth=true,
-        clickCallback=function ()
+        parent = frame,
+        anchorParent = frame,
+        anchorA = "TOP",
+        anchorB = "TOPRIGHT",
+        offsetX = offsetX,
+        offsetY = -10,
+        label = " - ",
+        sizeX = 12,
+        sizeY = 20,
+        adjustWidth = true,
+        clickCallback = function()
             if gFrame.collapsed then
                 gFrame:Decollapse()
             else
@@ -528,7 +554,8 @@ end
 
 function GGUI.Frame:ResetPosition()
     self.frame.hookFrame:ClearAllPoints()
-    self.frame.hookFrame:SetPoint(self.originalAnchorA, self.originalAnchorParent, self.originalAnchorB, self.originalOffsetX, self.originalOffsetY)
+    self.frame.hookFrame:SetPoint(self.originalAnchorA, self.originalAnchorParent, self.originalAnchorB,
+        self.originalOffsetX, self.originalOffsetY)
 
     local x, y = self.frame.hookFrame:GetCenter()
     local relativeX, relativeY = self.originalAnchorParent:GetCenter()
@@ -544,7 +571,7 @@ end
 ---@param statusList GGUI.FrameStatus[]
 function GGUI.Frame:SetStatusList(statusList)
     -- map statuslist to their ids
-    table.foreach(statusList, function (_, status)
+    table.foreach(statusList, function(_, status)
         if not status.statusID then
             error("GGUI: FrameStatus without statusID")
         end
@@ -653,30 +680,30 @@ function GGUI.Icon:new(options)
     local newIcon = CreateFrame("Button", nil, options.parent, "GameMenuButtonTemplate")
     GGUI.Icon.super.new(self, newIcon)
     newIcon:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
-	newIcon:SetSize(options.sizeX, options.sizeY)
-	newIcon:SetNormalFontObject("GameFontNormalLarge")
-	newIcon:SetHighlightFontObject("GameFontHighlightLarge")
+    newIcon:SetSize(options.sizeX, options.sizeY)
+    newIcon:SetNormalFontObject("GameFontNormalLarge")
+    newIcon:SetHighlightFontObject("GameFontHighlightLarge")
     if self.isAtlas then
         newIcon:SetNormalAtlas(self.defaultTexture)
     else
         newIcon:SetNormalTexture(self.defaultTexture)
     end
     newIcon.qualityIcon = GGUI.QualityIcon({
-        parent=self.frame,
-        sizeX=options.sizeX*0.50*options.qualityIconScale,
-        sizeY=options.sizeY*0.50*options.qualityIconScale,
-        anchorParent=newIcon,
-        anchorA="TOPLEFT",
-        anchorB="TOPLEFT",
-        offsetX=-options.sizeX*0.10*options.qualityIconScale,
-        offsetY=options.sizeY*0.10*options.qualityIconScale,
+        parent = self.frame,
+        sizeX = options.sizeX * 0.50 * options.qualityIconScale,
+        sizeY = options.sizeY * 0.50 * options.qualityIconScale,
+        anchorParent = newIcon,
+        anchorA = "TOPLEFT",
+        anchorB = "TOPLEFT",
+        offsetX = -options.sizeX * 0.10 * options.qualityIconScale,
+        offsetY = options.sizeY * 0.10 * options.qualityIconScale,
     })
     newIcon.qualityIcon:Hide()
     self.qualityIcon = newIcon.qualityIcon
 
-    self.frame:HookScript("OnClick", function ()
+    self.frame:HookScript("OnClick", function()
         if IsShiftKeyDown() and self.item then
-            self.item:ContinueOnItemLoad(function ()
+            self.item:ContinueOnItemLoad(function()
                 ChatEdit_InsertLink(self.item:GetItemLink())
             end)
         end
@@ -716,9 +743,10 @@ function GGUI.Icon:SetItem(idLinkOrMixin, options)
     end
 
     self.item = item
-    item:ContinueOnItemLoad(function ()
+    item:ContinueOnItemLoad(function()
         gIcon.frame:SetNormalTexture(item:GetItemIcon())
-        GGUI:SetItemTooltip(gIcon.frame, item:GetItemLink(), options.tooltipOwner or gIcon.frame, options.tooltipAnchor or "ANCHOR_RIGHT")
+        GGUI:SetItemTooltip(gIcon.frame, item:GetItemLink(), options.tooltipOwner or gIcon.frame,
+            options.tooltipAnchor or "ANCHOR_RIGHT")
 
         if options.overrideQuality then
             gIcon.qualityIcon:SetQuality(options.overrideQuality)
@@ -835,22 +863,23 @@ function GGUI.Dropdown:new(options)
     options.initialData = options.initialData or {}
     options.initialValue = options.initialValue or ""
     options.initialLabel = options.initialLabel or ""
-	local dropDown = CreateFrame("Frame", options.globalName, options.parent, "UIDropDownMenuTemplate")
+    local dropDown = CreateFrame("Frame", options.globalName, options.parent, "UIDropDownMenuTemplate")
     GGUI.Dropdown.super.new(self, dropDown)
     self.clickCallback = options.clickCallback
-	dropDown:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
-	UIDropDownMenu_SetWidth(dropDown, options.width)
+    dropDown:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
+    UIDropDownMenu_SetWidth(dropDown, options.width)
     self.selectedValue = nil
-	
+
     self:SetData({
-        data=options.initialData, 
-        initialValue=options.initialValue, initialLabel=options.initialLabel})
+        data = options.initialData,
+        initialValue = options.initialValue,
+        initialLabel = options.initialLabel
+    })
 
     self.title = dropDown:CreateFontString(nil, 'OVERLAY', 'GameFontNormal')
     self.title:SetPoint("TOP", 0, 10)
 
     self:SetLabel(options.label)
-
 end
 
 function GGUI.Dropdown:SetLabel(label)
@@ -871,7 +900,7 @@ function GGUI.Dropdown:SetData(options)
 
     local dropDown = self.frame
     local gDropdown = self
-    local function initMainMenu(self, level, menulist) 
+    local function initMainMenu(self, level, menulist)
         local info = UIDropDownMenu_CreateInfo()
         if level == 1 then
             for _, data in pairs(options.data) do
@@ -885,7 +914,7 @@ function GGUI.Dropdown:SetData(options)
                 info.text = data.label
                 info.arg1 = data.value
                 if not data.isCategory then
-                    info.func = function(self, arg1, arg2, checked) 
+                    info.func = function(self, arg1, arg2, checked)
                         UIDropDownMenu_SetText(dropDown, data.label) -- value should contain the selected text..
                         gDropdown.selectedValue = data.value
                         if gDropdown.clickCallback then
@@ -893,7 +922,7 @@ function GGUI.Dropdown:SetData(options)
                         end
                     end
                 end
-                
+
                 info.hasArrow = data.isCategory
                 info.menuList = data.isCategory and data.label
                 if data.tooltipItemLink then
@@ -912,7 +941,7 @@ function GGUI.Dropdown:SetData(options)
                     for _, data in pairs(currentMenulist.value) do
                         info.text = data.label
                         info.arg1 = data.value
-                        info.func = function(self, arg1, arg2, checked) 
+                        info.func = function(self, arg1, arg2, checked)
                             UIDropDownMenu_SetText(dropDown, self.value) -- value should contain the selected text..
                             gDropdown.selectedValue = self.value
                             if gDropdown.clickCallback then
@@ -920,17 +949,17 @@ function GGUI.Dropdown:SetData(options)
                             end
                             CloseDropDownMenus()
                         end
-                        
+
                         UIDropDownMenu_AddButton(info, level)
                     end
                 end
             end
         end
-	end
+    end
 
-    
-	UIDropDownMenu_Initialize(dropDown, initMainMenu, "DROPDOWN_MENU_LEVEL")
-	UIDropDownMenu_SetText(dropDown, options.initialLabel)
+
+    UIDropDownMenu_Initialize(dropDown, initMainMenu, "DROPDOWN_MENU_LEVEL")
+    UIDropDownMenu_SetText(dropDown, options.initialLabel)
 
     self.selectedValue = options.initialValue
 end
@@ -991,7 +1020,7 @@ function GGUI.Text:new(options)
     if options.fixedWidth then
         text:SetWidth(options.fixedWidth)
     end
-    
+
     if options.justifyOptions then
         if options.justifyOptions.type == "V" and options.justifyOptions.align then
             text:SetJustifyV(options.justifyOptions.align)
@@ -1079,16 +1108,17 @@ function GGUI.ScrollingMessageFrame:new(options)
 
     scrollingFrame:SetScript("OnMouseWheel", function(self, delta)
         if delta > 0 then
-          scrollingFrame:ScrollUp()
+            scrollingFrame:ScrollUp()
         elseif delta < 0 then
-          scrollingFrame:ScrollDown()
+            scrollingFrame:ScrollDown()
         end
-      end)
+    end)
 end
 
 function GGUI.ScrollingMessageFrame:AddMessage(message)
     self.frame:AddMessage(message)
 end
+
 function GGUI.ScrollingMessageFrame:Clear(message)
     self.frame:Clear(message)
 end
@@ -1096,7 +1126,6 @@ end
 function GGUI.ScrollingMessageFrame:EnableHyperLinksForFrameAndChilds()
     GGUI:EnableHyperLinksForFrameAndChilds(self.frame)
 end
-
 
 --- GGUI.Button
 
@@ -1166,7 +1195,7 @@ function GGUI.Button:new(options)
     self.originalAnchorParent = options.anchorParent or UIParent
     self.activeStatusID = options.initialStatusID
     self.macro = options.macro or false
-    self.secure= options.secure or false
+    self.secure = options.secure or false
     self.macroText = options.macroText or ""
 
     ---@type string?
@@ -1177,12 +1206,12 @@ function GGUI.Button:new(options)
     -- end
 
     if self.macro or self.secure then
-        templates="InsecureActionButtonTemplate"
+        templates = "InsecureActionButtonTemplate"
     end
 
     local button = CreateFrame("Button", nil, options.parent, templates)
     button:SetScale(options.scale)
-    
+
     if options.atlasTextureOptions then
         if options.atlasTextureOptions.normalAtlas then
             button:SetNormalAtlas(options.atlasTextureOptions.normalAtlas)
@@ -1197,7 +1226,7 @@ function GGUI.Button:new(options)
 
     if self.macro then
         button:SetAttribute("type1", "macro")
-	    button:SetAttribute("macrotext", self.macroText)
+        button:SetAttribute("macrotext", self.macroText)
         -- needs to be explicitly set for macro buttons
         button:RegisterForClicks("AnyUp", "AnyDown")
     end
@@ -1209,14 +1238,14 @@ function GGUI.Button:new(options)
     else
         button:SetSize(options.sizeX, options.sizeY)
     end
-    
+
     button:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
 
     -- to not overwrite click script if macro button
     if not self.macro then
         self.clickCallback = options.clickCallback
 
-        button:SetScript("OnClick", function() 
+        button:SetScript("OnClick", function()
             if self.clickCallback then
                 self.clickCallback(self)
             end
@@ -1259,7 +1288,7 @@ end
 ---@param statusList GGUI.ButtonStatus[]
 function GGUI.Button:SetStatusList(statusList)
     -- map statuslist to their ids
-    table.foreach(statusList, function (_, status)
+    table.foreach(statusList, function(_, status)
         if not status.statusID then
             error("GGUI: ButtonStatus without statusID")
         end
@@ -1366,7 +1395,7 @@ function GGUI.TabSystem:new(tabList)
     end
     -- show first tab in list
     for _, tab in pairs(tabList) do
-        tab.button.frame:SetScript("OnClick", function(self) 
+        tab.button.frame:SetScript("OnClick", function(self)
             for _, otherTab in pairs(tabList) do
                 ---@type GGUI.Tab
                 otherTab.content:Hide()
@@ -1382,7 +1411,7 @@ function GGUI.TabSystem:new(tabList)
 end
 
 function GGUI.TabSystem:EnableHyperLinksForFrameAndChilds()
-    table.foreach(self.tabs, function (_, tab)
+    table.foreach(self.tabs, function(_, tab)
         GGUI:EnableHyperLinksForFrameAndChilds(tab.content)
     end)
 end
@@ -1423,12 +1452,12 @@ function GGUI.Checkbox:new(options)
     ---@type ChatConfigCheckButtonTemplate|CheckButton
     self.frame = self.frame
     checkBox:SetHitRectInsets(0, 0, 0, 0); -- see https://wowpedia.fandom.com/wiki/API_Frame_SetHitRectInsets
-	checkBox:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
-	checkBox.Text:SetText(options.label)
+    checkBox:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
+    checkBox.Text:SetText(options.label)
     checkBox.tooltip = options.tooltip
-	-- there already is an existing OnClick script that plays a sound, hook it
+    -- there already is an existing OnClick script that plays a sound, hook it
     checkBox:SetChecked(options.initialValue)
-	checkBox:HookScript("OnClick", function() 
+    checkBox:HookScript("OnClick", function()
         if self.clickCallback then
             self.clickCallback(self, self.frame:GetChecked())
         end
@@ -1438,6 +1467,7 @@ end
 function GGUI.Checkbox:GetChecked()
     return self.frame:GetChecked()
 end
+
 function GGUI.Checkbox:SetChecked(value)
     return self.frame:SetChecked(value)
 end
@@ -1446,7 +1476,6 @@ end
 function GGUI.Checkbox:SetLabel(label)
     self.frame.Text:SetText(label or "")
 end
-
 
 --- GGUI.Slider
 
@@ -1495,16 +1524,16 @@ function GGUI.Slider:new(options)
     newSlider:SetOrientation(options.orientation)
     newSlider:SetMinMaxValues(options.minValue, options.maxValue)
     newSlider:SetValue(options.initialValue)
-    _G[newSlider:GetName() .. 'Low']:SetText(options.lowText)        -- Sets the left-side slider text (default is "Low").
-    _G[newSlider:GetName() .. 'High']:SetText(options.highText)     -- Sets the right-side slider text (default is "High").
-    _G[newSlider:GetName() .. 'Text']:SetText(options.label)       -- Sets the "title" text (top-centre of slider).
+    _G[newSlider:GetName() .. 'Low']:SetText(options.lowText)   -- Sets the left-side slider text (default is "Low").
+    _G[newSlider:GetName() .. 'High']:SetText(options.highText) -- Sets the right-side slider text (default is "High").
+    _G[newSlider:GetName() .. 'Text']:SetText(options.label)    -- Sets the "title" text (top-centre of slider).
 
-    newSlider:SetScript("OnValueChanged", 
-    function (...)
-        if self.onValueChangedCallback then
-            self.onValueChangedCallback(...)
-        end
-    end)
+    newSlider:SetScript("OnValueChanged",
+        function(...)
+            if self.onValueChangedCallback then
+                self.onValueChangedCallback(...)
+            end
+        end)
 end
 
 --- GGUI.HelpIcon
@@ -1537,16 +1566,16 @@ function GGUI.HelpIcon:new(options)
     helpButton.tooltipText = options.text
     helpButton:SetNormalTexture("Interface\\common\\help-i")
     helpButton:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight", "ADD")
-    helpButton:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)	
-    helpButton:SetSize(options.sizeX or 30,options.sizeY or 30)
+    helpButton:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
+    helpButton:SetSize(options.sizeX or 30, options.sizeY or 30)
 
-    helpButton:SetScript("OnEnter", function(self) 
+    helpButton:SetScript("OnEnter", function(self)
         GameTooltip:SetOwner(helpButton, "ANCHOR_RIGHT")
-        GameTooltip:ClearLines() 
+        GameTooltip:ClearLines()
         GameTooltip:SetText(self.tooltipText)
         GameTooltip:Show()
     end)
-    helpButton:SetScript("OnLeave", function(self) 
+    helpButton:SetScript("OnLeave", function(self)
         GameTooltip:Hide()
     end)
 end
@@ -1554,7 +1583,6 @@ end
 function GGUI.HelpIcon:SetText(text)
     self.frame.tooltipText = text
 end
-
 
 --- GGUI.ScrollFrame
 
@@ -1581,7 +1609,7 @@ function GGUI.ScrollFrame:new(options)
     self.hideScrollbar = options.hideScrollbar or false
 
     local scrollFrame = CreateFrame("ScrollFrame", nil, options.parent, "UIPanelScrollFrameTemplate, BackdropTemplate")
-    
+
     -- scrollFrame.ScrollBar:HookScript("OnShow", function ()
     --     if self.hideScrollbar then
     --         scrollFrame.ScrollBar:Hide();
@@ -1593,7 +1621,7 @@ function GGUI.ScrollFrame:new(options)
     if options.showBorder then
         -- border around scrollframe
         local borderFrame = CreateFrame("Frame", nil, options.parent, "BackdropTemplate")
-        borderFrame:SetSize(options.parent:GetWidth() , options.parent:GetHeight())
+        borderFrame:SetSize(options.parent:GetWidth(), options.parent:GetHeight())
         if self.hideScrollbar then
             borderFrame:SetPoint("TOP", options.parent, "TOP", 0, options.offsetTOP)
             borderFrame:SetPoint("LEFT", options.parent, "LEFT", options.offsetLEFT, 0)
@@ -1609,23 +1637,23 @@ function GGUI.ScrollFrame:new(options)
             edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
             edgeSize = 16,
         })
-        borderFrame:SetFrameLevel(scrollFrame:GetFrameLevel()+1)
+        borderFrame:SetFrameLevel(scrollFrame:GetFrameLevel() + 1)
 
         if not self.hideScrollbar then
             -- separator between scroll bar and content
             local separatorFrame = CreateFrame("Frame", nil, options.parent, "BackdropTemplate")
-            separatorFrame:SetSize(5 , options.parent:GetHeight()+0.5)
+            separatorFrame:SetSize(5, options.parent:GetHeight() + 0.5)
             separatorFrame:SetPoint("TOPRIGHT", options.parent, "TOPRIGHT", 0, 0)
             separatorFrame:SetBackdrop({
                 edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
                 edgeSize = 16,
             })
-            separatorFrame:SetFrameLevel(scrollFrame:GetFrameLevel()+1)
+            separatorFrame:SetFrameLevel(scrollFrame:GetFrameLevel() + 1)
         end
     end
     scrollFrame.scrollChild = CreateFrame("frame")
     local scrollChild = scrollFrame.scrollChild
-    scrollFrame:SetSize(options.parent:GetWidth() , options.parent:GetHeight())
+    scrollFrame:SetSize(options.parent:GetWidth(), options.parent:GetHeight())
     scrollFrame:SetPoint("TOP", options.parent, "TOP", 0, options.offsetTOP)
     scrollFrame:SetPoint("LEFT", options.parent, "LEFT", options.offsetLEFT, 0)
     scrollFrame:SetPoint("RIGHT", options.parent, "RIGHT", options.offsetRIGHT, 0)
@@ -1690,22 +1718,22 @@ function GGUI.TextInput:new(options)
     textInput:SetAutoFocus(options.autoFocus) -- dont automatically focus
     textInput:SetFontObject(options.font)
     textInput:SetText(options.initialValue)
-    textInput:SetScript("OnEscapePressed", function() 
+    textInput:SetScript("OnEscapePressed", function()
         if self.oneEnterCallback then
             self.onEnterCallback(self)
         else
-            textInput:ClearFocus() 
+            textInput:ClearFocus()
         end
     end)
-    textInput:SetScript("OnEnterPressed", function() 
+    textInput:SetScript("OnEnterPressed", function()
         if self.onEscapeCallback then
             self.onEscapeCallback(self)
         else
-            textInput:ClearFocus() 
+            textInput:ClearFocus()
         end
     end)
 
-    textInput:SetScript("OnTextChanged", function(_, userInput) 
+    textInput:SetScript("OnTextChanged", function(_, userInput)
         if self.onTextChangedCallback then
             self.onTextChangedCallback(self, self:GetText(), userInput)
         end
@@ -1715,6 +1743,7 @@ end
 function GGUI.TextInput:GetText()
     return self.frame:GetText()
 end
+
 function GGUI.TextInput:SetText(text, userInput)
     self.frame:SetText(text)
 
@@ -1775,29 +1804,29 @@ function GGUI.CurrencyInput:new(options)
     currencyInput.copper = 0
 
     local textInput = GGUI.TextInput({
-        parent=options.parent,
-        anchorParent=options.anchorParent,
-        anchorA=options.anchorA,
-        anchorB=options.anchorB,
-        offsetX=options.offsetX,
-        offsetY=options.offsetY,
-        sizeX=options.sizeX,
-        sizeY=options.sizeY,
-        initialValue=options.initialValue,
-        onTextChangedCallback= function(self, input, userInput)             
+        parent = options.parent,
+        anchorParent = options.anchorParent,
+        anchorA = options.anchorA,
+        anchorB = options.anchorB,
+        offsetX = options.offsetX,
+        offsetY = options.offsetY,
+        sizeX = options.sizeX,
+        sizeY = options.sizeY,
+        initialValue = options.initialValue,
+        onTextChangedCallback = function(self, input, userInput)
             if userInput then
                 -- validate and color text, and adapt save button
                 input = input or ""
-                -- remove colorizations    
+                -- remove colorizations
                 input = string.gsub(input, GUTIL.COLORS.GOLD, "")
                 input = string.gsub(input, GUTIL.COLORS.SILVER, "")
                 input = string.gsub(input, GUTIL.COLORS.COPPER, "")
                 input = string.gsub(input, "|r", "")
                 input = string.gsub(input, "|c", "")
-    
+
                 local valid = GUTIL:ValidateMoneyString(input)
                 currencyInput.isValid = valid
-    
+
                 if valid then
                     -- colorize
                     local gold = tonumber(string.match(input, "(%d+)g")) or 0
@@ -1806,22 +1835,23 @@ function GGUI.CurrencyInput:new(options)
                     local gC = GUTIL:ColorizeText("g", GUTIL.COLORS.GOLD)
                     local sC = GUTIL:ColorizeText("s", GUTIL.COLORS.SILVER)
                     local cC = GUTIL:ColorizeText("c", GUTIL.COLORS.COPPER)
-                    local colorizedText = ((gold > 0 and (gold .. gC)) or "") .. ((silver > 0 and (silver .. sC)) or "") .. ((copper > 0 and (copper .. cC)) or "")
+                    local colorizedText = ((gold > 0 and (gold .. gC)) or "") ..
+                        ((silver > 0 and (silver .. sC)) or "") .. ((copper > 0 and (copper .. cC)) or "")
                     currencyInput.textInput:SetText(colorizedText)
-    
-    
+
+
                     currencyInput.gold = gold
                     currencyInput.silver = silver
                     currencyInput.copper = copper
-                    currencyInput.total = gold*10000+silver*100+copper
+                    currencyInput.total = gold * 10000 + silver * 100 + copper
                     if currencyInput.onValueValidCallback then
                         currencyInput.onValueValidCallback(currencyInput)
-                    end    
+                    end
                 end
 
-                
+
                 currencyInput.border:SetValid(valid)
-                
+
                 if currencyInput.onValidationChangedCallback then
                     currencyInput.onValidationChangedCallback(valid)
                 end
@@ -1833,13 +1863,14 @@ function GGUI.CurrencyInput:new(options)
 
     local validationBorder = CreateFrame("Frame", nil, textInput.frame, "BackdropTemplate")
     self.border = validationBorder
-    validationBorder:SetSize(textInput:GetWidth()*1.3*options.borderAdjustWidth, textInput:GetHeight()*1.6*options.borderAdjustHeight)
+    validationBorder:SetSize(textInput:GetWidth() * 1.3 * options.borderAdjustWidth,
+        textInput:GetHeight() * 1.6 * options.borderAdjustHeight)
     validationBorder:SetPoint("CENTER", textInput.frame, "CENTER", -2, 0)
     validationBorder:SetBackdrop({
         edgeFile = "Interface\\PVPFrame\\UI-Character-PVP-Highlight",
         edgeSize = options.borderWidth,
     })
-    function validationBorder:SetValid(valid) 
+    function validationBorder:SetValid(valid)
         if valid then
             validationBorder:Hide()
         else
@@ -1847,6 +1878,7 @@ function GGUI.CurrencyInput:new(options)
             validationBorder:SetBackdropBorderColor(1, 0, 0, 0.5)
         end
     end
+
     validationBorder:Hide()
     textInput.validationBorder = validationBorder
 
@@ -1854,8 +1886,13 @@ function GGUI.CurrencyInput:new(options)
 
     if options.showFormatHelpIcon then
         self.helpIcon = GGUI.HelpIcon({
-            parent=options.parent,
-            text="Format: 100g10s1c", textInput.frame, anchorParent=textInput.frame, anchorA="LEFT", anchorB="RIGHT", offsetX=5,
+            parent = options.parent,
+            text = "Format: 100g10s1c",
+            textInput.frame,
+            anchorParent = textInput.frame,
+            anchorA = "LEFT",
+            anchorB = "RIGHT",
+            offsetX = 5,
         })
     end
 end
@@ -1865,13 +1902,14 @@ function GGUI.CurrencyInput:SetValue(total)
     local gC = GUTIL:ColorizeText("g", GUTIL.COLORS.GOLD)
     local sC = GUTIL:ColorizeText("s", GUTIL.COLORS.SILVER)
     local cC = GUTIL:ColorizeText("c", GUTIL.COLORS.COPPER)
-    local colorizedText = ((gold > 0 and (gold .. gC)) or "") .. ((silver > 0 and (silver .. sC)) or "") .. ((copper > 0 and (copper .. cC)) or "")
+    local colorizedText = ((gold > 0 and (gold .. gC)) or "") ..
+        ((silver > 0 and (silver .. sC)) or "") .. ((copper > 0 and (copper .. cC)) or "")
     self.textInput:SetText(colorizedText)
 
     self.gold = gold
     self.silver = silver
     self.copper = copper
-    self.total = gold*10000+silver*100+copper
+    self.total = gold * 10000 + silver * 100 + copper
 end
 
 function GGUI.CurrencyInput:Show()
@@ -1880,6 +1918,7 @@ function GGUI.CurrencyInput:Show()
         self.helpIcon:Show()
     end
 end
+
 function GGUI.CurrencyInput:Hide()
     self.textInput:Hide()
     if self.helpIcon then
@@ -1924,9 +1963,9 @@ function GGUI.NumericInput:new(options)
     options.anchorB = options.anchorB or "CENTER"
     options.offsetX = options.offsetX or 0
     options.offsetY = options.offsetY or 0
-    options.sizeX = options.sizeX or 100    
+    options.sizeX = options.sizeX or 100
     options.sizeY = options.sizeY or 25
-    options.initialValue = options.initialValue or 0 
+    options.initialValue = options.initialValue or 0
     options.allowDecimals = options.allowDecimals or false
     options.autoFocus = options.autoFocus or false
     options.font = options.font or "ChatFontNormal"
@@ -1947,17 +1986,17 @@ function GGUI.NumericInput:new(options)
 
     ---@type GGUI.TextInput | GGUI.Widget
     self.textInput = GGUI.TextInput({
-        parent=options.parent,
-        anchorParent=options.anchorParent,
-        anchorA=options.anchorA,
-        anchorB=options.anchorB,
-        offsetX=options.offsetX,
-        offsetY=options.offsetY,
-        sizeX=options.sizeX,
-        sizeY=options.sizeY,
-        initialValue=options.initialValue,
-        autoFocus=options.autoFocus,
-        onTextChangedCallback=function (textInput, input, userInput)
+        parent = options.parent,
+        anchorParent = options.anchorParent,
+        anchorA = options.anchorA,
+        anchorB = options.anchorB,
+        offsetX = options.offsetX,
+        offsetY = options.offsetY,
+        sizeX = options.sizeX,
+        sizeY = options.sizeY,
+        initialValue = options.initialValue,
+        autoFocus = options.autoFocus,
+        onTextChangedCallback = function(textInput, input, userInput)
             if userInput then
                 local valid = GUTIL:ValidateNumberString(input, self.minValue, self.maxValue, self.allowDecimals)
                 if valid then
@@ -1982,22 +2021,23 @@ function GGUI.NumericInput:new(options)
         local buttonOffsetX = 0
         local buttonOffsetY = -1
         self.textInput.frame.plusButton = GGUI.Button({
-            parent=self.textInput.frame,
-            anchorParent=self.textInput.frame,
-            anchorA="TOPLEFT",
-            anchorB="TOPRIGHT",
-            offsetX=buttonOffsetX,
-            offsetY=buttonOffsetY,
-            label="+",
-            sizeX=buttonWidth,
-            sizeY=buttonHeight,
-            adjustWidth=true,
-            scale=options.buttonsScale,
-            clickCallback=function ()
+            parent = self.textInput.frame,
+            anchorParent = self.textInput.frame,
+            anchorA = "TOPLEFT",
+            anchorB = "TOPRIGHT",
+            offsetX = buttonOffsetX,
+            offsetY = buttonOffsetY,
+            label = "+",
+            sizeX = buttonWidth,
+            sizeY = buttonHeight,
+            adjustWidth = true,
+            scale = options.buttonsScale,
+            clickCallback = function()
                 local input = tonumber(numericInput.textInput:GetText())
                 if input then
-                    local valid = GUTIL:ValidateNumberString(tostring(input + 1), self.minValue, self.maxValue, self.allowDecimals)   
-                    
+                    local valid = GUTIL:ValidateNumberString(tostring(input + 1), self.minValue, self.maxValue,
+                        self.allowDecimals)
+
                     if valid then
                         numericInput.currentValue = input + 1
                         numericInput.textInput:SetText(input + 1)
@@ -2013,20 +2053,21 @@ function GGUI.NumericInput:new(options)
             end,
         })
         self.textInput.frame.minusButton = GGUI.Button({
-            parent=self.textInput.frame,
-            anchorParent=self.textInput.frame.plusButton.frame,
-            anchorA="TOP",
-            anchorB="BOTTOM",
-            label="-",
-            sizeX=buttonWidth,
-            sizeY=buttonHeight,
-            adjustWidth=true,
-            scale=options.buttonsScale,
-            clickCallback=function ()
+            parent = self.textInput.frame,
+            anchorParent = self.textInput.frame.plusButton.frame,
+            anchorA = "TOP",
+            anchorB = "BOTTOM",
+            label = "-",
+            sizeX = buttonWidth,
+            sizeY = buttonHeight,
+            adjustWidth = true,
+            scale = options.buttonsScale,
+            clickCallback = function()
                 local input = tonumber(numericInput.textInput:GetText())
                 if input then
-                    local valid = GUTIL:ValidateNumberString(tostring(input - 1), self.minValue, self.maxValue, self.allowDecimals)   
-                    
+                    local valid = GUTIL:ValidateNumberString(tostring(input - 1), self.minValue, self.maxValue,
+                        self.allowDecimals)
+
                     if valid then
                         numericInput.currentValue = input - 1
                         numericInput.textInput:SetText(input - 1)
@@ -2045,13 +2086,14 @@ function GGUI.NumericInput:new(options)
 
     local validationBorder = CreateFrame("Frame", nil, self.textInput.frame, "BackdropTemplate")
     self.border = validationBorder
-    validationBorder:SetSize(self.textInput.frame:GetWidth()*1.3*options.borderAdjustWidth, self.textInput.frame:GetHeight()*1.6*options.borderAdjustHeight)
+    validationBorder:SetSize(self.textInput.frame:GetWidth() * 1.3 * options.borderAdjustWidth,
+        self.textInput.frame:GetHeight() * 1.6 * options.borderAdjustHeight)
     validationBorder:SetPoint("CENTER", self.textInput.frame, "CENTER", -2, 0)
     validationBorder:SetBackdrop({
         edgeFile = "Interface\\PVPFrame\\UI-Character-PVP-Highlight",
         edgeSize = options.borderWidth,
     })
-    function validationBorder:SetValid(valid) 
+    function validationBorder:SetValid(valid)
         if valid then
             validationBorder:Hide()
         else
@@ -2059,6 +2101,7 @@ function GGUI.NumericInput:new(options)
             validationBorder:SetBackdropBorderColor(1, 0, 0, 0.5)
         end
     end
+
     validationBorder:Hide()
     self.validationBorder = validationBorder
 end
@@ -2120,80 +2163,83 @@ function GGUI.FrameList:new(options)
     options.headerOffsetX = options.headerOffsetX or 5
     options.scale = options.scale or 1
     options.rowScale = options.rowScale or 1
-    self.rowBackdrops = options.rowBackdrops 
+    self.rowBackdrops = options.rowBackdrops
     self.rowScale = options.rowScale
     self.rowHeight = options.rowHeight
     self.selectionOptions = options.selectionOptions
     if self.selectionOptions then
-        self.selectionOptions.hoverRGBA = self.selectionOptions.hoverRGBA or {0, 1, 0, 0.3}
-        self.selectionOptions.selectedRGBA = self.selectionOptions.selectedRGBA or {0, 1, 0, 0.6}
+        self.selectionOptions.hoverRGBA = self.selectionOptions.hoverRGBA or { 0, 1, 0, 0.3 }
+        self.selectionOptions.selectedRGBA = self.selectionOptions.selectedRGBA or { 0, 1, 0, 0.6 }
         self.selectionOptions.selectionCallback = self.selectionOptions.selectionCallback or function() end
     end
     ---@type GGUI.FrameList.Row
     self.selectedRow = nil
-    
+
     if not options.columnOptions or #options.columnOptions == 0 then
         error("GGUI Error: FrameList needs a least one column! (columnOptions)")
     end
-    
+
     if not options.rowConstructor then
         error("GGUI Error: FrameList needs a rowConstructor function!")
+    end
+
+    local firstColumnOffsetX = 0
+    local rowWidth = firstColumnOffsetX
+
+    table.foreach(options.columnOptions, function(_, columnOption)
+        if not columnOption.width then
+            error("GGUI Error: All columnOptions need a width property!")
         end
-        
-        local firstColumnOffsetX = 0
-        local rowWidth = firstColumnOffsetX
-        
-        table.foreach(options.columnOptions, function (_, columnOption)
-            if not columnOption.width then
-                error("GGUI Error: All columnOptions need a width property!")
-            end
-            rowWidth = rowWidth + columnOption.width
-        end)
+        rowWidth = rowWidth + columnOption.width
+    end)
     self.rowWidth = rowWidth
     self.columnOptions = options.columnOptions
-    self.rowConstructor = options.rowConstructor 
+    self.rowConstructor = options.rowConstructor
 
-    local mainFrame = CreateFrame("Frame", nil, options.parent) 
+    local mainFrame = CreateFrame("Frame", nil, options.parent)
     mainFrame:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
     mainFrame:SetSize(options.sizeX or (rowWidth + 10), options.sizeY)
     mainFrame:SetScale(options.scale)
-    
+
     ---@type GGUI.ScrollFrame
     self.scrollFrame = GGUI.ScrollFrame({
-        parent=mainFrame,
-        offsetTOP=-5,
-        offsetLEFT=5,
-        offsetRIGHT=-5,
-        offsetBOTTOM=5,
+        parent = mainFrame,
+        offsetTOP = -5,
+        offsetLEFT = 5,
+        offsetRIGHT = -5,
+        offsetBOTTOM = 5,
         showBorder = options.showBorder,
         hideScrollbar = options.hideScrollbar
     })
-    
+
     ---@type GGUI.FrameList.Row
     self.rows = {}
     ---@type GGUI.FrameList.Row
     self.activeRows = {}
-    
+
     local header = CreateFrame("Frame", nil, mainFrame)
     header:SetPoint("BOTTOMLEFT", mainFrame, "TOPLEFT")
     header:SetSize(rowWidth, 25)
-    
+
     local lastHeaderColumn = nil
     for index, columnOption in pairs(options.columnOptions) do
         local headerColumn = CreateFrame("Frame", nil, header)
         headerColumn:SetSize(columnOption.width, 25)
-        
+
         headerColumn.text = GGUI.Text({
-            fixedWidth=columnOption.width, text=columnOption.label or "",
-            parent=headerColumn, anchorParent=headerColumn, justifyOptions=columnOption.justifyOptions or {type="H", align="LEFT"},
+            fixedWidth = columnOption.width,
+            text = columnOption.label or "",
+            parent = headerColumn,
+            anchorParent = headerColumn,
+            justifyOptions = columnOption.justifyOptions or { type = "H", align = "LEFT" },
         })
-        
+
         if index == 1 then
-            headerColumn:SetPoint("TOPLEFT", header ,"TOPLEFT", options.headerOffsetX, 0)
+            headerColumn:SetPoint("TOPLEFT", header, "TOPLEFT", options.headerOffsetX, 0)
         else
-            headerColumn:SetPoint("LEFT", lastHeaderColumn ,"RIGHT")
+            headerColumn:SetPoint("LEFT", lastHeaderColumn, "RIGHT")
         end
-        
+
         lastHeaderColumn = headerColumn
     end
 
@@ -2217,7 +2263,7 @@ GGUI.FrameList.Row = GGUI.Widget:extend()
 function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     GGUI.FrameList.Row.super.new(self, rowFrame)
     self.columns = columns
-    self.active=false
+    self.active = false
     self.frameList = frameList
     ---@class GGUI.FrameList.Row.TooltipOptions?
     ---@field spellID number?
@@ -2255,10 +2301,12 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
         GameTooltip:Hide();
     end
     if frameList.selectionOptions then
-        self.Select = function ()
+        self.Select = function()
             if self ~= frameList.selectedRow or frameList.selectionOptions.noSelectionColor then
                 if not frameList.selectionOptions.noSelectionColor then
-                    rowFrame:SetBackdropColor(frameList.selectionOptions.selectedRGBA[1], frameList.selectionOptions.selectedRGBA[2], frameList.selectionOptions.selectedRGBA[3], frameList.selectionOptions.selectedRGBA[4])
+                    rowFrame:SetBackdropColor(frameList.selectionOptions.selectedRGBA[1],
+                        frameList.selectionOptions.selectedRGBA[2], frameList.selectionOptions.selectedRGBA[3],
+                        frameList.selectionOptions.selectedRGBA[4])
                     if frameList.selectedRow then
                         -- revert color
                         frameList.selectedRow.frame:SetBackdropColor(0, 0, 0, 0)
@@ -2277,13 +2325,15 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
         })
         rowFrame:SetBackdropColor(0, 0, 0, 0) -- make colorless
 
-        onEnterSelectableRow = 
+        onEnterSelectableRow =
             function()
                 if self ~= frameList.selectedRow or frameList.selectionOptions.noSelectionColor then
-                    rowFrame:SetBackdropColor(frameList.selectionOptions.hoverRGBA[1], frameList.selectionOptions.hoverRGBA[2], frameList.selectionOptions.hoverRGBA[3], frameList.selectionOptions.hoverRGBA[4])
+                    rowFrame:SetBackdropColor(frameList.selectionOptions.hoverRGBA[1],
+                        frameList.selectionOptions.hoverRGBA[2], frameList.selectionOptions.hoverRGBA[3],
+                        frameList.selectionOptions.hoverRGBA[4])
                 end
             end
-        onLeaveSelectableRow = 
+        onLeaveSelectableRow =
             function()
                 if self ~= frameList.selectedRow or frameList.selectionOptions.noSelectionColor then
                     rowFrame:SetBackdropColor(0, 0, 0, 0)
@@ -2294,13 +2344,13 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
             self:Select()
         end)
     end
-    rowFrame:SetScript("OnEnter", function ()
+    rowFrame:SetScript("OnEnter", function()
         handleTooltipOnEnter()
         if onEnterSelectableRow then
             onEnterSelectableRow()
         end
     end)
-    rowFrame:SetScript("OnLeave", function ()
+    rowFrame:SetScript("OnLeave", function()
         handleTooltipOnLeave()
         if onLeaveSelectableRow then
             onLeaveSelectableRow()
@@ -2323,7 +2373,6 @@ function GGUI.FrameList:SelectRow(index)
 end
 
 function GGUI.FrameList:CreateRow()
-
     local rowFrame = CreateFrame("Frame", nil, self.scrollFrame.content, "BackdropTemplate")
     rowFrame:SetSize(self.rowWidth, self.rowHeight)
     rowFrame:SetScale(self.rowScale)
@@ -2332,7 +2381,7 @@ function GGUI.FrameList:CreateRow()
     else
         rowFrame:SetPoint("TOPLEFT", self.rows[#self.rows].frame, "BOTTOMLEFT")
     end
-    
+
     local columns = {}
     local lastColumn = nil
     for index, columnOption in pairs(self.columnOptions) do
@@ -2354,9 +2403,12 @@ function GGUI.FrameList:CreateRow()
                 insets = borderOptions.insets,
                 tile = columnOption.backdropOptions.tile,
                 tileSize = columnOption.backdropOptions.tileSize,
-            })    
-            columnFrame:SetBackdropColor(columnOption.backdropOptions.colorR or 0, columnOption.backdropOptions.colorG or 0, columnOption.backdropOptions.colorB or 0, columnOption.backdropOptions.colorA or 1)
-            columnFrame:SetBackdropBorderColor(borderOptions.colorR or 0, borderOptions.colorG or 0, borderOptions.colorB or 0, borderOptions.colorA or 1)
+            })
+            columnFrame:SetBackdropColor(columnOption.backdropOptions.colorR or 0,
+                columnOption.backdropOptions.colorG or 0, columnOption.backdropOptions.colorB or 0,
+                columnOption.backdropOptions.colorA or 1)
+            columnFrame:SetBackdropBorderColor(borderOptions.colorR or 0, borderOptions.colorG or 0,
+                borderOptions.colorB or 0, borderOptions.colorA or 1)
         end
 
         table.insert(columns, columnFrame)
@@ -2439,7 +2491,7 @@ end
 ---@param sortFunc? fun(rowA:GGUI.FrameList.Row, rowB:GGUI.FrameList.Row): boolean optional sorting before updating the display
 function GGUI.FrameList:UpdateDisplay(sortFunc)
     -- filter and show active rows and hide all inactive
-    self.activeRows = GUTIL:Filter(self.rows, function(row) 
+    self.activeRows = GUTIL:Filter(self.rows, function(row)
         if row.active then
             row:Show()
             return true
@@ -2476,15 +2528,15 @@ function GGUI.FrameList:UpdateDisplay(sortFunc)
                 insets = borderOptions.insets,
                 tile = backdropOptions.tile,
                 tileSize = backdropOptions.tileSize,
-            })    
-            row.frame:SetBackdropColor(backdropOptions.colorR or 1, backdropOptions.colorG or 1, backdropOptions.colorB or 1, backdropOptions.colorA or 1)
-            row.frame:SetBackdropBorderColor(borderOptions.colorR or 1, borderOptions.colorG or 1, borderOptions.colorB or 1, borderOptions.colorA or 1)
-
+            })
+            row.frame:SetBackdropColor(backdropOptions.colorR or 1, backdropOptions.colorG or 1,
+                backdropOptions.colorB or 1, backdropOptions.colorA or 1)
+            row.frame:SetBackdropBorderColor(borderOptions.colorR or 1, borderOptions.colorG or 1,
+                borderOptions.colorB or 1, borderOptions.colorA or 1)
         end
         lastRow = row
     end
 end
-
 
 ---@class GGUI.ShowPopupOptions
 ---@field title? string
@@ -2555,38 +2607,55 @@ end
 ---@param options GGUI.InitPopupOptions
 function GGUI:InitializePopup(options)
     ---@type GGUI.Frame | GGUI.Widget
-        popupFrame = GGUI.Frame({
-            backdropOptions = options.backdropOptions,
-            sizeX=options.sizeX or 300, sizeY=options.sizeY or 300, moveable=true, frameStrata="DIALOG", frameID=options.frameID,
-            title=options.title or "", closeable=true,
-        })
+    popupFrame = GGUI.Frame({
+        backdropOptions = options.backdropOptions,
+        sizeX = options.sizeX or 300,
+        sizeY = options.sizeY or 300,
+        moveable = true,
+        frameStrata = "DIALOG",
+        frameID = options.frameID,
+        title = options.title or "",
+        closeable = true,
+    })
 
-        popupFrame.content.text = GGUI.Text({
-            parent=popupFrame.content, anchorParent=popupFrame.title.frame, anchorA="TOP", anchorB="BOTTOM", offsetY=-20,
-        })
+    popupFrame.content.text = GGUI.Text({
+        parent = popupFrame.content, anchorParent = popupFrame.title.frame, anchorA = "TOP", anchorB = "BOTTOM", offsetY = -20,
+    })
 
-        popupFrame.content.acceptButton = GGUI.Button({
-            parent=popupFrame.content, anchorParent=popupFrame.frame, anchorA="BOTTOMLEFT", anchorB="BOTTOMLEFT", offsetX=10, offsetY=10,
-            label="Accept", clickCallback=function ()
-                if popupFrame.onAccept then
-                    popupFrame.onAccept()
-                end
-                popupFrame:Hide()
+    popupFrame.content.acceptButton = GGUI.Button({
+        parent = popupFrame.content,
+        anchorParent = popupFrame.frame,
+        anchorA = "BOTTOMLEFT",
+        anchorB = "BOTTOMLEFT",
+        offsetX = 10,
+        offsetY = 10,
+        label = "Accept",
+        clickCallback = function()
+            if popupFrame.onAccept then
+                popupFrame.onAccept()
             end
-        })
-        popupFrame.content.declineButton = GGUI.Button({
-            parent=popupFrame.content, anchorParent=popupFrame.frame, anchorA="BOTTOMRIGHT", anchorB="BOTTOMRIGHT", offsetX=-10, offsetY=10,
-            label="Decline", clickCallback=function ()
-                if popupFrame.onDecline then
-                    popupFrame.onDecline()
-                end
-                popupFrame:Hide()
+            popupFrame:Hide()
+        end
+    })
+    popupFrame.content.declineButton = GGUI.Button({
+        parent = popupFrame.content,
+        anchorParent = popupFrame.frame,
+        anchorA = "BOTTOMRIGHT",
+        anchorB = "BOTTOMRIGHT",
+        offsetX = -10,
+        offsetY = 10,
+        label = "Decline",
+        clickCallback = function()
+            if popupFrame.onDecline then
+                popupFrame.onDecline()
             end
-        })
+            popupFrame:Hide()
+        end
+    })
 
-        popupFrame:Hide()
+    popupFrame:Hide()
 
-        GGUI:EnableHyperLinksForFrameAndChilds(popupFrame.content)
+    GGUI:EnableHyperLinksForFrameAndChilds(popupFrame.content)
 end
 
 --- GGUI.ItemSelector
@@ -2638,16 +2707,16 @@ function GGUI.ItemSelector:new(options)
     self.selectedItem = nil
     self.emptyIcon = options.emptyIcon or GGUI.CONST.EMPTY_TEXTURE
 
-    self.icon = GGUI.Icon{
-        parent=options.parent, anchorParent=options.anchorParent, anchorA=options.anchorA, anchorB=options.anchorB,
-        offsetX=options.offsetX, offsetY=options.offsetY, qualityIconScale=options.qualityIconScale,
-        sizeX=options.sizeX, sizeY=options.sizeY, texturePath = self.emptyIcon, isAtlas = options.isAtlas
+    self.icon = GGUI.Icon {
+        parent = options.parent, anchorParent = options.anchorParent, anchorA = options.anchorA, anchorB = options.anchorB,
+        offsetX = options.offsetX, offsetY = options.offsetY, qualityIconScale = options.qualityIconScale,
+        sizeX = options.sizeX, sizeY = options.sizeY, texturePath = self.emptyIcon, isAtlas = options.isAtlas
     }
 
     if options.label then
-        GGUI.Text{
-            parent=options.parent, anchorParent=self.icon.frame, anchorA="BOTTOM", anchorB="TOP",
-            text=options.label
+        GGUI.Text {
+            parent = options.parent, anchorParent = self.icon.frame, anchorA = "BOTTOM", anchorB = "TOP",
+            text = options.label
         }
     end
 
@@ -2660,7 +2729,8 @@ function GGUI.ItemSelector:new(options)
     options.selectionFrameOptions.closeOnClickOutside = true
     options.selectionFrameOptions.frameConfigTable = options.selectionFrameOptions.frameConfigTable or {}
     local numFrames = GUTIL:Count(options.selectionFrameOptions.frameTable or {}) + 1
-    options.selectionFrameOptions.frameID = options.selectionFrameOptions.frameID or ("GGUIIconSelectorFrame " .. numFrames)
+    options.selectionFrameOptions.frameID = options.selectionFrameOptions.frameID or
+        ("GGUIIconSelectorFrame " .. numFrames)
     options.selectionFrameOptions.frameStrata = options.selectionFrameOptions.frameStrata or "FULLSCREEN"
     options.selectionFrameOptions.scrollableContent = true
     options.selectionFrameOptions.title = options.selectionFrameOptions.title or ""
@@ -2671,9 +2741,9 @@ function GGUI.ItemSelector:new(options)
     self.selectionFrame = GGUI.Frame(options.selectionFrameOptions)
     self.selectionFrame:Hide()
 
-    self.selectionFrame:SetFrameLevel(options.parent:GetFrameLevel()+10)
+    self.selectionFrame:SetFrameLevel(options.parent:GetFrameLevel() + 10)
 
-    self.icon.frame:SetScript("OnClick", function ()
+    self.icon.frame:SetScript("OnClick", function()
         if not self.selectionFrame:IsVisible() then
             self.selectionFrame:Show()
         end
@@ -2704,12 +2774,12 @@ function GGUI.ItemSelector:AddSlotIcon(item)
     local baseOffsetY = 0
     local spacingX = iconSizeX + 5
     local spacingY = (iconSizeY + 5) * -1
-    local offsetX = baseOffsetX + spacingX * (self.selectionFrame.currentColumn-1)
-    local offsetY = baseOffsetY + spacingY * (self.selectionFrame.currentRow-1)
+    local offsetX = baseOffsetX + spacingX * (self.selectionFrame.currentColumn - 1)
+    local offsetY = baseOffsetY + spacingY * (self.selectionFrame.currentRow - 1)
 
-    local icon = GGUI.Icon{
-        parent=self.selectionFrame.content, anchorParent=self.selectionFrame.content, anchorA="TOPLEFT", 
-        anchorB="TOPLEFT", offsetX = offsetX, offsetY=offsetY, sizeX=25, sizeY=25
+    local icon = GGUI.Icon {
+        parent = self.selectionFrame.content, anchorParent = self.selectionFrame.content, anchorA = "TOPLEFT",
+        anchorB = "TOPLEFT", offsetX = offsetX, offsetY = offsetY, sizeX = 25, sizeY = 25
     }
 
     if item then
@@ -2718,7 +2788,7 @@ function GGUI.ItemSelector:AddSlotIcon(item)
     end
 
 
-    icon.frame:SetScript("OnClick", function ()
+    icon.frame:SetScript("OnClick", function()
         self.selectedItem = icon.item
         self.selectionFrame:Hide()
         self.icon:SetItem(icon.item)
@@ -2797,7 +2867,7 @@ function GGUI.CheckboxSelector:new(options)
 
     options.buttonOptions = options.buttonOptions or {}
 
-    options.buttonOptions.clickCallback = function ()
+    options.buttonOptions.clickCallback = function()
         if not self.selectionFrame:IsVisible() then
             self.selectionFrame:Show()
         end
@@ -2814,7 +2884,8 @@ function GGUI.CheckboxSelector:new(options)
     options.selectionFrameOptions.closeOnClickOutside = true
     options.selectionFrameOptions.frameConfigTable = options.selectionFrameOptions.frameConfigTable or {}
     local numFrames = GUTIL:Count(options.selectionFrameOptions.frameTable or {}) + 1
-    options.selectionFrameOptions.frameID = options.selectionFrameOptions.frameID or ("GGUICheckboxSelectorFrame " .. numFrames)
+    options.selectionFrameOptions.frameID = options.selectionFrameOptions.frameID or
+        ("GGUICheckboxSelectorFrame " .. numFrames)
     options.selectionFrameOptions.frameStrata = options.selectionFrameOptions.frameStrata or "FULLSCREEN"
     options.selectionFrameOptions.scrollableContent = true
     options.selectionFrameOptions.title = options.selectionFrameOptions.title or ""
@@ -2825,7 +2896,7 @@ function GGUI.CheckboxSelector:new(options)
     self.selectionFrame = GGUI.Frame(options.selectionFrameOptions)
     self.selectionFrame:Hide()
 
-    self.selectionFrame:SetFrameLevel(options.selectionFrameOptions.parent:GetFrameLevel()+10)
+    self.selectionFrame:SetFrameLevel(options.selectionFrameOptions.parent:GetFrameLevel() + 10)
 
     ---@type GGUI.Checkbox[]
     self.selectionFrame.checkboxSlots = {}
@@ -2846,15 +2917,15 @@ function GGUI.CheckboxSelector:AddSlotCheckbox(checkboxItem)
     local spacingY = -20
     local offsetY = baseOffsetY + spacingY * (#self.selectionFrame.checkboxSlots)
 
-    local checkbox = GGUI.Checkbox{
-        parent=self.selectionFrame.content, anchorParent=self.selectionFrame.content, anchorA="TOPLEFT", 
-        anchorB="TOPLEFT", offsetX = 0, offsetY=offsetY, sizeX=25, sizeY=25, label=checkboxItem.name,
-        clickCallback = function (checkbox, checked)
-                if self.savedVariablesTable and checkboxItem.savedVariableProperty then
-                    self.savedVariablesTable[checkboxItem.savedVariableProperty] = checked
-                end
-                self.selectedValues[checkboxItem.selectionID] = checked
-                self.onSelectCallback(self, checkboxItem.selectionID, checked)
+    local checkbox = GGUI.Checkbox {
+        parent = self.selectionFrame.content, anchorParent = self.selectionFrame.content, anchorA = "TOPLEFT",
+        anchorB = "TOPLEFT", offsetX = 0, offsetY = offsetY, sizeX = 25, sizeY = 25, label = checkboxItem.name,
+        clickCallback = function(checkbox, checked)
+            if self.savedVariablesTable and checkboxItem.savedVariableProperty then
+                self.savedVariablesTable[checkboxItem.savedVariableProperty] = checked
+            end
+            self.selectedValues[checkboxItem.selectionID] = checked
+            self.onSelectCallback(self, checkboxItem.selectionID, checked)
         end
     }
 
@@ -2885,18 +2956,18 @@ function GGUI.CheckboxSelector:SetItems(checkboxItems)
             checkbox:Show()
         elseif checkboxItem then
             checkbox:SetLabel(checkboxItem.name)
-            checkbox.clickCallback = function (checkbox, checked)
+            checkbox.clickCallback = function(checkbox, checked)
                 if self.savedVariablesTable and checkboxItem.savedVariableProperty then
                     self.savedVariablesTable[checkboxItem.savedVariableProperty] = checked
                 end
-                self.selectedValues[checkboxItem.selectionID] = checked   
+                self.selectedValues[checkboxItem.selectionID] = checked
                 self.onSelectCallback(self, checkboxItem.selectionID, checked)
             end
             checkbox:Show()
         elseif checkbox then
             checkbox:Hide()
             checkbox:SetLabel()
-            checkbox.clickCallback = function () end
+            checkbox.clickCallback = function() end
         end
     end
 end
@@ -3039,70 +3110,70 @@ GGUI.CONST.CLASS_ICONS = {
 }
 
 GGUI.CONST.CLASS_COLORS_RGBA = {
-    WARRIOR = {0.7804, 0.6118, 0.4314, 1},       -- #C79C6E
-    ARMS = {0.7804, 0.6118, 0.4314, 1},          -- Warrior
-    FURY = {0.7804, 0.6118, 0.4314, 1},          -- Warrior
-    PROTECTION = {0.7804, 0.6118, 0.4314, 1},    -- Warrior
+    WARRIOR = { 0.7804, 0.6118, 0.4314, 1 },           -- #C79C6E
+    ARMS = { 0.7804, 0.6118, 0.4314, 1 },              -- Warrior
+    FURY = { 0.7804, 0.6118, 0.4314, 1 },              -- Warrior
+    PROTECTION = { 0.7804, 0.6118, 0.4314, 1 },        -- Warrior
 
-    PALADIN = {0.9569, 0.549, 0.7294, 1},        -- #F58CBA
-    HOLY = {0.9569, 0.549, 0.7294, 1},           -- Paladin
-    RETRIBUTION = {0.9569, 0.549, 0.7294, 1},    -- Paladin
-    PROTECTION_PALADIN = {0.9569, 0.549, 0.7294, 1}, -- Paladin
+    PALADIN = { 0.9569, 0.549, 0.7294, 1 },            -- #F58CBA
+    HOLY = { 0.9569, 0.549, 0.7294, 1 },               -- Paladin
+    RETRIBUTION = { 0.9569, 0.549, 0.7294, 1 },        -- Paladin
+    PROTECTION_PALADIN = { 0.9569, 0.549, 0.7294, 1 }, -- Paladin
 
-    HUNTER = {0.6706, 0.8353, 0.4509, 1},        -- #ABD473
-    BEAST_MASTERY = {0.6706, 0.8353, 0.4509, 1}, -- Hunter
-    MARKSMANSHIP = {0.6706, 0.8353, 0.4509, 1},  -- Hunter
-    SURVIVAL = {0.6706, 0.8353, 0.4509, 1},      -- Hunter
+    HUNTER = { 0.6706, 0.8353, 0.4509, 1 },            -- #ABD473
+    BEAST_MASTERY = { 0.6706, 0.8353, 0.4509, 1 },     -- Hunter
+    MARKSMANSHIP = { 0.6706, 0.8353, 0.4509, 1 },      -- Hunter
+    SURVIVAL = { 0.6706, 0.8353, 0.4509, 1 },          -- Hunter
 
-    ROGUE = {1, 0.9608, 0.4118, 1},              -- #FFF569
-    ASSASSINATION = {1, 0.9608, 0.4118, 1},      -- Rogue
-    OUTLAW = {1, 0.9608, 0.4118, 1},             -- Rogue
-    SUBTLETY = {1, 0.9608, 0.4118, 1},           -- Rogue
+    ROGUE = { 1, 0.9608, 0.4118, 1 },                  -- #FFF569
+    ASSASSINATION = { 1, 0.9608, 0.4118, 1 },          -- Rogue
+    OUTLAW = { 1, 0.9608, 0.4118, 1 },                 -- Rogue
+    SUBTLETY = { 1, 0.9608, 0.4118, 1 },               -- Rogue
 
-    PRIEST = {1, 1, 1, 1},                       -- #FFFFFF
-    DISCIPLINE = {1, 1, 1, 1},                   -- Priest
-    HOLY_PRIEST = {1, 1, 1, 1},                  -- Priest
-    SHADOW = {1, 1, 1, 1},                       -- Priest
+    PRIEST = { 1, 1, 1, 1 },                           -- #FFFFFF
+    DISCIPLINE = { 1, 1, 1, 1 },                       -- Priest
+    HOLY_PRIEST = { 1, 1, 1, 1 },                      -- Priest
+    SHADOW = { 1, 1, 1, 1 },                           -- Priest
 
-    DEATHKNIGHT = {0.7686, 0.1216, 0.2314, 1},   -- #C41F3B
-    BLOOD = {0.7686, 0.1216, 0.2314, 1},         -- Death Knight
-    FROST = {0.7686, 0.1216, 0.2314, 1},         -- Death Knight
-    UNHOLY = {0.7686, 0.1216, 0.2314, 1},        -- Death Knight
+    DEATHKNIGHT = { 0.7686, 0.1216, 0.2314, 1 },       -- #C41F3B
+    BLOOD = { 0.7686, 0.1216, 0.2314, 1 },             -- Death Knight
+    FROST = { 0.7686, 0.1216, 0.2314, 1 },             -- Death Knight
+    UNHOLY = { 0.7686, 0.1216, 0.2314, 1 },            -- Death Knight
 
-    SHAMAN = {0, 0.4392, 0.8706, 1},             -- #0070DE
-    ELEMENTAL = {0, 0.4392, 0.8706, 1},          -- Shaman
-    ENHANCEMENT = {0, 0.4392, 0.8706, 1},        -- Shaman
-    RESTORATION = {0, 0.4392, 0.8706, 1},        -- Shaman
+    SHAMAN = { 0, 0.4392, 0.8706, 1 },                 -- #0070DE
+    ELEMENTAL = { 0, 0.4392, 0.8706, 1 },              -- Shaman
+    ENHANCEMENT = { 0, 0.4392, 0.8706, 1 },            -- Shaman
+    RESTORATION = { 0, 0.4392, 0.8706, 1 },            -- Shaman
 
-    MAGE = {0.4157, 0.8, 0.9412, 1},             -- #69CCF0
-    ARCANE = {0.4157, 0.8, 0.9412, 1},           -- Mage
-    FIRE = {0.4157, 0.8, 0.9412, 1},             -- Mage
-    FROST_MAGE = {0.4157, 0.8, 0.9412, 1},       -- Mage
+    MAGE = { 0.4157, 0.8, 0.9412, 1 },                 -- #69CCF0
+    ARCANE = { 0.4157, 0.8, 0.9412, 1 },               -- Mage
+    FIRE = { 0.4157, 0.8, 0.9412, 1 },                 -- Mage
+    FROST_MAGE = { 0.4157, 0.8, 0.9412, 1 },           -- Mage
 
-    WARLOCK = {0.5804, 0.5098, 0.7882, 1},       -- #9482C9
-    AFFLICTION = {0.5804, 0.5098, 0.7882, 1},    -- Warlock
-    DEMONOLOGY = {0.5804, 0.5098, 0.7882, 1},    -- Warlock
-    DESTRUCTION = {0.5804, 0.5098, 0.7882, 1},   -- Warlock
+    WARLOCK = { 0.5804, 0.5098, 0.7882, 1 },           -- #9482C9
+    AFFLICTION = { 0.5804, 0.5098, 0.7882, 1 },        -- Warlock
+    DEMONOLOGY = { 0.5804, 0.5098, 0.7882, 1 },        -- Warlock
+    DESTRUCTION = { 0.5804, 0.5098, 0.7882, 1 },       -- Warlock
 
-    MONK = {0, 1, 0.5882, 1},                    -- #00FF96
-    BREWMASTER = {0, 1, 0.5882, 1},              -- Monk
-    MISTWEAVER = {0, 1, 0.5882, 1},              -- Monk
-    WINDWALKER = {0, 1, 0.5882, 1},              -- Monk
+    MONK = { 0, 1, 0.5882, 1 },                        -- #00FF96
+    BREWMASTER = { 0, 1, 0.5882, 1 },                  -- Monk
+    MISTWEAVER = { 0, 1, 0.5882, 1 },                  -- Monk
+    WINDWALKER = { 0, 1, 0.5882, 1 },                  -- Monk
 
-    DRUID = {1, 0.4902, 0.0392, 1},              -- #FF7D0A
-    BALANCE = {1, 0.4902, 0.0392, 1},            -- Druid
-    FERAL = {1, 0.4902, 0.0392, 1},              -- Druid
-    GUARDIAN = {1, 0.4902, 0.0392, 1},           -- Druid
-    RESTORATION_DRUID = {1, 0.4902, 0.0392, 1},  -- Druid
+    DRUID = { 1, 0.4902, 0.0392, 1 },                  -- #FF7D0A
+    BALANCE = { 1, 0.4902, 0.0392, 1 },                -- Druid
+    FERAL = { 1, 0.4902, 0.0392, 1 },                  -- Druid
+    GUARDIAN = { 1, 0.4902, 0.0392, 1 },               -- Druid
+    RESTORATION_DRUID = { 1, 0.4902, 0.0392, 1 },      -- Druid
 
-    DEMONHUNTER = {0.6392, 0.2078, 0.9333, 1},   -- #A330C9
-    HAVOC = {0.6392, 0.2078, 0.9333, 1},         -- Demon Hunter
-    VENGEANCE = {0.6392, 0.2078, 0.9333, 1},     -- Demon Hunter
+    DEMONHUNTER = { 0.6392, 0.2078, 0.9333, 1 },       -- #A330C9
+    HAVOC = { 0.6392, 0.2078, 0.9333, 1 },             -- Demon Hunter
+    VENGEANCE = { 0.6392, 0.2078, 0.9333, 1 },         -- Demon Hunter
 
-    EVOKER = {0.2, 0.58, 0.5, 1},   -- #33937F
-    AUGMENTATION = {0.6392, 0.2078, 0.9333, 1},     -- Evoker
-    DEVASTATION = {0.6392, 0.2078, 0.9333, 1},         -- Evoker
-    PRESERVATION = {0.6392, 0.2078, 0.9333, 1},     -- Evoker
+    EVOKER = { 0.2, 0.58, 0.5, 1 },                    -- #33937F
+    AUGMENTATION = { 0.6392, 0.2078, 0.9333, 1 },      -- Evoker
+    DEVASTATION = { 0.6392, 0.2078, 0.9333, 1 },       -- Evoker
+    PRESERVATION = { 0.6392, 0.2078, 0.9333, 1 },      -- Evoker
 }
 
 ---@class GGUI.ClassIconConstructorOptions
@@ -3141,22 +3212,23 @@ function GGUI.ClassIcon:new(options)
     self.icon = CreateFrame("Button", nil, options.parent, "GameMenuButtonTemplate")
     GGUI.Icon.super.new(self, self.icon)
     self.icon:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
-	self.icon:SetSize(options.sizeX, options.sizeY)
+    self.icon:SetSize(options.sizeX, options.sizeY)
 
     if options.showBorder then
         local borderSize = options.borderSize or 10
         self.borderFrame = CreateFrame("Frame", nil, options.parent, "BackdropTemplate")
         self.borderFrame:SetSize(options.sizeX + borderSize, options.sizeY + borderSize)
         self.borderFrame:SetPoint("CENTER", self.icon, "CENTER")
-        self.borderFrame:SetBackdrop{
+        self.borderFrame:SetBackdrop {
             edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
             edgeSize = 20,
         }
-        self.borderFrame:SetFrameLevel(self.icon:GetFrameLevel()+10)
+        self.borderFrame:SetFrameLevel(self.icon:GetFrameLevel() + 10)
         if self.class then
             local initialColor = GGUI.CONST.CLASS_COLORS_RGBA[self.class]
             if initialColor then
-                self.borderFrame:SetBackdropBorderColor(initialColor[1], initialColor[2], initialColor[3], initialColor[4])
+                self.borderFrame:SetBackdropBorderColor(initialColor[1], initialColor[2], initialColor[3],
+                    initialColor[4])
             end
         end
     end
@@ -3177,7 +3249,7 @@ function GGUI.ClassIcon:new(options)
     if options.enableMouse ~= nil and options.enableMouse == false then
         self.icon:EnableMouse(false)
     else
-        self.icon:SetScript("OnClick", function ()
+        self.icon:SetScript("OnClick", function()
             if options.clickCallback then
                 options.clickCallback(self)
             end
@@ -3189,6 +3261,7 @@ function GGUI.ClassIcon:Desaturate()
     self.frame:GetNormalTexture():SetVertexColor(0.2, 0.2, 0.2)
     self.desaturate = true
 end
+
 function GGUI.ClassIcon:Saturate()
     self.frame:GetNormalTexture():SetVertexColor(1, 1, 1)
     self.desaturate = false
@@ -3244,7 +3317,7 @@ function GGUI.SpellIcon:new(options)
     self.icon = CreateFrame("Button", nil, options.parent)
     GGUI.Icon.super.new(self, self.icon)
     self.icon:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
-	self.icon:SetSize(options.sizeX, options.sizeY)
+    self.icon:SetSize(options.sizeX, options.sizeY)
 
     local texture = GetSpellTexture(self.spellID)
     if texture then
@@ -3263,7 +3336,7 @@ function GGUI.SpellIcon:new(options)
     if options.enableMouse ~= nil and options.enableMouse == false then
         self.icon:EnableMouse(false)
     else
-        self.icon:SetScript("OnClick", function ()
+        self.icon:SetScript("OnClick", function()
             if options.clickCallback then
                 options.clickCallback(self)
             end
@@ -3278,6 +3351,7 @@ function GGUI.SpellIcon:Desaturate()
     end
     self.desaturate = true
 end
+
 function GGUI.SpellIcon:Saturate()
     local texture = self.frame:GetNormalTexture()
     if texture then
@@ -3314,7 +3388,7 @@ function GGUI.BlizzardTabSystem:new(tabList)
     end
     -- show first tab in list
     for _, tab in pairs(tabList) do
-        tab.button:SetScript("OnClick", function(self) 
+        tab.button:SetScript("OnClick", function(self)
             for _, otherTab in pairs(tabList) do
                 ---@type GGUI.BlizzardTab
                 otherTab.content:Hide()
@@ -3329,7 +3403,7 @@ function GGUI.BlizzardTabSystem:new(tabList)
     if GGUI_GUTIL:Count(tabList, function(tab) return tab.initialTab end) ~= 1 then
         error("GGUI Error: BlizzardTabSystem needs exactly one tab with property initialTab = true")
     end
-    
+
     for _, tab in pairs(tabList) do
         if tab.initialTab then
             tab.content:Show()
@@ -3342,7 +3416,7 @@ function GGUI.BlizzardTabSystem:new(tabList)
 end
 
 function GGUI.BlizzardTabSystem:EnableHyperLinksForFrameAndChilds()
-    table.foreach(self.tabs, function (_, tab)
+    table.foreach(self.tabs, function(_, tab)
         GGUI:EnableHyperLinksForFrameAndChilds(tab.content)
     end)
 end
@@ -3392,13 +3466,15 @@ function GGUI.BlizzardTab:new(options)
 
     if self.top then
         self.button = CreateFrame("Button", nil, options.parent, "PanelTopTabButtonTemplate")
-        self.button:SetPoint(buttonOptions.anchorA or "BOTTOMLEFT", buttonOptions.anchorParent or options.parent, buttonOptions.anchorB or "TOPLEFT", buttonOptions.offsetX or 0, buttonOptions.offsetY or 0)
+        self.button:SetPoint(buttonOptions.anchorA or "BOTTOMLEFT", buttonOptions.anchorParent or options.parent,
+            buttonOptions.anchorB or "TOPLEFT", buttonOptions.offsetX or 0, buttonOptions.offsetY or 0)
     else
         self.button = CreateFrame("Button", nil, options.parent, "PanelTabButtonTemplate")
-        self.button:SetPoint(buttonOptions.anchorA or "TOPLEFT", buttonOptions.anchorParent or options.parent, buttonOptions.anchorB or "BOTTOMLEFT", buttonOptions.offsetX or 0, buttonOptions.offsetY or 0)
+        self.button:SetPoint(buttonOptions.anchorA or "TOPLEFT", buttonOptions.anchorParent or options.parent,
+            buttonOptions.anchorB or "BOTTOMLEFT", buttonOptions.offsetX or 0, buttonOptions.offsetY or 0)
     end
 
-	self.button:SetText(buttonOptions.label)
+    self.button:SetText(buttonOptions.label)
 
     self.content = CreateFrame("Frame", nil, options.parent)
     self.content:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
@@ -3440,7 +3516,7 @@ function GGUI.Texture:new(options)
     local textureButton = CreateFrame("Button", nil, options.parent)
     GGUI.Texture.super.new(self, textureButton)
     textureButton:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
-	textureButton:SetSize(options.sizeX, options.sizeY)
+    textureButton:SetSize(options.sizeX, options.sizeY)
     if self.atlas then
         textureButton:SetNormalAtlas(self.atlas)
     elseif self.texture then
