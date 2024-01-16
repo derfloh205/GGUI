@@ -1,5 +1,5 @@
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 15)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 16)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -1201,12 +1201,8 @@ function GGUI.Button:new(options)
     ---@type string?
     local templates = "UIPanelButtonTemplate"
 
-    -- if options.atlasTexture then
-    --     templates = nil
-    -- end
-
     if self.macro or self.secure then
-        templates = "InsecureActionButtonTemplate"
+        templates = "InsecureActionButtonTemplate, UIPanelButtonTemplate"
     end
 
     local button = CreateFrame("Button", nil, options.parent, templates)
