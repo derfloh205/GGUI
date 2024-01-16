@@ -2835,7 +2835,7 @@ end
 ---@class GGUI.CheckboxSelector.CheckboxItem
 ---@field name string
 ---@field selectionID any the key under what the status of the checkbox is saved in the selectedValues property of the selector
----@field savedVariableProperty? string
+---@field savedVariableProperty? string | number
 ---@field initialValue? boolean
 ---@field tooltip? string
 
