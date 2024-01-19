@@ -1,5 +1,5 @@
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 17)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 18)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -76,7 +76,6 @@ function GGUI:MakeFrameCloseable(frame, onCloseCallback)
         anchorB = "TOPRIGHT",
         sizeX = 25,
         sizeY = 20,
-        -- atlasTextureOptions={normalAtlas="128-RedButton-Exit", pushedAtlas="128-RedButton-Exit-Pressed"},
         clickCallback = function()
             frame:Hide()
             if onCloseCallback then
@@ -972,6 +971,247 @@ function GGUI.Dropdown:SetEnabled(enabled)
     end
 end
 
+--- GGUI.CustomDropdown
+
+---@class GGUI.CustomDropdownConstructorOptions
+---@field parent? Frame
+---@field anchorParent? Region
+---@field anchorA? FramePoint
+---@field anchorB? FramePoint
+---@field label? string
+---@field offsetX? number
+---@field offsetY? number
+---@field width? number
+---@field buttonOptions GGUI.ButtonConstructorOptions? options to partially overwrite the default widget options
+---@field selectionFrameOptions GGUI.FrameConstructorOptions? options to partially overwrite the default widget options
+---@field frameListOptions GGUI.FrameListConstructorOptions? options to partially overwrite the default widget options
+---@field labelOptions GGUI.TextConstructorOptions? options to partially overwrite the default widget options
+---@field initialData? GGUI.CustomDropdownData[]
+---@field clickCallback? fun(self:any, label:string, value:any)
+---@field initialValue? any
+---@field initialLabel? string
+
+---@class GGUI.CustomDropdownData
+---@field label string
+---@field value any
+----@field isCategory? boolean
+
+---@class GGUI.CustomDropdown : GGUI.Widget
+---@overload fun(options:GGUI.CustomDropdownConstructorOptions): GGUI.CustomDropdown
+GGUI.CustomDropdown = GGUI.Widget:extend()
+
+---@param options GGUI.CustomDropdownConstructorOptions
+function GGUI.CustomDropdown:new(options)
+    options                                    = options or {}
+    options.buttonOptions                      = options.buttonOptions or {}
+    options.buttonOptions.buttonTextureOptions = options.buttonOptions.buttonTextureOptions or {}
+    options.selectionFrameOptions              = options.selectionFrameOptions or {}
+    options.frameListOptions                   = options.frameListOptions or {}
+    options.frameListOptions.selectionOptions  = options.frameListOptions.selectionOptions or {}
+    options.labelOptions                       = options.labelOptions or {}
+    options.initialData                        = options.initialData or {}
+    options.initialValue                       = options.initialValue or ""
+    options.initialLabel                       = options.initialLabel or ""
+
+    self.selectedValue                         = nil
+
+    ---@type GGUI.ButtonConstructorOptions
+    local defaultButtonOptions                 = {
+        parent = options.parent or options.buttonOptions.parent,
+        anchorParent = options.anchorParent or options.buttonOptions.anchorParent,
+        offsetX = options.offsetX or options.buttonOptions.offsetX,
+        offsetY = options.offsetY or options.buttonOptions.offsetY,
+        anchorA = options.anchorA or options.buttonOptions.anchorA,
+        anchorB = options.anchorB or options.buttonOptions.anchorB,
+        adjustWidth = options.buttonOptions.adjustWidth or
+            options.buttonOptions.adjustWidth == nil,
+        initialStatusID = options.buttonOptions.initialStatusID,
+        clickCallback = function()
+            if not self.selectionFrame:IsVisible() then
+                self.button.button:SetButtonState("PUSHED", true)
+                self.selectionFrame:Show()
+            end
+        end,
+        scale = options.buttonOptions.scale,
+        sizeX = options.buttonOptions.sizeX or options.width or 150,
+        sizeY = options.buttonOptions.sizeY or 30,
+        cleanTemplate = true,
+        buttonTextureOptions = {
+            isAtlas = options.buttonOptions.buttonTextureOptions.isAtlas or
+                options.buttonOptions.buttonTextureOptions.isAtlas == nil,
+            normal = options.buttonOptions.buttonTextureOptions.normal or "ClickCastList-ButtonBackground",
+            highlight = options.buttonOptions.buttonTextureOptions.highlight or
+                "ClickCastList-ButtonHighlight",
+            pushed = options.buttonOptions.buttonTextureOptions.pushed or
+                "ClickCastList-ButtonHighlight",
+            disabled = options.buttonOptions.buttonTextureOptions.disabled or "ClickCastList-ButtonBackground"
+        },
+
+    }
+    self.button                                = GGUI.Button(defaultButtonOptions)
+
+    self.buttonLabel                           = GGUI.Text {
+        parent = self.button.frame, anchorParent = self.button.frame,
+    }
+
+    ---@type GGUI.TextConstructorOptions
+    local defaultLabelOptions                  = {
+        text = options.labelOptions.text or options.label or "",
+        parent = options.labelOptions.parent or defaultButtonOptions.parent,
+        anchorParent = options.labelOptions.anchorParent or self.button.frame,
+        justifyOptions = options.labelOptions.justifyOptions or { type = "H", align = "LEFT" },
+        anchorA = options.labelOptions.anchorA or "BOTTOMLEFT",
+        anchorB = options.labelOptions.anchorB or "TOPLEFT",
+        font = options.labelOptions.font,
+        offsetX = options.labelOptions.offsetX,
+        offsetY = options.labelOptions.offsetY,
+        scale = options.labelOptions.scale,
+        fixedWidth = options.labelOptions.fixedWidth,
+    }
+    self.label                                 = GGUI.Text(defaultLabelOptions)
+
+    self.selectionFrame                        = GGUI.Frame {
+        parent = options.selectionFrameOptions.parent or options.parent,
+        anchorParent = options.selectionFrameOptions.anchorParent or self.button.frame,
+        anchorA = options.selectionFrameOptions.anchorA or "TOPLEFT",
+        anchorB = options.selectionFrameOptions.anchorB or "BOTTOMLEFT",
+        offsetX = options.selectionFrameOptions.offsetX or 0,
+        offsetY = options.selectionFrameOptions.offsetY or 0,
+        closeOnClickOutside = options.selectionFrameOptions.closeOnClickOutside == nil or options.selectionFrameOptions.closeOnClickOutside,
+        backdropOptions = options.selectionFrameOptions.backdropOptions or {
+            borderOptions = {
+                edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+                edgeSize = 16,
+                insets = { left = 2, right = 2, top = 2, bottom = 2 },
+            },
+            bgFile = "Interface\\Buttons\\WHITE8X8",
+            tile = true,
+            tileSize = 32,
+            colorR = 0,
+            colorG = 0,
+            colorB = 0,
+            colorA = 1,
+        },
+        scale = options.selectionFrameOptions.scale,
+        sizeX = options.selectionFrameOptions.sizeX or self.button:GetWidth(),
+        sizeY = options.selectionFrameOptions.sizeY or 100,
+        title = options.selectionFrameOptions.title,
+    }
+
+    self.selectionFrame.frame:SetFrameStrata(options.selectionFrameOptions.frameStrata or "DIALOG")
+
+    self.selectionFrame:Hide()
+
+    self.selectionFrame:HookScript("OnHide", function()
+        self.button.button:SetButtonState("NORMAL", false)
+    end)
+
+    ---@type GGUI.FrameListConstructorOptions
+    local defaultframeListOptions = {
+        columnOptions = {
+            {
+                label = "",
+                width = self.selectionFrame:GetWidth() - 10,
+            }
+        },
+        rowConstructor =
+            function(columns, row)
+                ---@class GGUI.CustomDropdown.SelectionRow : GGUI.FrameList.Row
+                row = row
+                ---@type any
+                row.selectionValue = nil
+                row.selectionLabel = ""
+                ---@class GGUI.CustomDropdown.LabelColumn : Frame
+                local labelColumn = columns[1]
+                labelColumn.text = GGUI.Text {
+                    parent = labelColumn, anchorParent = labelColumn,
+                    justifyOptions = { type = "H", align = "LEFT" }
+                }
+            end,
+        parent = options.frameListOptions.parent or self.selectionFrame.frame,
+        anchorParent = options.frameListOptions.anchorParent or self.selectionFrame.frame,
+        anchorA = options.frameListOptions.anchorA or "TOPLEFT",
+        anchorB = options.frameListOptions.anchorB or "TOPLEFT",
+        offsetX = options.frameListOptions.offsetX or 0,
+        offsetY = options.frameListOptions.offsetY or 0,
+        showBorder = options.frameListOptions.showBorder,
+        hideScrollbar = options.frameListOptions.hideScrollbar == nil or options.frameListOptions.hideScrollbar,
+        autoAdjustHeight = options.frameListOptions.autoAdjustHeight == nil or options.frameListOptions.autoAdjustHeight,
+        autoAdjustHeightCallback = function(newHeight)
+            self.selectionFrame:SetSize(self.selectionFrame:GetWidth(), newHeight)
+        end,
+        selectionOptions = {
+            hoverRGBA = options.frameListOptions.selectionOptions.hoverRGBA or { 1, 1, 1, 0.2 },
+            noSelectionColor = options.frameListOptions.selectionOptions.noSelectionColor,
+            selectedRGBA = options.frameListOptions.selectionOptions.selectedRGBA or { 1, 1, 1, 0.5 },
+            selectionCallback =
+            ---@param row GGUI.CustomDropdown.SelectionRow
+            ---@param userInput boolean
+                function(row, userInput)
+                    self.selectionFrame:Hide()
+                    self.buttonLabel:SetText(row.selectionLabel)
+                    if options.frameListOptions.selectionOptions.selectionCallback then
+                        options.frameListOptions.selectionOptions.selectionCallback(row, userInput)
+                    end
+                end
+        },
+    }
+
+    self.selectionList            = GGUI.FrameList(defaultframeListOptions)
+
+    if options.initialData then
+        self:SetData({
+            data = options.initialData,
+            initialLabel = options.initialLabel,
+            initialValue = options.initialValue,
+        })
+    else
+        if options.initialLabel then
+            self.buttonLabel:SetText(options.initialLabel)
+        end
+
+        self.selectedValue = options.initialValue
+    end
+end
+
+function GGUI.CustomDropdown:SetLabel(label)
+    self.label:SetText(label)
+end
+
+---@class GGUI.CustomDropdownSetDataOptions
+---@field data GGUI.CustomDropdownData[]
+---@field sortFunc? fun(a: GGUI.CustomDropdown.SelectionRow, b: GGUI.CustomDropdown.SelectionRow):boolean
+---@field initialLabel? string
+---@field initialValue? any
+
+---@param options GGUI.CustomDropdownSetDataOptions
+function GGUI.CustomDropdown:SetData(options)
+    for _, customDropdownOption in ipairs(options.data) do
+        self.selectionList:Add(
+        ---@param row GGUI.CustomDropdown.SelectionRow
+            function(row)
+                local columns = row.columns
+                local labelColumn = columns[1] --[[@as GGUI.CustomDropdown.LabelColumn]]
+
+                labelColumn.text:SetText(customDropdownOption.label)
+                row.selectionValue = customDropdownOption.value
+                row.selectionLabel = customDropdownOption.label
+            end)
+    end
+
+    self.selectedValue = self.selectedValue or options.initialValue
+    if options.initialLabel then
+        self.buttonLabel:SetText(options.initialLabel)
+    end
+
+    self.selectionList:UpdateDisplay(options.sortFunc)
+end
+
+function GGUI.CustomDropdown:SetEnabled(enabled)
+    self.button:SetEnabled(enabled)
+    self.selectionFrame:Hide()
+end
+
 --- GGUI.Text
 
 ---@class GGUI.TextConstructorOptions
@@ -1008,6 +1248,7 @@ function GGUI.Text:new(options)
     options.scale = options.scale or 1
 
     local text = options.parent:CreateFontString(nil, "OVERLAY", options.font)
+    self.text = text
     GGUI.Text.super.new(self, text)
     text:SetText(options.text)
     text:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
@@ -1161,12 +1402,16 @@ end
 ---@field secure? boolean
 ---@field macroText? string
 ---@field scale? number
----@field atlasTextureOptions? GGUI.AtlasTextureOptions
+---@field buttonTextureOptions? GGUI.ButtonTextureOptions
+---@field cleanTemplate? boolean
 
----@class GGUI.AtlasTextureOptions
----@field highlightAtlas? string
----@field normalAtlas? string
----@field pushedAtlas? string
+---@class GGUI.ButtonTextureOptions
+---@field highlight? string
+---@field normal? string
+---@field pushed? string
+---@field disabled? string
+---@field isAtlas? boolean
+---@field highlightBlendmode? BlendMode
 
 ---@class GGUI.Button : GGUI.Widget
 ---@overload fun(options:GGUI.ButtonConstructorOptions): GGUI.Button
@@ -1197,26 +1442,63 @@ function GGUI.Button:new(options)
     self.macro = options.macro or false
     self.secure = options.secure or false
     self.macroText = options.macroText or ""
+    self.cleanTemplate = options.cleanTemplate or false
 
     ---@type string?
     local templates = "UIPanelButtonTemplate"
 
+    if self.cleanTemplate then
+        templates = nil
+    end
+
     if self.macro or self.secure then
-        templates = "InsecureActionButtonTemplate, UIPanelButtonTemplate"
+        if self.cleanTemplate then
+            templates = "InsecureActionButtonTemplate"
+        else
+            templates = "InsecureActionButtonTemplate, " .. templates
+        end
     end
 
     local button = CreateFrame("Button", nil, options.parent, templates)
     button:SetScale(options.scale)
 
-    if options.atlasTextureOptions then
-        if options.atlasTextureOptions.normalAtlas then
-            button:SetNormalAtlas(options.atlasTextureOptions.normalAtlas)
-        end
-        if options.atlasTextureOptions.pushedAtlas then
-            button:SetPushedAtlas(options.atlasTextureOptions.pushedAtlas)
-        end
-        if options.atlasTextureOptions.highlightAtlas then
-            button:SetHighlightAtlas(options.atlasTextureOptions.highlightAtlas, "ADD")
+    if options.buttonTextureOptions then
+        if options.buttonTextureOptions.isAtlas then
+            button:ClearNormalTexture()
+            button:ClearPushedTexture()
+            button:ClearDisabledTexture()
+            button:ClearHighlightTexture()
+            if options.buttonTextureOptions.normal then
+                button:SetNormalAtlas(options.buttonTextureOptions.normal)
+            end
+            if options.buttonTextureOptions.pushed then
+                button:SetPushedAtlas(options.buttonTextureOptions.pushed)
+            end
+            if options.buttonTextureOptions.disabled then
+                button:SetDisabledAtlas(options.buttonTextureOptions.disabled)
+            end
+            if options.buttonTextureOptions.highlight then
+                button:SetHighlightAtlas(options.buttonTextureOptions.highlight,
+                    options.buttonTextureOptions.highlightBlendmode or "ADD")
+            end
+        else
+            button:ClearNormalTexture()
+            button:ClearPushedTexture()
+            button:ClearDisabledTexture()
+            button:ClearHighlightTexture()
+            if options.buttonTextureOptions.normal then
+                button:SetNormalTexture(options.buttonTextureOptions.normal)
+            end
+            if options.buttonTextureOptions.pushed then
+                button:SetPushedTexture(options.buttonTextureOptions.pushed)
+            end
+            if options.buttonTextureOptions.disabled then
+                button:SetDisabledTexture(options.buttonTextureOptions.disabled)
+            end
+            if options.buttonTextureOptions.highlight then
+                button:SetHighlightTexture(options.buttonTextureOptions.highlight,
+                    options.buttonTextureOptions.highlightBlendmode or "ADD")
+            end
         end
     end
 
@@ -1247,6 +1529,8 @@ function GGUI.Button:new(options)
             end
         end)
     end
+
+    self.button = button
 end
 
 function GGUI.Button:SetAttribute(name, value)
@@ -1609,14 +1893,14 @@ function GGUI.ScrollFrame:new(options)
 
     local scrollFrame = CreateFrame("ScrollFrame", nil, options.parent, "UIPanelScrollFrameTemplate, BackdropTemplate")
 
-    -- scrollFrame.ScrollBar:HookScript("OnShow", function ()
-    --     if self.hideScrollbar then
-    --         scrollFrame.ScrollBar:Hide();
-    --     end
-    -- end)
-    if self.hideScrollbar then
-        scrollFrame.ScrollBar:ClearAllPoints() -- hack much
-    end
+    scrollFrame.ScrollBar:HookScript("OnShow", function()
+        if self.hideScrollbar then
+            scrollFrame.ScrollBar:Hide();
+        end
+    end) -- need to use this solution because otherwise scrolling is no longer possible
+    -- if self.hideScrollbar then
+    --     scrollFrame.ScrollBar:ClearAllPoints() -- hack much
+    -- end
     if options.showBorder then
         -- border around scrollframe
         local borderFrame = CreateFrame("Frame", nil, options.parent, "BackdropTemplate")
@@ -2119,7 +2403,7 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field parent? Frame
 ---@field rowHeight? number
 ---@field columnOptions GGUI.FrameList.ColumnOption[]
----@field rowConstructor fun(columns: Frame[]) used to construct the rows and fill the column frames with content, columns are forwarded as params (...)
+---@field rowConstructor fun(columns: Frame[], row: GGUI.FrameList.Row) used to construct the rows and fill the column frames with content, columns are forwarded as params (...)
 ---@field showBorder? boolean
 ---@field anchorParent? Frame
 ---@field anchorA? FramePoint
@@ -2127,13 +2411,15 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field offsetX? number
 ---@field offsetY? number
 ---@field sizeX? number if omitted will adjust to row width
----@field sizeY? number
+---@field sizeY? number will be ignored when autoAdjustHeight is set
 ---@field headerOffsetX? number
 ---@field scale? number
 ---@field rowScale? number
 ---@field selectionOptions? GGUI.FrameList.SelectionOptions
 ---@field rowBackdrops? GGUI.BackdropOptions[] rows will alternate backdroplist
 ---@field hideScrollbar? boolean
+---@field autoAdjustHeight? boolean
+---@field autoAdjustHeightCallback? fun(newHeight: number)
 
 ---@class GGUI.FrameList.SelectionOptions
 ---@field noSelectionColor boolean?
@@ -2162,6 +2448,8 @@ function GGUI.FrameList:new(options)
     options.headerOffsetX = options.headerOffsetX or 5
     options.scale = options.scale or 1
     options.rowScale = options.rowScale or 1
+    self.autoAdjustHeight = options.autoAdjustHeight or false
+    self.autoAdjustHeightCallback = options.autoAdjustHeightCallback
     self.rowBackdrops = options.rowBackdrops
     self.rowScale = options.rowScale
     self.rowHeight = options.rowHeight
@@ -2262,7 +2550,7 @@ GGUI.FrameList.Row = GGUI.Widget:extend()
 
 ---@param rowFrame Frame
 ---@param columns Frame[]
----@param rowConstructor fun(columns: Frame[])
+---@param rowConstructor fun(columns: Frame[], row: GGUI.FrameList.Row)
 ---@param frameList GGUI.FrameList
 function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     GGUI.FrameList.Row.super.new(self, rowFrame)
@@ -2331,7 +2619,7 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
 
         onEnterSelectableRow =
             function()
-                if self ~= frameList.selectedRow or frameList.selectionOptions.noSelectionColor and frameList.selectionEnabled then
+                if self ~= frameList.selectedRow or frameList.selectionOptions.noSelectionColor then
                     rowFrame:SetBackdropColor(frameList.selectionOptions.hoverRGBA[1],
                         frameList.selectionOptions.hoverRGBA[2], frameList.selectionOptions.hoverRGBA[3],
                         frameList.selectionOptions.hoverRGBA[4])
@@ -2363,7 +2651,7 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
             onLeaveSelectableRow()
         end
     end)
-    rowConstructor(self.columns)
+    rowConstructor(self.columns, self)
     self:Hide()
 end
 
@@ -2545,6 +2833,18 @@ function GGUI.FrameList:UpdateDisplay(sortFunc)
                 borderOptions.colorB or 1, borderOptions.colorA or 1)
         end
         lastRow = row
+    end
+
+    if self.autoAdjustHeight then
+        -- adjust framelist height depending on activeRow Count and call callback if existing
+        local headerOffset = 10
+        local newHeight = (#self.activeRows * self.rowHeight) + headerOffset
+
+        self.frame:SetSize(self.frame:GetWidth(), newHeight)
+
+        if self.autoAdjustHeightCallback then
+            self.autoAdjustHeightCallback(newHeight)
+        end
     end
 end
 
