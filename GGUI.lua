@@ -1,5 +1,5 @@
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 18)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 19)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -1976,6 +1976,7 @@ end
 ---@field onTextChangedCallback? function
 ---@field onEnterCallback? function Default: Clear Focus
 ---@field onEscapeCallback? function Default: Clear Focus
+---@field onTabPressedCallback? fun(input: GGUI.TextInput)
 
 ---@class GGUI.TextInput : GGUI.Widget
 ---@overload fun(options:GGUI.TextInputConstructorOptions): GGUI.TextInput
@@ -1995,6 +1996,7 @@ function GGUI.TextInput:new(options)
     self.onTextChangedCallback = options.onTextChangedCallback
     self.onEnterCallback = options.onEnterCallback
     self.onEscapeCallback = options.onEscapeCallback
+    self.onTabPressedCallback = options.onTabPressedCallback
 
     local textInput = CreateFrame("EditBox", nil, options.parent, "InputBoxTemplate")
     GGUI.TextInput.super.new(self, textInput)
@@ -2021,6 +2023,12 @@ function GGUI.TextInput:new(options)
     textInput:SetScript("OnTextChanged", function(_, userInput)
         if self.onTextChangedCallback then
             self.onTextChangedCallback(self, self:GetText(), userInput)
+        end
+    end)
+
+    textInput:SetScript("OnTabPressed", function()
+        if self.onTabPressedCallback then
+            self.onTabPressedCallback(self)
         end
     end)
 end
@@ -2230,6 +2238,7 @@ end
 ---@field font? string
 ---@field onNumberValidCallback? fun(input:GGUI.NumericInput)
 ---@field onValidationChangedCallback? fun(valid:boolean)
+---@field onTabPressedCallback? fun(input:GGUI.NumericInput)
 ---@field incrementOneButtons? boolean
 ---@field incrementFiveButtons? boolean
 ---@field buttonsScale? number
@@ -2262,6 +2271,7 @@ function GGUI.NumericInput:new(options)
     options.borderWidth = options.borderWidth or 25
     self.onNumberValidCallback = options.onNumberValidCallback
     self.onValidationChangedCallback = options.onValidationChangedCallback
+    self.onTabPressedCallback = options.onTabPressedCallback
     self.allowDecimals = options.allowDecimals
     self.autoFocus = options.autoFocus
     self.minValue = options.minValue
@@ -2298,6 +2308,11 @@ function GGUI.NumericInput:new(options)
                 end
             end
         end,
+        onTabPressedCallback = function()
+            if self.onTabPressedCallback then
+                self.onTabPressedCallback(self)
+            end
+        end
     })
 
     if options.incrementOneButtons then
@@ -2655,6 +2670,16 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     end)
     rowConstructor(self.columns, self)
     self:Hide()
+end
+
+---@return number? index nil if row is not active
+function GGUI.FrameList.Row:GetActiveRowIndex()
+    for index, activeRow in ipairs(self.frameList.activeRows) do
+        if self == activeRow then
+            return index
+        end
+    end
+    return nil
 end
 
 ---@param index number
