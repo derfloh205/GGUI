@@ -1050,12 +1050,14 @@ function GGUI.CustomDropdown:new(options)
     }
     self.button                                = GGUI.Button(defaultButtonOptions)
 
-    self.buttonLabel                           = GGUI.Text {
+    GGUI.CustomDropdown.super.new(self.button)
+
+    self.buttonLabel          = GGUI.Text {
         parent = self.button.frame, anchorParent = self.button.frame,
     }
 
     ---@type GGUI.TextConstructorOptions
-    local defaultLabelOptions                  = {
+    local defaultLabelOptions = {
         text = options.labelOptions.text or options.label or "",
         parent = options.labelOptions.parent or defaultButtonOptions.parent,
         anchorParent = options.labelOptions.anchorParent or self.button.frame,
@@ -1068,9 +1070,9 @@ function GGUI.CustomDropdown:new(options)
         scale = options.labelOptions.scale,
         fixedWidth = options.labelOptions.fixedWidth,
     }
-    self.label                                 = GGUI.Text(defaultLabelOptions)
+    self.label                = GGUI.Text(defaultLabelOptions)
 
-    self.selectionFrame                        = GGUI.Frame {
+    self.selectionFrame       = GGUI.Frame {
         parent = options.selectionFrameOptions.parent or options.parent,
         anchorParent = options.selectionFrameOptions.anchorParent or self.button.frame,
         anchorA = options.selectionFrameOptions.anchorA or "TOPLEFT",
