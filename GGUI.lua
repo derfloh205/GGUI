@@ -1405,7 +1405,13 @@ end
 ---@field macroText? string
 ---@field scale? number
 ---@field buttonTextureOptions? GGUI.ButtonTextureOptions
+---@field fontOptions? GGUI.FontOptions
 ---@field cleanTemplate? boolean
+
+---@class GGUI.FontOptions
+---@field fontFile? string
+---@field height? number
+---@field flags? "MONOCHROME" | "OUTLINE" | "THICK"
 
 ---@class GGUI.ButtonTextureOptions
 ---@field highlight? string
@@ -1501,6 +1507,14 @@ function GGUI.Button:new(options)
                 button:SetHighlightTexture(options.buttonTextureOptions.highlight,
                     options.buttonTextureOptions.highlightBlendmode or "ADD")
             end
+        end
+    end
+
+    if options.fontOptions then
+        local fontString = button:GetFontString()
+        if fontString then
+            fontString:SetFont(options.fontOptions.fontFile or nil, options.fontOptions.height or 12,
+                options.fontOptions.flags or "")
         end
     end
 
