@@ -986,10 +986,20 @@ end
 ---@field selectionFrameOptions GGUI.FrameConstructorOptions? options to partially overwrite the default widget options
 ---@field frameListOptions GGUI.FrameListConstructorOptions? options to partially overwrite the default widget options
 ---@field labelOptions GGUI.TextConstructorOptions? options to partially overwrite the default widget options
+---@field arrowOptions GGUI.CustomDropdown.ArrowOptions?
 ---@field initialData? GGUI.CustomDropdownData[]
----@field clickCallback? fun(self:any, label:string, value:any)
+---@field clickCallback? fun(self:GGUI.CustomDropdown, label:string, value:any)
 ---@field initialValue? any
 ---@field initialLabel? string
+
+---@class GGUI.CustomDropdown.ArrowOptions
+---@field isAtlas? boolean
+---@field normal? string
+---@field pushed? string
+---@field sizeX? number
+---@field sizeY? number
+---@field offsetX? number
+---@field offsetY? number
 
 ---@class GGUI.CustomDropdownData
 ---@field label string
@@ -1008,12 +1018,14 @@ function GGUI.CustomDropdown:new(options)
     options.selectionFrameOptions              = options.selectionFrameOptions or {}
     options.frameListOptions                   = options.frameListOptions or {}
     options.frameListOptions.selectionOptions  = options.frameListOptions.selectionOptions or {}
+    options.arrowOptions                       = options.arrowOptions or {}
     options.labelOptions                       = options.labelOptions or {}
     options.initialData                        = options.initialData or {}
     options.initialValue                       = options.initialValue or ""
     options.initialLabel                       = options.initialLabel or ""
 
     self.selectedValue                         = nil
+    self.clickCallback                         = options.clickCallback
 
     ---@type GGUI.ButtonConstructorOptions
     local defaultButtonOptions                 = {
@@ -1030,12 +1042,12 @@ function GGUI.CustomDropdown:new(options)
             if not self.selectionFrame:IsVisible() then
                 self.button.button:SetButtonState("PUSHED", true)
                 self.selectionFrame:Show()
+                self.arrow:SetPushed(true)
             end
         end,
         scale = options.buttonOptions.scale,
         sizeX = options.buttonOptions.sizeX or options.width or 150,
         sizeY = options.buttonOptions.sizeY or 30,
-        cleanTemplate = true,
         buttonTextureOptions = {
             isAtlas = options.buttonOptions.buttonTextureOptions.isAtlas or
                 options.buttonOptions.buttonTextureOptions.isAtlas == nil,
@@ -1046,15 +1058,46 @@ function GGUI.CustomDropdown:new(options)
                 "ClickCastList-ButtonHighlight",
             disabled = options.buttonOptions.buttonTextureOptions.disabled or "ClickCastList-ButtonBackground"
         },
-
+        fontOptions = options.buttonOptions.fontOptions
     }
     self.button                                = GGUI.Button(defaultButtonOptions)
+    self.button.button:GetFontString():SetJustifyH("LEFT")
+    self.button.button:GetFontString():SetWidth(self.button.button:GetWidth() - 10)
+    GGUI.CustomDropdown.super.new(self, self.button)
 
-    GGUI.CustomDropdown.super.new(self.button)
-
-    self.buttonLabel          = GGUI.Text {
-        parent = self.button.frame, anchorParent = self.button.frame,
+    ---@class GGUI.CustomDropdown.ArrowTexture : GGUI.Texture
+    self.arrow = GGUI.Texture {
+        parent = self.button.button:GetParent(), anchorParent = self.button.button,
+        anchorA = "RIGHT", anchorB = "RIGHT", sizeX = options.arrowOptions.sizeX or 25,
+        sizeY = options.arrowOptions.sizeY or 25,
+        offsetY = options.arrowOptions.offsetY or -2,
+        offsetX = options.arrowOptions.offsetX or -3,
     }
+
+    self.arrow:SetFrameLevel(self.button.button:GetFrameLevel() + 10)
+
+
+    self.arrow.isAtlas = (options.arrowOptions.isAtlas ~= nil and options.arrowOptions.isAtlas) or
+        options.arrowOptions.isAtlas == nil
+
+    self.arrow.SetPushed = function(self, pushed)
+        if pushed then
+            if self.isAtlas then
+                self:SetAtlas(options.arrowOptions.pushed or "common-dropdown-a-button-pressed")
+            else
+                self:SetTexture(options.arrowOptions.pushed)
+            end
+        else
+            if self.isAtlas then
+                self:SetAtlas(options.arrowOptions.normal or "common-dropdown-a-button-open")
+            else
+                self:SetTexture(options.arrowOptions.normal)
+            end
+        end
+    end
+
+    self.arrow:SetPushed(false)
+
 
     ---@type GGUI.TextConstructorOptions
     local defaultLabelOptions = {
@@ -1074,7 +1117,7 @@ function GGUI.CustomDropdown:new(options)
 
     self.selectionFrame       = GGUI.Frame {
         parent = options.selectionFrameOptions.parent or options.parent,
-        anchorParent = options.selectionFrameOptions.anchorParent or self.button.frame,
+        anchorParent = options.selectionFrameOptions.anchorParent or self.button.button,
         anchorA = options.selectionFrameOptions.anchorA or "TOPLEFT",
         anchorB = options.selectionFrameOptions.anchorB or "BOTTOMLEFT",
         offsetX = options.selectionFrameOptions.offsetX or 0,
@@ -1095,7 +1138,7 @@ function GGUI.CustomDropdown:new(options)
             colorA = 1,
         },
         scale = options.selectionFrameOptions.scale,
-        sizeX = options.selectionFrameOptions.sizeX or self.button:GetWidth(),
+        sizeX = options.selectionFrameOptions.sizeX or self.button.button:GetWidth(),
         sizeY = options.selectionFrameOptions.sizeY or 100,
         title = options.selectionFrameOptions.title,
     }
@@ -1106,6 +1149,7 @@ function GGUI.CustomDropdown:new(options)
 
     self.selectionFrame:HookScript("OnHide", function()
         self.button.button:SetButtonState("NORMAL", false)
+        self.arrow:SetPushed(false)
     end)
 
     ---@type GGUI.FrameListConstructorOptions
@@ -1151,9 +1195,13 @@ function GGUI.CustomDropdown:new(options)
             ---@param userInput boolean
                 function(row, userInput)
                     self.selectionFrame:Hide()
-                    self.buttonLabel:SetText(row.selectionLabel)
+                    self.button:SetText(row.selectionLabel)
+                    self.selectedValue = row.selectionValue
                     if options.frameListOptions.selectionOptions.selectionCallback then
                         options.frameListOptions.selectionOptions.selectionCallback(row, userInput)
+                    end
+                    if self.clickCallback then
+                        self.clickCallback(self, row.selectionLabel, row.selectionValue)
                     end
                 end
         },
@@ -1169,7 +1217,7 @@ function GGUI.CustomDropdown:new(options)
         })
     else
         if options.initialLabel then
-            self.buttonLabel:SetText(options.initialLabel)
+            self.button:SetText(options.initialLabel)
         end
 
         self.selectedValue = options.initialValue
@@ -1203,7 +1251,7 @@ function GGUI.CustomDropdown:SetData(options)
 
     self.selectedValue = self.selectedValue or options.initialValue
     if options.initialLabel then
-        self.buttonLabel:SetText(options.initialLabel)
+        self.button:SetText(options.initialLabel)
     end
 
     self.selectionList:UpdateDisplay(options.sortFunc)
@@ -1228,6 +1276,7 @@ end
 ---@field scale? number
 ---@field justifyOptions? GGUI.JustifyOptions
 ---@field fixedWidth? number
+---@field fontOptions? GGUI.FontOptions
 
 ---@class GGUI.JustifyOptions
 ---@field type "H" | "V" | "HV"
@@ -1255,6 +1304,11 @@ function GGUI.Text:new(options)
     text:SetText(options.text)
     text:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
     text:SetScale(options.scale)
+
+    if options.fontOptions then
+        text:SetFont(options.fontOptions.fontFile or nil, options.fontOptions.height or 20,
+            options.fontOptions.flags or "")
+    end
 
     if options.wrap then
         text:SetWordWrap(true)
@@ -1468,6 +1522,7 @@ function GGUI.Button:new(options)
     end
 
     local button = CreateFrame("Button", nil, options.parent, templates)
+    GGUI.Button.super.new(self, button)
     button:SetScale(options.scale)
 
     if options.buttonTextureOptions then
@@ -1525,7 +1580,6 @@ function GGUI.Button:new(options)
         button:RegisterForClicks("AnyUp", "AnyDown")
     end
 
-    GGUI.Button.super.new(self, button)
     button:SetText(options.label)
     if options.adjustWidth then
         button:SetSize(button:GetTextWidth() + options.sizeX, options.sizeY)
@@ -1567,7 +1621,8 @@ end
 ---@param width? number
 ---@param adjustWidth? boolean
 function GGUI.Button:SetText(text, width, adjustWidth)
-    self.frame:SetText(text)
+    local fontString = self.button:GetFontString()
+    fontString:SetText(text)
     if width then
         if adjustWidth then
             self.frame:SetSize(self.frame:GetTextWidth() + width, self.originalY)
@@ -3879,10 +3934,12 @@ end
 
 function GGUI.Texture:SetAtlas(atlas)
     self.atlas = atlas
+    self.frame:ClearNormalTexture()
     self.frame:SetNormalAtlas(self.atlas)
 end
 
 function GGUI.Texture:SetTexture(texture)
     self.texture = texture
+    self.frame:ClearNormalTexture()
     self.frame:SetNormalTexture(self.texture)
 end
