@@ -3904,6 +3904,7 @@ end
 ---@field anchorA? FramePoint
 ---@field anchorB? FramePoint
 ---@field anchorParent? Region
+---@field tooltip? string
 
 ---@class GGUI.Texture : GGUI.Widget
 ---@overload fun(options:GGUI.TextureConstructorOptions): GGUI.Texture
@@ -3929,7 +3930,18 @@ function GGUI.Texture:new(options)
         textureButton:SetNormalTexture(self.texture)
     end
 
-    textureButton:EnableMouse(false)
+    if options.tooltip then
+        textureButton:SetScript("OnEnter", function()
+            GameTooltip:SetOwner(textureButton, "ANCHOR_CURSOR");
+            GameTooltip:SetText(options.tooltip)
+            GameTooltip:Show();
+        end)
+        textureButton:SetScript("OnLeave", function()
+            GameTooltip:Hide();
+        end)
+    else
+        textureButton:EnableMouse(false)
+    end
 end
 
 function GGUI.Texture:SetAtlas(atlas)
@@ -3942,4 +3954,12 @@ function GGUI.Texture:SetTexture(texture)
     self.texture = texture
     self.frame:ClearNormalTexture()
     self.frame:SetNormalTexture(self.texture)
+end
+
+function GGUI.Texture:SetDesatured(desatured)
+    self.frame:GetNormalTexture():SetDesaturated(desatured)
+end
+
+function GGUI.Texture:SetAlpha(alpha)
+    self.frame:SetAlpha(alpha)
 end
