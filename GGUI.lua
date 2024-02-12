@@ -1,5 +1,5 @@
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 19)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 20)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -1844,8 +1844,8 @@ end
 ---@field minValue? number
 ---@field maxValue? number
 ---@field initialValue? number
----@field lowText? string
----@field highText? string
+---@field step? number
+---@field globalName? string
 ---@field onValueChangedCallback? function
 
 ---@class GGUI.Slider : GGUI.Widget
@@ -1865,26 +1865,31 @@ function GGUI.Slider:new(options)
     options.minValue = options.minValue or 0
     options.maxValue = options.maxValue or 1
     options.initialValue = options.initialValue or 0
-    options.lowText = options.lowText or ""
-    options.highText = options.highText or ""
+    options.globalName = options.globalName or ("GGUISlider" .. (tostring(GetTimePreciseSec() * 1000)))
+    self.onValueChangedCallback = options.onValueChangedCallback
 
-    local newSlider = CreateFrame("Slider", nil, options.parent, "OptionsSliderTemplate")
+    local newSlider = CreateFrame("Slider", options.globalName, options.parent, "MinimalSliderWithSteppersTemplate ")
     GGUI.Slider.super.new(self, newSlider)
     newSlider:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
     newSlider:SetSize(options.sizeX, options.sizeY)
-    newSlider:SetOrientation(options.orientation)
-    newSlider:SetMinMaxValues(options.minValue, options.maxValue)
-    newSlider:SetValue(options.initialValue)
-    _G[newSlider:GetName() .. 'Low']:SetText(options.lowText)   -- Sets the left-side slider text (default is "Low").
-    _G[newSlider:GetName() .. 'High']:SetText(options.highText) -- Sets the right-side slider text (default is "High").
-    _G[newSlider:GetName() .. 'Text']:SetText(options.label)    -- Sets the "title" text (top-centre of slider).
 
-    newSlider:SetScript("OnValueChanged",
+    newSlider:RegisterCallback("OnValueChanged",
         function(...)
             if self.onValueChangedCallback then
                 self.onValueChangedCallback(...)
             end
         end)
+
+    newSlider.LeftText:SetText(GUTIL:ColorizeText(options.label, GUTIL.COLORS.WHITE))
+    newSlider.LeftText:Show()
+
+    local formatters = {}
+    local right = newSlider.Label.Right
+    formatters[right] = CreateMinimalSliderFormatter(right,
+        function(value) return GUTIL:ColorizeText(value, GUTIL.COLORS.WHITE) end);
+
+    newSlider:Init(options.initialValue, options.minValue, options.maxValue,
+        options.step and ((options.maxValue / options.step) - 1) or (options.maxValue - 1), formatters)
 end
 
 --- GGUI.HelpIcon
@@ -3852,6 +3857,7 @@ end
 ---@field anchorParent? Region
 ---@field initialTab? boolean
 ---@field top? boolean
+---@field backdropOptions? GGUI.BackdropOptions
 
 ---@class GGUI.BlizzardTab : GGUI.Widget
 ---@overload fun(options:GGUI.BlizzardTabConstructorOptions): GGUI.BlizzardTab
@@ -3882,9 +3888,33 @@ function GGUI.BlizzardTab:new(options)
 
     self.button:SetText(buttonOptions.label)
 
-    self.content = CreateFrame("Frame", nil, options.parent)
+    self.content = CreateFrame("Frame", nil, options.parent, "BackdropTemplate")
     self.content:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
     self.content:SetSize(options.sizeX, options.sizeY)
+
+    if options.backdropOptions then
+        local borderOptions = options.backdropOptions.borderOptions or {}
+        self.content:SetBackdrop({
+            bgFile = options.backdropOptions.bgFile,
+            edgeFile = borderOptions.edgeFile,
+            edgeSize = borderOptions.edgeSize,
+            insets = borderOptions.insets,
+        })
+
+        self.content:SetBackdropColor(
+            options.backdropOptions.colorR or 1,
+            options.backdropOptions.colorG or 1,
+            options.backdropOptions.colorB or 1,
+            options.backdropOptions.colorA or 1
+        )
+
+        self.content:SetBackdropBorderColor(
+            borderOptions.colorR or 1,
+            borderOptions.colorG or 1,
+            borderOptions.colorB or 1,
+            borderOptions.colorA or 1
+        )
+    end
 end
 
 function GGUI.BlizzardTab:EnableHyperLinksForFrameAndChilds()
