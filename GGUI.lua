@@ -1,5 +1,5 @@
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 20)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 21)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -1774,6 +1774,7 @@ GGUI.Checkbox = GGUI.Widget:extend()
 
 ---@class GGUI.CheckboxConstructorOptions
 ---@field label? string
+---@field labelOptions? GGUI.TextConstructorOptions
 ---@field tooltip? string
 ---@field initialValue? boolean
 ---@field clickCallback? fun(checkbox:GGUI.Checkbox, checked:boolean)
@@ -1804,7 +1805,26 @@ function GGUI.Checkbox:new(options)
     self.frame = self.frame
     checkBox:SetHitRectInsets(0, 0, 0, 0); -- see https://wowpedia.fandom.com/wiki/API_Frame_SetHitRectInsets
     checkBox:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
-    checkBox.Text:SetText(options.label)
+    if not options.labelOptions then
+        checkBox.Text:SetText(options.label)
+    else
+        ---@type GGUI.TextConstructorOptions
+        local labelOptions = {
+            text = options.labelOptions.text or options.label or "",
+            anchorParent = options.labelOptions.anchorParent or checkBox,
+            parent = options.labelOptions.parent or options.parent,
+            anchorA = options.labelOptions.anchorA or "LEFT",
+            anchorB = options.labelOptions.anchorB or "RIGHT",
+            offsetX = options.labelOptions.offsetX or 0,
+            offsetY = options.labelOptions.offsetY or 0,
+            justifyOptions = options.labelOptions.justifyOptions or { type = "H", align = "LEFT" },
+            font = options.labelOptions.font,
+            fixedWidth = options.labelOptions.fixedWidth,
+            fontOptions = options.labelOptions.fontOptions,
+            scale = options.labelOptions.scale or 1,
+        }
+        self.labelText = GGUI.Text(labelOptions)
+    end
     checkBox.tooltip = options.tooltip
     -- there already is an existing OnClick script that plays a sound, hook it
     checkBox:SetChecked(options.initialValue)
@@ -1825,7 +1845,11 @@ end
 
 ---@param label? string
 function GGUI.Checkbox:SetLabel(label)
-    self.frame.Text:SetText(label or "")
+    if not self.labelText then
+        self.frame.Text:SetText(label or "")
+    else
+        self.labelText:SetText(label or "")
+    end
 end
 
 --- GGUI.Slider
