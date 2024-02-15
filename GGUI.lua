@@ -1,5 +1,5 @@
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 21)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 22)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -2844,7 +2844,7 @@ function GGUI.FrameList:CreateRow()
 end
 
 ---Add row data into the list
----@param fillFunc? fun(row: GGUI.FrameList.Row) function that receives a free row to add to the list
+---@param fillFunc? fun(row: GGUI.FrameList.Row, columns: Frame[]) function that receives a free row to add to the list
 function GGUI.FrameList:Add(fillFunc)
     -- get an inactive row from the list of rows, call fillFunc on it
     local freeRow = GUTIL:Find(self.rows, function(row) return not row.active end)
@@ -2854,7 +2854,7 @@ function GGUI.FrameList:Add(fillFunc)
         freeRow = self:CreateRow()
     end
     if fillFunc then
-        fillFunc(freeRow)
+        fillFunc(freeRow, freeRow.columns)
     end
     freeRow.active = true
 end
