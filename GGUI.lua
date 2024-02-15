@@ -1,5 +1,5 @@
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 22)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 24)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -2393,7 +2393,7 @@ function GGUI.NumericInput:new(options)
             if userInput then
                 local valid = GUTIL:ValidateNumberString(input, self.minValue, self.maxValue, self.allowDecimals)
                 if valid then
-                    numericInput.currentValue = input
+                    numericInput.currentValue = tonumber(input)
                     textInput:SetText(input)
                     if numericInput.onNumberValidCallback then
                         numericInput.onNumberValidCallback(numericInput)
@@ -2506,6 +2506,14 @@ end
 
 function GGUI.NumericInput:SetVisible(visible)
     self.textInput:SetVisible(visible)
+end
+
+function GGUI.NumericInput:Hide()
+    self.textInput:Hide()
+end
+
+function GGUI.NumericInput:Show()
+    self.textInput:Show()
 end
 
 --- GGUI.FrameList
@@ -2674,6 +2682,7 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     self.frameList = frameList
     ---@class GGUI.FrameList.Row.TooltipOptions?
     ---@field spellID number?
+    ---@field itemID number?
     ---@field owner Frame
     ---@field anchor TooltipAnchor
     ---@field text string?
@@ -2688,16 +2697,18 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     local function handleTooltipOnEnter()
         if not self.tooltipOptions then return end
 
+        GameTooltip:SetOwner(self.tooltipOptions.owner, self.tooltipOptions.anchor);
+
         if self.tooltipOptions.spellID then
             local _, currentSpellID = GameTooltip:GetSpell()
-            GameTooltip:SetOwner(self.tooltipOptions.owner, self.tooltipOptions.anchor);
 
             if currentSpellID ~= self.tooltipOptions.spellID then
                 -- to not set it again and hide the tooltip..
                 GameTooltip:SetSpellByID(self.tooltipOptions.spellID)
             end
+        elseif self.tooltipOptions.itemID then
+            GameTooltip:SetItemByID(self.tooltipOptions.itemID)
         elseif self.tooltipOptions.text then
-            GameTooltip:SetOwner(self.tooltipOptions.owner, self.tooltipOptions.anchor);
             GameTooltip:SetText(self.tooltipOptions.text, nil, nil, nil, nil, self.tooltipOptions.textWrap)
         end
 
@@ -2860,14 +2871,14 @@ function GGUI.FrameList:Add(fillFunc)
 end
 
 ---@param updateFunc fun(row:GGUI.FrameList.Row)
----@param filterFunc fun(row:GGUI.FrameList.Row)
+---@param filterFunc? fun(row:GGUI.FrameList.Row)
 ---@param limit? number -- optional limit of max updates
 function GGUI.FrameList:UpdateRows(updateFunc, filterFunc, limit)
     local count = 0
     for _, row in pairs(self.rows) do
         if row.active then
             count = count + 1
-            if filterFunc(row) then
+            if not filterFunc or filterFunc(row) then
                 updateFunc(row)
             end
 
