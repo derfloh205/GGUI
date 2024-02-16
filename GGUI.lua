@@ -1,5 +1,5 @@
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 24)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 25)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -2103,14 +2103,14 @@ function GGUI.TextInput:new(options)
     textInput:SetAutoFocus(options.autoFocus) -- dont automatically focus
     textInput:SetFontObject(options.font)
     textInput:SetText(options.initialValue)
-    textInput:SetScript("OnEscapePressed", function()
-        if self.oneEnterCallback then
+    textInput:SetScript("OnEnterPressed", function()
+        if self.onEnterCallback then
             self.onEnterCallback(self)
         else
             textInput:ClearFocus()
         end
     end)
-    textInput:SetScript("OnEnterPressed", function()
+    textInput:SetScript("OnEscapePressed", function()
         if self.onEscapeCallback then
             self.onEscapeCallback(self)
         else
@@ -2337,6 +2337,7 @@ end
 ---@field onNumberValidCallback? fun(input:GGUI.NumericInput)
 ---@field onValidationChangedCallback? fun(valid:boolean)
 ---@field onTabPressedCallback? fun(input:GGUI.NumericInput)
+---@field onEnterPressedCallback? fun(input:GGUI.NumericInput, value)
 ---@field incrementOneButtons? boolean
 ---@field incrementFiveButtons? boolean
 ---@field buttonsScale? number
@@ -2370,6 +2371,7 @@ function GGUI.NumericInput:new(options)
     self.onNumberValidCallback = options.onNumberValidCallback
     self.onValidationChangedCallback = options.onValidationChangedCallback
     self.onTabPressedCallback = options.onTabPressedCallback
+    self.onEnterPressedCallback = options.onEnterPressedCallback
     self.allowDecimals = options.allowDecimals
     self.autoFocus = options.autoFocus
     self.minValue = options.minValue
@@ -2389,6 +2391,16 @@ function GGUI.NumericInput:new(options)
         sizeY = options.sizeY,
         initialValue = options.initialValue,
         autoFocus = options.autoFocus,
+        onEnterCallback = function(textInput)
+            -- always userinput
+            local input = textInput:GetText()
+            local valid = GUTIL:ValidateNumberString(input, self.minValue, self.maxValue, self.allowDecimals)
+            if self.onEnterPressedCallback and valid then
+                numericInput.currentValue = tonumber(input)
+                textInput:SetText(input)
+                self.onEnterPressedCallback(self, tonumber(input))
+            end
+        end,
         onTextChangedCallback = function(textInput, input, userInput)
             if userInput then
                 local valid = GUTIL:ValidateNumberString(input, self.minValue, self.maxValue, self.allowDecimals)
