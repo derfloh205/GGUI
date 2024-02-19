@@ -2807,30 +2807,8 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     ---@type function
     local onLeaveSelectableRow = nil
 
-    local function handleTooltipOnEnter()
-        if not self.tooltipOptions then return end
+    GGUI:SetTooltipsByTooltipOptions(rowFrame, self)
 
-        GameTooltip:SetOwner(self.tooltipOptions.owner, self.tooltipOptions.anchor);
-
-        if self.tooltipOptions.spellID then
-            local _, currentSpellID = GameTooltip:GetSpell()
-
-            if currentSpellID ~= self.tooltipOptions.spellID then
-                -- to not set it again and hide the tooltip..
-                GameTooltip:SetSpellByID(self.tooltipOptions.spellID)
-            end
-        elseif self.tooltipOptions.itemID then
-            GameTooltip:SetItemByID(self.tooltipOptions.itemID)
-        elseif self.tooltipOptions.text then
-            GameTooltip:SetText(self.tooltipOptions.text, nil, nil, nil, nil, self.tooltipOptions.textWrap)
-        end
-
-        GameTooltip:Show();
-    end
-    local function handleTooltipOnLeave()
-        if not self.tooltipOptions then return end
-        GameTooltip:Hide();
-    end
     if frameList.selectionOptions then
         self.Select = function(_, userInput)
             if self ~= frameList.selectedRow or frameList.selectionOptions.noSelectionColor then
@@ -2877,15 +2855,13 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
             end
         end)
     end
-    rowFrame:SetScript("OnEnter", function()
+    rowFrame:HookScript("OnEnter", function()
         if not frameList.selectionEnabled then return end
-        handleTooltipOnEnter()
         if onEnterSelectableRow then
             onEnterSelectableRow()
         end
     end)
-    rowFrame:SetScript("OnLeave", function()
-        handleTooltipOnLeave()
+    rowFrame:HookScript("OnLeave", function()
         if onLeaveSelectableRow then
             onLeaveSelectableRow()
         end
