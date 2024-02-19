@@ -2752,6 +2752,13 @@ function GGUI.FrameList:new(options)
         local headerColumn = CreateFrame("Frame", nil, header)
         headerColumn:SetSize(columnOption.width, 25)
 
+        local columnTooltipOptions = columnOption.tooltipOptions
+
+        if columnTooltipOptions then
+            columnTooltipOptions.anchor = columnTooltipOptions.anchor or "ANCHOR_CURSOR"
+            columnTooltipOptions.owner = columnTooltipOptions.owner or headerColumn
+        end
+
         headerColumn.text = GGUI.Text({
             fixedWidth = columnOption.width,
             text = columnOption.label or "",
@@ -2759,7 +2766,7 @@ function GGUI.FrameList:new(options)
             anchorParent = headerColumn,
             justifyOptions = columnOption.justifyOptions or { type = "H", align = "LEFT" },
             fontOptions = columnOption.fontOptions,
-            tooltipOptions = columnOption.tooltipOptions,
+            tooltipOptions = columnTooltipOptions,
         })
 
         if index == 1 then
