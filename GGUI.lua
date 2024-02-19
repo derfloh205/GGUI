@@ -2602,7 +2602,7 @@ function GGUI.NumericInput:new(options)
             fontOptions = options.labelOptions.fontOptions,
             fixedWidth = options.labelOptions.fixedWidth,
             justifyOptions = options.labelOptions.justifyOptions or { type = "H", align = "RIGHT" },
-            offsetX = options.labelOptions.offsetX or -10,
+            offsetX = options.labelOptions.offsetX or -8,
             offsetY = options.labelOptions.offsetY,
             scale = options.labelOptions.scale,
             text = options.labelOptions.text or "",
