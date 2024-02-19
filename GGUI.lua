@@ -1,5 +1,5 @@
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 25)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 26)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -163,6 +163,41 @@ function GGUI:SetSpellTooltip(frame, spellID, owner, anchor)
     end
 end
 
+function GGUI:SetTooltipsByTooltipOptions(frame, optionsOwner)
+    local function handleTooltipOnEnter()
+        if not optionsOwner.tooltipOptions then return end
+
+        GameTooltip:SetOwner(optionsOwner.tooltipOptions.owner, optionsOwner.tooltipOptions.anchor);
+
+        if optionsOwner.tooltipOptions.spellID then
+            local _, currentSpellID = GameTooltip:GetSpell()
+
+            if currentSpellID ~= optionsOwner.tooltipOptions.spellID then
+                -- to not set it again and hide the tooltip..
+                GameTooltip:SetSpellByID(optionsOwner.tooltipOptions.spellID)
+            end
+        elseif optionsOwner.tooltipOptions.itemID then
+            GameTooltip:SetItemByID(optionsOwner.tooltipOptions.itemID)
+        elseif optionsOwner.tooltipOptions.text then
+            GameTooltip:SetText(optionsOwner.tooltipOptions.text, nil, nil, nil, nil,
+                optionsOwner.tooltipOptions.textWrap)
+        end
+
+        GameTooltip:Show();
+    end
+    local function handleTooltipOnLeave()
+        if not optionsOwner.tooltipOptions then return end
+        GameTooltip:Hide();
+    end
+
+    frame:HookScript("OnEnter", function()
+        handleTooltipOnEnter()
+    end)
+    frame:HookScript("OnLeave", function()
+        handleTooltipOnLeave()
+    end)
+end
+
 function GGUI:EnableHyperLinksForFrameAndChilds(frame)
     if type(frame) == "table" and frame.SetHyperlinksEnabled and not frame.enabledLinks then -- prevent inf loop by references
         frame.enabledLinks = true
@@ -291,6 +326,7 @@ end
 ---@field frameTable? table The table where your addon stores its frames for later retrieval
 ---@field frameConfigTable? table The saved variable table where your addon stores any frame config like position
 ---@field closeOnClickOutside? boolean
+---@field tooltipOptions? GGUI.TooltipOptions
 
 ---@class GGUI.BackdropOptions
 ---@field colorR? number
@@ -466,6 +502,12 @@ function GGUI.Frame:new(options)
         frame.content:SetPoint("TOP", frame, "TOP")
         frame.content:SetSize(options.sizeX, options.sizeY)
     end
+
+    self.tooltipOptions = options.tooltipOptions
+    if self.tooltipOptions then
+        GGUI:SetTooltipsByTooltipOptions(self.frame, self)
+    end
+
     self.content = frame.content
     options.frameTable[self.frameID] = self
     return frame
@@ -782,6 +824,7 @@ end
 ---@field offsetX? number
 ---@field offsetY? number
 ---@field initialQuality? number
+---@field tooltipOptions? GGUI.TooltipOptions
 
 ---@class GGUI.QualityIcon : GGUI.Widget
 ---@overload fun(options:GGUI.QualityIconConstructorOptions): GGUI.QualityIcon
@@ -804,6 +847,11 @@ function GGUI.QualityIcon:new(options)
     icon:SetTexture("Interface\\Professions\\ProfessionsQualityIcons")
     icon:SetAtlas("Professions-Icon-Quality-Tier" .. options.initialQuality)
     icon:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
+
+    self.tooltipOptions = options.tooltipOptions
+    if self.tooltipOptions then
+        GGUI:SetTooltipsByTooltipOptions(icon, self)
+    end
 end
 
 ---@param qualityID number
@@ -1112,6 +1160,8 @@ function GGUI.CustomDropdown:new(options)
         offsetY = options.labelOptions.offsetY,
         scale = options.labelOptions.scale,
         fixedWidth = options.labelOptions.fixedWidth,
+        fontOptions = options.labelOptions.fontOptions,
+        tooltipOptions = options.labelOptions.tooltipOptions,
     }
     self.label                = GGUI.Text(defaultLabelOptions)
 
@@ -1141,6 +1191,7 @@ function GGUI.CustomDropdown:new(options)
         sizeX = options.selectionFrameOptions.sizeX or self.button.button:GetWidth(),
         sizeY = options.selectionFrameOptions.sizeY or 100,
         title = options.selectionFrameOptions.title,
+        tooltipOptions = options.selectionFrameOptions.tooltipOptions
     }
 
     self.selectionFrame.frame:SetFrameStrata(options.selectionFrameOptions.frameStrata or "DIALOG")
@@ -1277,6 +1328,7 @@ end
 ---@field justifyOptions? GGUI.JustifyOptions
 ---@field fixedWidth? number
 ---@field fontOptions? GGUI.FontOptions
+---@field tooltipOptions? GGUI.TooltipOptions
 
 ---@class GGUI.JustifyOptions
 ---@field type "H" | "V" | "HV"
@@ -1327,6 +1379,11 @@ function GGUI.Text:new(options)
             text:SetJustifyH(options.justifyOptions.alignH)
             text:SetJustifyV(options.justifyOptions.alignV)
         end
+    end
+
+    self.tooltipOptions = options.tooltipOptions
+    if self.tooltipOptions then
+        GGUI:SetTooltipsByTooltipOptions(self.frame, self)
     end
 end
 
@@ -1461,6 +1518,7 @@ end
 ---@field buttonTextureOptions? GGUI.ButtonTextureOptions
 ---@field fontOptions? GGUI.FontOptions
 ---@field cleanTemplate? boolean
+---@field tooltipOptions? GGUI.TooltipOptions
 
 ---@class GGUI.FontOptions
 ---@field fontFile? string
@@ -1601,6 +1659,11 @@ function GGUI.Button:new(options)
     end
 
     self.button = button
+
+    self.tooltipOptions = options.tooltipOptions
+    if self.tooltipOptions then
+        GGUI:SetTooltipsByTooltipOptions(self.button, self)
+    end
 end
 
 function GGUI.Button:SetAttribute(name, value)
@@ -2075,6 +2138,7 @@ end
 ---@field onEnterCallback? function Default: Clear Focus
 ---@field onEscapeCallback? function Default: Clear Focus
 ---@field onTabPressedCallback? fun(input: GGUI.TextInput)
+---@field tooltipOptions? GGUI.TooltipOptions
 
 ---@class GGUI.TextInput : GGUI.Widget
 ---@overload fun(options:GGUI.TextInputConstructorOptions): GGUI.TextInput
@@ -2129,6 +2193,11 @@ function GGUI.TextInput:new(options)
             self.onTabPressedCallback(self)
         end
     end)
+
+    self.tooltipOptions = options.tooltipOptions
+    if self.tooltipOptions then
+        GGUI:SetTooltipsByTooltipOptions(textInput, self)
+    end
 end
 
 function GGUI.TextInput:GetText()
@@ -2161,6 +2230,7 @@ end
 ---@field borderAdjustWidth? number
 ---@field borderAdjustHeight? number
 ---@field borderWidth? number
+---@field tooltipOptions? GGUI.TooltipOptions
 
 ---@class GGUI.CurrencyInput : Object
 ---@overload fun(options:GGUI.CurrencyInputConstructorOptions): GGUI.CurrencyInput
@@ -2286,6 +2356,11 @@ function GGUI.CurrencyInput:new(options)
             offsetX = 5,
         })
     end
+
+    self.tooltipOptions = options.tooltipOptions
+    if self.tooltipOptions then
+        GGUI:SetTooltipsByTooltipOptions(self.textInput.frame, self)
+    end
 end
 
 function GGUI.CurrencyInput:SetValue(total)
@@ -2344,6 +2419,8 @@ end
 ---@field borderAdjustWidth? number
 ---@field borderAdjustHeight? number
 ---@field borderWidth? number
+---@field tooltipOptions? GGUI.TooltipOptions
+---@field labelOptions? GGUI.TextConstructorOptions
 
 ---@class GGUI.NumericInput : Object
 ---@overload fun(options:GGUI.NumericInputConstructorOptions): GGUI.NumericInput
@@ -2514,6 +2591,30 @@ function GGUI.NumericInput:new(options)
 
     validationBorder:Hide()
     self.validationBorder = validationBorder
+
+    if options.labelOptions then
+        ---@type GGUI.TextConstructorOptions
+        local labelOptions = {
+            parent = options.labelOptions.parent or options.parent,
+            anchorParent = options.labelOptions.anchorParent or self.textInput.frame,
+            anchorA = options.labelOptions.anchorA or "RIGHT",
+            anchorB = options.labelOptions.anchorB or "LEFT",
+            fontOptions = options.labelOptions.fontOptions,
+            fixedWidth = options.labelOptions.fixedWidth,
+            justifyOptions = options.labelOptions.justifyOptions or { type = "H", align = "RIGHT" },
+            offsetX = options.labelOptions.offsetX or -10,
+            offsetY = options.labelOptions.offsetY,
+            scale = options.labelOptions.scale,
+            text = options.labelOptions.text or "",
+            tooltipOptions = options.labelOptions.tooltipOptions,
+        }
+        self.label = GGUI.Text(labelOptions)
+    end
+
+    if options.tooltipOptions then
+        self.tooltipOptions = options.tooltipOptions
+        GGUI:SetTooltipsByTooltipOptions(self.textInput.frame, self)
+    end
 end
 
 function GGUI.NumericInput:SetVisible(visible)
@@ -2692,7 +2793,7 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     self.columns = columns
     self.active = false
     self.frameList = frameList
-    ---@class GGUI.FrameList.Row.TooltipOptions?
+    ---@class GGUI.TooltipOptions?
     ---@field spellID number?
     ---@field itemID number?
     ---@field owner Frame
