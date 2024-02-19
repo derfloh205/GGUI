@@ -2668,6 +2668,8 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field label? string
 ---@field justifyOptions? GGUI.JustifyOptions
 ---@field backdropOptions? GGUI.BackdropOptions
+---@field tooltipOptions? GGUI.TooltipOptions
+---@field fontOptions? GGUI.FontOptions
 
 function GGUI.FrameList:new(options)
     self.isGGUI = true
@@ -2756,6 +2758,8 @@ function GGUI.FrameList:new(options)
             parent = headerColumn,
             anchorParent = headerColumn,
             justifyOptions = columnOption.justifyOptions or { type = "H", align = "LEFT" },
+            fontOptions = columnOption.fontOptions,
+            tooltipOptions = columnOption.tooltipOptions,
         })
 
         if index == 1 then
@@ -3968,6 +3972,7 @@ end
 ---@field parent? Frame
 ---@field anchorParent? Region
 ---@field label string
+---@field tooltipOptions? GGUI.TooltipOptions
 
 ---@class GGUI.BlizzardTabConstructorOptions
 ---@field buttonOptions GGUI.BlizzardTabButtonOptions
@@ -4011,6 +4016,11 @@ function GGUI.BlizzardTab:new(options)
     end
 
     self.button:SetText(buttonOptions.label)
+
+    self.tooltipOptions = options.buttonOptions.tooltipOptions
+    if self.tooltipOptions then
+        GGUI:SetTooltipsByTooltipOptions(self.button, self)
+    end
 
     self.content = CreateFrame("Frame", nil, options.parent, "BackdropTemplate")
     self.content:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
@@ -4058,7 +4068,7 @@ end
 ---@field anchorA? FramePoint
 ---@field anchorB? FramePoint
 ---@field anchorParent? Region
----@field tooltip? string
+---@field tooltipOptions? GGUI.TooltipOptions
 
 ---@class GGUI.Texture : GGUI.Widget
 ---@overload fun(options:GGUI.TextureConstructorOptions): GGUI.Texture
@@ -4084,15 +4094,11 @@ function GGUI.Texture:new(options)
         textureButton:SetNormalTexture(self.texture)
     end
 
-    if options.tooltip then
-        textureButton:SetScript("OnEnter", function()
-            GameTooltip:SetOwner(textureButton, "ANCHOR_CURSOR");
-            GameTooltip:SetText(options.tooltip)
-            GameTooltip:Show();
-        end)
-        textureButton:SetScript("OnLeave", function()
-            GameTooltip:Hide();
-        end)
+    if options.tooltipOptions then
+        self.tooltipOptions = options.tooltipOptions
+        if self.tooltipOptions then
+            GGUI:SetTooltipsByTooltipOptions(textureButton, self)
+        end
     else
         textureButton:EnableMouse(false)
     end
