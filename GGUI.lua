@@ -1,5 +1,5 @@
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 26)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 27)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -2040,6 +2040,7 @@ end
 ---@field offsetBOTTOM? number
 ---@field showBorder? boolean
 ---@field hideScrollbar? boolean
+---@field disableScrolling? boolean
 
 ---@class GGUI.ScrollFrame : Object
 ---@overload fun(options:GGUI.ScrollFrameConstructorOptions): GGUI.ScrollFrame
@@ -2107,6 +2108,10 @@ function GGUI.ScrollFrame:new(options)
     scrollFrame:SetScrollChild(scrollFrame.scrollChild)
     scrollChild:SetWidth(scrollFrame:GetWidth())
     scrollChild:SetHeight(1)
+
+    if options.disableScrolling then
+        scrollFrame:EnableMouseWheel(false)
+    end
 
     self.scrollFrame = scrollFrame
     self.content = scrollChild
@@ -2656,6 +2661,7 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field hideScrollbar? boolean
 ---@field autoAdjustHeight? boolean
 ---@field autoAdjustHeightCallback? fun(newHeight: number)
+---@field disableScrolling? boolean
 
 ---@class GGUI.FrameList.SelectionOptions
 ---@field noSelectionColor boolean?
@@ -2735,7 +2741,8 @@ function GGUI.FrameList:new(options)
         offsetRIGHT = -5,
         offsetBOTTOM = 5,
         showBorder = options.showBorder,
-        hideScrollbar = options.hideScrollbar
+        hideScrollbar = options.hideScrollbar,
+        disableScrolling = options.disableScrolling,
     })
 
     ---@type GGUI.FrameList.Row
