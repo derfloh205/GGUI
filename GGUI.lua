@@ -1,5 +1,5 @@
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 27)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 28)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -3525,215 +3525,31 @@ function GGUI.CheckboxSelector:SetItems(checkboxItems)
     end
 end
 
---- GGUI ClassIcon
+--- GGUI.ClassIcon
 
----@enum GGUI.Class
-GGUI.CONST.CLASSES = {
-    WARRIOR = "WARRIOR",
-    ARMS = "ARMS",
-    FURY = "FURY",
-    PROTECTION = "PROTECTION",
-
-    PALADIN = "PALADIN",
-    HOLY = "HOLY",
-    RETRIBUTION = "RETRIBUTION",
-    PROTECTION_PALADIN = "PROTECTION_PALADIN",
-
-    HUNTER = "HUNTER",
-    BEAST_MASTERY = "BEAST_MASTERY",
-    MARKSMANSHIP = "MARKSMANSHIP",
-    SURVIVAL = "SURVIVAL",
-
-    ROGUE = "ROGUE",
-    ASSASSINATION = "ASSASSINATION",
-    OUTLAW = "OUTLAW",
-    SUBTLETY = "SUBTLETY",
-
-    PRIEST = "PRIEST",
-    DISCIPLINE = "DISCIPLINE",
-    HOLY_PRIEST = "HOLY_PRIEST",
-    SHADOW = "SHADOW",
-
-    DEATHKNIGHT = "DEATHKNIGHT",
-    BLOOD = "BLOOD",
-    FROST = "FROST",
-    UNHOLY = "UNHOLY",
-
-    SHAMAN = "SHAMAN",
-    ELEMENTAL = "ELEMENTAL",
-    ENHANCEMENT = "ENHANCEMENT",
-    RESTORATION = "RESTORATION",
-
-    MAGE = "MAGE",
-    ARCANE = "ARCANE",
-    FIRE = "FIRE",
-    FROST_MAGE = "FROST_MAGE",
-
-    WARLOCK = "WARLOCK",
-    AFFLICTION = "AFFLICTION",
-    DEMONOLOGY = "DEMONOLOGY",
-    DESTRUCTION = "DESTRUCTION",
-
-    MONK = "MONK",
-    BREWMASTER = "BREWMASTER",
-    MISTWEAVER = "MISTWEAVER",
-    WINDWALKER = "WINDWALKER",
-
-    DRUID = "DRUID",
-    BALANCE = "BALANCE",
-    FERAL = "FERAL",
-    GUARDIAN = "GUARDIAN",
-    RESTORATION_DRUID = "RESTORATION_DRUID",
-
-    DEMONHUNTER = "DEMONHUNTER",
-    HAVOC = "HAVOC",
-    VENGEANCE = "VENGEANCE",
-
-    EVOKER = "EVOKER",
-    AUGMENTATION = "AUGMENTATION",
-    DEVASTATION = "DEVASTATION",
-    PRESERVATION = "PRESERVATION",
-}
----@type table<GGUI.Class, string>
+---@type table<ClassFile, string>
 GGUI.CONST.CLASS_ICONS = {
     WARRIOR = "Interface\\Icons\\ClassIcon_Warrior",
-    ARMS = "Interface\\Icons\\Ability_Warrior_SavageBlow",
-    FURY = "Interface\\Icons\\Ability_Warrior_InnerRage",
-    PROTECTION = "Interface\\Icons\\Ability_Warrior_DefensiveStance",
-
     PALADIN = "Interface\\Icons\\ClassIcon_Paladin",
-    HOLY = "Interface\\Icons\\Spell_Holy_HolyBolt",
-    RETRIBUTION = "Interface\\Icons\\Spell_Holy_AuraOfLight",
-    PROTECTION_PALADIN = "Interface\\Icons\\Ability_Paladin_ShieldoftheTemplar",
-
     HUNTER = "Interface\\Icons\\ClassIcon_Hunter",
-    BEAST_MASTERY = "Interface\\Icons\\ability_hunter_bestialdiscipline",
-    MARKSMANSHIP = "Interface\\Icons\\ability_marksmanship",
-    SURVIVAL = "Interface\\Icons\\ability_hunter_camouflage",
-
     ROGUE = "Interface\\Icons\\ClassIcon_Rogue",
-    ASSASSINATION = "Interface\\Icons\\Ability_Rogue_Eviscerate",
-    OUTLAW = "Interface\\Icons\\Ability_Rogue_Waylay",
-    SUBTLETY = "Interface\\Icons\\Ability_Stealth",
-
     PRIEST = "Interface\\Icons\\ClassIcon_Priest",
-    DISCIPLINE = "Interface\\Icons\\Spell_Holy_PowerWordShield",
-    HOLY_PRIEST = "Interface\\Icons\\Spell_Holy_GuardianSpirit",
-    SHADOW = "Interface\\Icons\\Spell_Shadow_ShadowWordPain",
-
     DEATHKNIGHT = "Interface\\Icons\\ClassIcon_DeathKnight",
-    BLOOD = "Interface\\Icons\\Spell_DeathKnight_BloodPresence",
-    FROST = "Interface\\Icons\\Spell_DeathKnight_FrostPresence",
-    UNHOLY = "Interface\\Icons\\Spell_DeathKnight_UnholyPresence",
-
     SHAMAN = "Interface\\Icons\\ClassIcon_Shaman",
-    ELEMENTAL = "Interface\\Icons\\Spell_Nature_Lightning",
-    ENHANCEMENT = "Interface\\Icons\\Spell_Shaman_ImprovedStormstrike",
-    RESTORATION = "Interface\\Icons\\Spell_Nature_MagicImmunity",
-
     MAGE = "Interface\\Icons\\ClassIcon_Mage",
-    ARCANE = "Interface\\Icons\\Spell_Holy_MagicalSentry",
-    FIRE = "Interface\\Icons\\Spell_Fire_FireBolt02",
-    FROST_MAGE = "Interface\\Icons\\Spell_Frost_FrostBolt02",
-
     WARLOCK = "Interface\\Icons\\ClassIcon_Warlock",
-    AFFLICTION = "Interface\\Icons\\Spell_Shadow_DeathCoil",
-    DEMONOLOGY = "Interface\\Icons\\Spell_Shadow_Metamorphosis",
-    DESTRUCTION = "Interface\\Icons\\Spell_Shadow_RainOfFire",
-
     MONK = "Interface\\Icons\\ClassIcon_Monk",
-    BREWMASTER = "Interface\\Icons\\Spell_Monk_Brewmaster_Spec",
-    MISTWEAVER = "Interface\\Icons\\Ability_Monk_SoothingMists",
-    WINDWALKER = "Interface\\Icons\\spell_monk_windwalker_spec",
-
     DRUID = "Interface\\Icons\\ClassIcon_Druid",
-    BALANCE = "Interface\\Icons\\Spell_Nature_Starfall",
-    FERAL = "Interface\\Icons\\Ability_Druid_CatForm",
-    GUARDIAN = "Interface\\Icons\\Ability_Racial_BearForm",
-    RESTORATION_DRUID = "Interface\\Icons\\Spell_Nature_HealingTouch",
-
     DEMONHUNTER = "Interface\\Icons\\ClassIcon_DemonHunter",
-    HAVOC = "Interface\\Icons\\Ability_DemonHunter_SpecDPS",
-    VENGEANCE = "Interface\\Icons\\Ability_DemonHunter_SpecTank",
-
     EVOKER = "Interface\\Icons\\classicon_evoker",
-    AUGMENTATION = "Interface\\Icons\\classicon_evoker_augmentation",
-    DEVASTATION = "Interface\\Icons\\classicon_evoker_devastation",
-    PRESERVATION = "Interface\\Icons\\classicon_evoker_preservation",
-}
-
-GGUI.CONST.CLASS_COLORS_RGBA = {
-    WARRIOR = { 0.7804, 0.6118, 0.4314, 1 },           -- #C79C6E
-    ARMS = { 0.7804, 0.6118, 0.4314, 1 },              -- Warrior
-    FURY = { 0.7804, 0.6118, 0.4314, 1 },              -- Warrior
-    PROTECTION = { 0.7804, 0.6118, 0.4314, 1 },        -- Warrior
-
-    PALADIN = { 0.9569, 0.549, 0.7294, 1 },            -- #F58CBA
-    HOLY = { 0.9569, 0.549, 0.7294, 1 },               -- Paladin
-    RETRIBUTION = { 0.9569, 0.549, 0.7294, 1 },        -- Paladin
-    PROTECTION_PALADIN = { 0.9569, 0.549, 0.7294, 1 }, -- Paladin
-
-    HUNTER = { 0.6706, 0.8353, 0.4509, 1 },            -- #ABD473
-    BEAST_MASTERY = { 0.6706, 0.8353, 0.4509, 1 },     -- Hunter
-    MARKSMANSHIP = { 0.6706, 0.8353, 0.4509, 1 },      -- Hunter
-    SURVIVAL = { 0.6706, 0.8353, 0.4509, 1 },          -- Hunter
-
-    ROGUE = { 1, 0.9608, 0.4118, 1 },                  -- #FFF569
-    ASSASSINATION = { 1, 0.9608, 0.4118, 1 },          -- Rogue
-    OUTLAW = { 1, 0.9608, 0.4118, 1 },                 -- Rogue
-    SUBTLETY = { 1, 0.9608, 0.4118, 1 },               -- Rogue
-
-    PRIEST = { 1, 1, 1, 1 },                           -- #FFFFFF
-    DISCIPLINE = { 1, 1, 1, 1 },                       -- Priest
-    HOLY_PRIEST = { 1, 1, 1, 1 },                      -- Priest
-    SHADOW = { 1, 1, 1, 1 },                           -- Priest
-
-    DEATHKNIGHT = { 0.7686, 0.1216, 0.2314, 1 },       -- #C41F3B
-    BLOOD = { 0.7686, 0.1216, 0.2314, 1 },             -- Death Knight
-    FROST = { 0.7686, 0.1216, 0.2314, 1 },             -- Death Knight
-    UNHOLY = { 0.7686, 0.1216, 0.2314, 1 },            -- Death Knight
-
-    SHAMAN = { 0, 0.4392, 0.8706, 1 },                 -- #0070DE
-    ELEMENTAL = { 0, 0.4392, 0.8706, 1 },              -- Shaman
-    ENHANCEMENT = { 0, 0.4392, 0.8706, 1 },            -- Shaman
-    RESTORATION = { 0, 0.4392, 0.8706, 1 },            -- Shaman
-
-    MAGE = { 0.4157, 0.8, 0.9412, 1 },                 -- #69CCF0
-    ARCANE = { 0.4157, 0.8, 0.9412, 1 },               -- Mage
-    FIRE = { 0.4157, 0.8, 0.9412, 1 },                 -- Mage
-    FROST_MAGE = { 0.4157, 0.8, 0.9412, 1 },           -- Mage
-
-    WARLOCK = { 0.5804, 0.5098, 0.7882, 1 },           -- #9482C9
-    AFFLICTION = { 0.5804, 0.5098, 0.7882, 1 },        -- Warlock
-    DEMONOLOGY = { 0.5804, 0.5098, 0.7882, 1 },        -- Warlock
-    DESTRUCTION = { 0.5804, 0.5098, 0.7882, 1 },       -- Warlock
-
-    MONK = { 0, 1, 0.5882, 1 },                        -- #00FF96
-    BREWMASTER = { 0, 1, 0.5882, 1 },                  -- Monk
-    MISTWEAVER = { 0, 1, 0.5882, 1 },                  -- Monk
-    WINDWALKER = { 0, 1, 0.5882, 1 },                  -- Monk
-
-    DRUID = { 1, 0.4902, 0.0392, 1 },                  -- #FF7D0A
-    BALANCE = { 1, 0.4902, 0.0392, 1 },                -- Druid
-    FERAL = { 1, 0.4902, 0.0392, 1 },                  -- Druid
-    GUARDIAN = { 1, 0.4902, 0.0392, 1 },               -- Druid
-    RESTORATION_DRUID = { 1, 0.4902, 0.0392, 1 },      -- Druid
-
-    DEMONHUNTER = { 0.6392, 0.2078, 0.9333, 1 },       -- #A330C9
-    HAVOC = { 0.6392, 0.2078, 0.9333, 1 },             -- Demon Hunter
-    VENGEANCE = { 0.6392, 0.2078, 0.9333, 1 },         -- Demon Hunter
-
-    EVOKER = { 0.2, 0.58, 0.5, 1 },                    -- #33937F
-    AUGMENTATION = { 0.6392, 0.2078, 0.9333, 1 },      -- Evoker
-    DEVASTATION = { 0.6392, 0.2078, 0.9333, 1 },       -- Evoker
-    PRESERVATION = { 0.6392, 0.2078, 0.9333, 1 },      -- Evoker
 }
 
 ---@class GGUI.ClassIconConstructorOptions
 ---@field parent? Frame
 ---@field offsetX? number
 ---@field offsetY? number
----@field initialClass? GGUI.Class
+---@field initialClass? ClassFile
+---@field initialSpecID? number
 ---@field sizeX? number
 ---@field sizeY? number
 ---@field anchorA? FramePoint
@@ -3744,10 +3560,13 @@ GGUI.CONST.CLASS_COLORS_RGBA = {
 ---@field borderSize? number
 ---@field clickCallback? fun(GGUI.ClassIcon)
 ---@field desaturate? boolean
+---@field showTooltip? boolean
 
 ---@class GGUI.ClassIcon : GGUI.Widget
 ---@overload fun(options:GGUI.ClassIconConstructorOptions): GGUI.ClassIcon
 GGUI.ClassIcon = GGUI.Widget:extend()
+
+---@param options  GGUI.ClassIconConstructorOptions
 function GGUI.ClassIcon:new(options)
     options = options or {}
     options.offsetX = options.offsetX or 0
@@ -3758,9 +3577,16 @@ function GGUI.ClassIcon:new(options)
     options.anchorB = options.anchorB or "CENTER"
     self.showBorder = options.showBorder or false
     self.desaturate = options.desaturate or false
+    self.showTooltip = options.showTooltip
 
     self.class = options.initialClass
+    self.specID = options.initialSpecID
 
+    if self.specID then
+        self.class = select(6, GetSpecializationInfoByID(self.specID))
+    end
+    ---@type GGUI.TooltipOptions?
+    self.tooltipOptions = nil
 
     self.icon = CreateFrame("Button", nil, options.parent, "GameMenuButtonTemplate")
     GGUI.Icon.super.new(self, self.icon)
@@ -3778,10 +3604,10 @@ function GGUI.ClassIcon:new(options)
         }
         self.borderFrame:SetFrameLevel(self.icon:GetFrameLevel() + 10)
         if self.class then
-            local initialColor = GGUI.CONST.CLASS_COLORS_RGBA[self.class]
+            local initialColor = C_ClassColor.GetClassColor(self.class)
             if initialColor then
-                self.borderFrame:SetBackdropBorderColor(initialColor[1], initialColor[2], initialColor[3],
-                    initialColor[4])
+                self.borderFrame:SetBackdropBorderColor(initialColor.r, initialColor.g, initialColor.b,
+                    initialColor.a)
             end
         end
     end
@@ -3808,6 +3634,22 @@ function GGUI.ClassIcon:new(options)
             end
         end)
     end
+
+    if options.showTooltip then
+        GGUI:SetTooltipsByTooltipOptions(self.icon, self)
+
+        local initialText = nil
+        if self.class then
+            initialText = C_ClassColor.GetClassColor(self.class):WrapTextInColorCode(LOCALIZED_CLASS_NAMES_MALE
+                [self.class])
+        end
+
+        self.tooltipOptions = {
+            anchor = "ANCHOR_CURSOR",
+            owner = self.icon,
+            text = initialText,
+        }
+    end
 end
 
 function GGUI.ClassIcon:Desaturate()
@@ -3820,25 +3662,34 @@ function GGUI.ClassIcon:Saturate()
     self.desaturate = false
 end
 
----@param class ClassFile | number
-function GGUI.ClassIcon:SetClass(class)
+---@param classOrSpec ClassFile | number
+function GGUI.ClassIcon:SetClass(classOrSpec)
     local texture
-    if type(class) == 'string' then
-        texture = GGUI.CONST.CLASS_ICONS[class]
-        self.class = class
+    if type(classOrSpec) == 'string' then
+        texture = GGUI.CONST.CLASS_ICONS[classOrSpec]
+        self.class = classOrSpec
+        self.specID = nil
+        if self.showTooltip then
+            self.tooltipOptions.text = LOCALIZED_CLASS_NAMES_MALE[self.class]
+        end
     else
-        local specInfo = { GetSpecializationInfoByID(class) }
+        local specInfo = { GetSpecializationInfoByID(classOrSpec) }
         texture = specInfo[4]
         self.class = specInfo[6]
+        self.specID = classOrSpec
+        if self.showTooltip then
+            self.tooltipOptions.text = C_ClassColor.GetClassColor(self.class):WrapTextInColorCode(specInfo[2] .. " " ..
+                LOCALIZED_CLASS_NAMES_MALE[self.class])
+        end
     end
     if texture then
         self.icon:SetNormalTexture(texture)
     end
 
     if self.showBorder then
-        local color = GGUI.CONST.CLASS_COLORS_RGBA[self.class]
+        local color = C_ClassColor.GetClassColor(self.class)
         if color then
-            self.borderFrame:SetBackdropBorderColor(color[1], color[2], color[3], color[4])
+            self.borderFrame:SetBackdropBorderColor(color.r, color.g, color.b, color.a)
         end
     end
 end
