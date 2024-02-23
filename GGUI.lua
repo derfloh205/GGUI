@@ -1,5 +1,5 @@
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 28)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 29)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -1211,6 +1211,7 @@ function GGUI.CustomDropdown:new(options)
                 width = self.selectionFrame:GetWidth() - 10,
             }
         },
+        disableScrolling = true,
         rowConstructor =
             function(columns, row)
                 ---@class GGUI.CustomDropdown.SelectionRow : GGUI.FrameList.Row
