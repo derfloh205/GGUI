@@ -3820,10 +3820,17 @@ function GGUI.ClassIcon:Saturate()
     self.desaturate = false
 end
 
----@param class GGUI.Class
+---@param class ClassFile | number
 function GGUI.ClassIcon:SetClass(class)
-    local texture = GGUI.CONST.CLASS_ICONS[class]
-    self.class = class
+    local texture
+    if type(class) == 'string' then
+        texture = GGUI.CONST.CLASS_ICONS[class]
+        self.class = class
+    else
+        local specInfo = { GetSpecializationInfoByID(class) }
+        texture = specInfo[4]
+        self.class = specInfo[6]
+    end
     if texture then
         self.icon:SetNormalTexture(texture)
     end
