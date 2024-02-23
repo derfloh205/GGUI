@@ -1069,7 +1069,7 @@ function GGUI.CustomDropdown:new(options)
     options.arrowOptions                       = options.arrowOptions or {}
     options.labelOptions                       = options.labelOptions or {}
     options.initialData                        = options.initialData or {}
-    options.initialValue                       = options.initialValue or ""
+    options.initialValue                       = options.initialValue or nil
     options.initialLabel                       = options.initialLabel or ""
 
     self.selectedValue                         = nil
