@@ -1,5 +1,5 @@
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 30)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 31)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
