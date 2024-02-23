@@ -1,5 +1,5 @@
 ---@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 29)
+local GGUI = LibStub:NewLibrary("GGUI-2.0", 30)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -2837,7 +2837,13 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
                         frameList.selectionOptions.selectedRGBA[4])
                     if frameList.selectedRow then
                         -- revert color
-                        frameList.selectedRow.frame:SetBackdropColor(0, 0, 0, 0)
+                        if self.originalBackdropColor then
+                            frameList.selectedRow.frame:SetBackdropColor(self.originalBackdropColor.r,
+                                self.originalBackdropColor.g,
+                                self.originalBackdropColor.b, self.originalBackdropColor.a)
+                        else
+                            frameList.selectedRow.frame:SetBackdropColor(0, 0, 0, 0)
+                        end
                     end
                 end
                 frameList.selectedRow = self
@@ -2864,7 +2870,12 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
         onLeaveSelectableRow =
             function()
                 if self ~= frameList.selectedRow or frameList.selectionOptions.noSelectionColor then
-                    rowFrame:SetBackdropColor(0, 0, 0, 0)
+                    if self.originalBackdropColor then
+                        rowFrame:SetBackdropColor(self.originalBackdropColor.r, self.originalBackdropColor.g,
+                            self.originalBackdropColor.b, self.originalBackdropColor.a)
+                    else
+                        rowFrame:SetBackdropColor(0, 0, 0, 0)
+                    end
                 end
             end
         -- OnMouseDown handler - Mouse click
@@ -3075,6 +3086,14 @@ function GGUI.FrameList:UpdateDisplay(sortFunc)
                 backdropOptions.colorB or 1, backdropOptions.colorA or 1)
             row.frame:SetBackdropBorderColor(borderOptions.colorR or 1, borderOptions.colorG or 1,
                 borderOptions.colorB or 1, borderOptions.colorA or 1)
+
+            row.originalBackdropColor = {
+                r = backdropOptions.colorR,
+                g = backdropOptions.colorG,
+                b = backdropOptions
+                    .colorB,
+                a = backdropOptions.colorA
+            }
         end
         lastRow = row
     end
