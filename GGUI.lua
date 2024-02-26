@@ -3682,8 +3682,18 @@ function GGUI.ClassIcon:Saturate()
     self.desaturate = false
 end
 
----@param classOrSpec ClassFile | number
+---@param classOrSpec ClassFile | number | nil
 function GGUI.ClassIcon:SetClass(classOrSpec)
+    if not classOrSpec then
+        self.class = nil
+        self.specID = nil
+        self.tooltipOptions.text = nil
+        self.icon:ClearNormalTexture()
+        if self.showBorder then
+            self.borderFrame:SetBackdropBorderColor(1, 1, 1, 0)
+        end
+        return
+    end
     local texture
     if type(classOrSpec) == 'string' then
         texture = GGUI.CONST.CLASS_ICONS[classOrSpec]
