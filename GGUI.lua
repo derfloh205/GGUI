@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 1)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 2)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -72,6 +72,12 @@ GGUI.CONST.EMPTY_TEXTURE = "Interface\\containerframe\\bagsitemslot2x"
 ---@field offsetY number?
 
 -- GGUI UTILS
+function GGUI:DebugPrint(objectConstructorOptions, text)
+    if objectConstructorOptions.debug then
+        print(GUTIL:ColorizeText("GGUI Debug: ", GUTIL.COLORS.EPIC) .. tostring(text))
+    end
+end
+
 function GGUI:MakeFrameCloseable(frame, onCloseCallback)
     frame.closeButton = GGUI.Button({
         parent = frame,
@@ -1359,14 +1365,18 @@ function GGUI.Text:new(options)
     options.font = options.font or "GameFontHighlight"
     options.scale = options.scale or 1
 
+    GGUI:DebugPrint(options, "Debug Text " .. tostring(options.text))
+
     local text = options.parent:CreateFontString(nil, "OVERLAY", options.font)
     self.text = text
     GGUI.Text.super.new(self, text)
     text:SetText(options.text)
     if options.anchorPoints then
         for _, anchorPoint in ipairs(options.anchorPoints) do
-            text:SetPoint(anchorPoint.anchorA, anchorPoint.anchorParent, anchorPoint.anchorB, anchorPoint.offsetX,
-                anchorPoint.offsetY)
+            GGUI:DebugPrint(options, "- Set Anchor OffsetY " .. tostring(anchorPoint.offsetY))
+            self.frame:SetPoint(anchorPoint.anchorA, anchorPoint.anchorParent, anchorPoint.anchorB,
+                anchorPoint.offsetX or 0,
+                anchorPoint.offsetY or 0)
         end
     else
         text:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
@@ -1423,8 +1433,8 @@ end
 function GGUI.Text:SetAnchorPoints(anchorPoints)
     self.frame:ClearAllPoints()
     for _, anchorPoint in ipairs(anchorPoints) do
-        self.frame:SetPoint(anchorPoint.anchorA, anchorPoint.anchorParent, anchorPoint.anchorB, anchorPoint.offsetX,
-            anchorPoint.offsetY)
+        self.frame:SetPoint(anchorPoint.anchorA, anchorPoint.anchorParent, anchorPoint.anchorB, anchorPoint.offsetX or 0,
+            anchorPoint.offsetY or 0)
     end
 end
 
@@ -2757,8 +2767,9 @@ function GGUI.FrameList:new(options)
     local mainFrame = CreateFrame("Frame", nil, options.parent)
     if options.anchorPoints then
         for _, anchorPoint in ipairs(options.anchorPoints) do
-            mainFrame:SetPoint(anchorPoint.anchorA, anchorPoint.anchorParent, anchorPoint.anchorB, anchorPoint.offsetX,
-                anchorPoint.offsetY)
+            mainFrame:SetPoint(anchorPoint.anchorA, anchorPoint.anchorParent, anchorPoint.anchorB,
+                anchorPoint.offsetX or 0,
+                anchorPoint.offsetY or 0)
         end
     else
         mainFrame:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
@@ -2825,8 +2836,8 @@ end
 function GGUI.FrameList:SetAnchorPoints(anchorPoints)
     self.frame:ClearAllPoints()
     for _, anchorPoint in ipairs(anchorPoints) do
-        self.frame:SetPoint(anchorPoint.anchorA, anchorPoint.anchorParent, anchorPoint.anchorB, anchorPoint.offsetX,
-            anchorPoint.offsetY)
+        self.frame:SetPoint(anchorPoint.anchorA, anchorPoint.anchorParent, anchorPoint.anchorB, anchorPoint.offsetX or 0,
+            anchorPoint.offsetY or 0)
     end
 end
 
