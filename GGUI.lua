@@ -1,5 +1,5 @@
----@class GGUI-2.0
-local GGUI = LibStub:NewLibrary("GGUI-2.0", 31)
+---@class GGUI-2.1
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 1)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -63,6 +63,13 @@ end
 -- GGUI CONST
 GGUI.CONST = {}
 GGUI.CONST.EMPTY_TEXTURE = "Interface\\containerframe\\bagsitemslot2x"
+
+---@class GGUI.AnchorPoint
+---@field anchorParent Region?
+---@field anchorA FramePoint?
+---@field anchorB FramePoint?
+---@field offsetX number?
+---@field offsetY number?
 
 -- GGUI UTILS
 function GGUI:MakeFrameCloseable(frame, onCloseCallback)
@@ -1318,12 +1325,13 @@ end
 
 ---@class GGUI.TextConstructorOptions
 ---@field text? string
+---@field anchorPoints? GGUI.AnchorPoint[]
 ---@field parent? Frame
----@field anchorParent? Region
----@field anchorA? FramePoint
----@field anchorB? FramePoint
----@field offsetX? number
----@field offsetY? number
+---@field anchorParent? Region -- DEPRICATED: Use anchorPoints
+---@field anchorA? FramePoint -- DEPRICATED: Use anchorPoints
+---@field anchorB? FramePoint -- DEPRICATED: Use anchorPoints
+---@field offsetX? number -- DEPRICATED: Use anchorPoints
+---@field offsetY? number -- DEPRICATED: Use anchorPoints
 ---@field font? string
 ---@field scale? number
 ---@field justifyOptions? GGUI.JustifyOptions
@@ -1355,7 +1363,14 @@ function GGUI.Text:new(options)
     self.text = text
     GGUI.Text.super.new(self, text)
     text:SetText(options.text)
-    text:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
+    if options.anchorPoints then
+        for _, anchorPoint in ipairs(options.anchorPoints) do
+            text:SetPoint(anchorPoint.anchorA, anchorPoint.anchorParent, anchorPoint.anchorB, anchorPoint.offsetX,
+                anchorPoint.offsetY)
+        end
+    else
+        text:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
+    end
     text:SetScale(options.scale)
 
     if options.fontOptions then
@@ -1401,6 +1416,15 @@ function GGUI.Text:SetColor(color)
     local text = GUTIL:StripColor(self:GetText())
     if color then
         self:SetText(GUTIL:ColorizeText(text, color))
+    end
+end
+
+---@param anchorPoints GGUI.AnchorPoint[]
+function GGUI.Text:SetAnchorPoints(anchorPoints)
+    self.frame:ClearAllPoints()
+    for _, anchorPoint in ipairs(anchorPoints) do
+        self.frame:SetPoint(anchorPoint.anchorA, anchorPoint.anchorParent, anchorPoint.anchorB, anchorPoint.offsetX,
+            anchorPoint.offsetY)
     end
 end
 
@@ -2647,11 +2671,12 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field columnOptions GGUI.FrameList.ColumnOption[]
 ---@field rowConstructor fun(columns: Frame[], row: GGUI.FrameList.Row) used to construct the rows and fill the column frames with content, columns are forwarded as params (...)
 ---@field showBorder? boolean
----@field anchorParent? Frame
----@field anchorA? FramePoint
----@field anchorB? FramePoint
----@field offsetX? number
----@field offsetY? number
+---@field anchorPoints? GGUI.AnchorPoint[]
+---@field anchorParent? Frame -- DEPRICATED Use anchorPoints
+---@field anchorA? FramePoint -- DEPRICATED Use anchorPoints
+---@field anchorB? FramePoint -- DEPRICATED Use anchorPoints
+---@field offsetX? number -- DEPRICATED Use anchorPoints
+---@field offsetY? number -- DEPRICATED Use anchorPoints
 ---@field sizeX? number if omitted will adjust to row width
 ---@field sizeY? number will be ignored when autoAdjustHeight is set
 ---@field headerOffsetX? number
@@ -2730,7 +2755,14 @@ function GGUI.FrameList:new(options)
     self.rowConstructor = options.rowConstructor
 
     local mainFrame = CreateFrame("Frame", nil, options.parent)
-    mainFrame:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
+    if options.anchorPoints then
+        for _, anchorPoint in ipairs(options.anchorPoints) do
+            mainFrame:SetPoint(anchorPoint.anchorA, anchorPoint.anchorParent, anchorPoint.anchorB, anchorPoint.offsetX,
+                anchorPoint.offsetY)
+        end
+    else
+        mainFrame:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
+    end
     mainFrame:SetSize(options.sizeX or (rowWidth + 10), options.sizeY)
     mainFrame:SetScale(options.scale)
 
@@ -2787,6 +2819,15 @@ function GGUI.FrameList:new(options)
     end
 
     GGUI.FrameList.super.new(self, mainFrame)
+end
+
+---@param anchorPoints GGUI.AnchorPoint[]
+function GGUI.FrameList:SetAnchorPoints(anchorPoints)
+    self.frame:ClearAllPoints()
+    for _, anchorPoint in ipairs(anchorPoints) do
+        self.frame:SetPoint(anchorPoint.anchorA, anchorPoint.anchorParent, anchorPoint.anchorB, anchorPoint.offsetX,
+            anchorPoint.offsetY)
+    end
 end
 
 function GGUI.FrameList:SetSelectionEnabled(enabled)
