@@ -3654,8 +3654,10 @@ function GGUI.ClassIcon:new(options)
     self.class = options.initialClass
     self.specID = options.initialSpecID
 
+
     if self.specID then
         self.class = select(6, GetSpecializationInfoByID(self.specID))
+        GGUI:DebugPrint(options, "ClassIcon For Class: " .. tostring(self.class))
     end
     ---@type GGUI.TooltipOptions?
     self.tooltipOptions = nil
@@ -3682,10 +3684,17 @@ function GGUI.ClassIcon:new(options)
                     initialColor.a)
             end
         end
+
+        self.icon:HookScript("OnShow", function()
+            self.borderFrame:Show()
+        end)
+        self.icon:HookScript("OnHide", function()
+            self.borderFrame:Hide()
+        end)
     end
 
 
-    local texture = GGUI.CONST.CLASS_ICONS[options.initialClass]
+    local texture = GGUI.CONST.CLASS_ICONS[self.class]
     if texture then
         local buttonTexture = self.icon:CreateTexture(nil, "BACKGROUND")
         buttonTexture:SetAllPoints()
@@ -3711,7 +3720,12 @@ function GGUI.ClassIcon:new(options)
         GGUI:SetTooltipsByTooltipOptions(self.icon, self)
 
         local initialText = nil
-        if self.class then
+        if self.specID then
+            local specName = select(2, GetSpecializationInfoByID(self.specID))
+            initialText = C_ClassColor.GetClassColor(self.class):WrapTextInColorCode(specName ..
+                " " .. LOCALIZED_CLASS_NAMES_MALE
+                [self.class])
+        elseif self.class then
             initialText = C_ClassColor.GetClassColor(self.class):WrapTextInColorCode(LOCALIZED_CLASS_NAMES_MALE
                 [self.class])
         end
