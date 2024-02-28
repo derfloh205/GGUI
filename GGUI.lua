@@ -340,6 +340,7 @@ end
 ---@field frameConfigTable? table The saved variable table where your addon stores any frame config like position
 ---@field closeOnClickOutside? boolean
 ---@field tooltipOptions? GGUI.TooltipOptions
+---@field hide? boolean
 
 ---@class GGUI.BackdropOptions
 ---@field colorR? number
@@ -425,6 +426,10 @@ function GGUI.Frame:new(options)
     frame:SetScale(options.scale)
     frame:SetFrameStrata(options.frameStrata or "HIGH")
     frame:SetFrameLevel(numFrames)
+
+    if options.hide then
+        frame:Hide()
+    end
 
     if self.closeOnClickOutside then
         -- Check for clicks outside the scaled frame
@@ -1374,7 +1379,8 @@ function GGUI.Text:new(options)
     if options.anchorPoints then
         for _, anchorPoint in ipairs(options.anchorPoints) do
             GGUI:DebugPrint(options, "- Set Anchor OffsetY " .. tostring(anchorPoint.offsetY))
-            self.frame:SetPoint(anchorPoint.anchorA, anchorPoint.anchorParent, anchorPoint.anchorB,
+            self.frame:SetPoint(anchorPoint.anchorA or "CENTER", anchorPoint.anchorParent,
+                anchorPoint.anchorB or "CENTER",
                 anchorPoint.offsetX or 0,
                 anchorPoint.offsetY or 0)
         end
@@ -3684,13 +3690,6 @@ function GGUI.ClassIcon:new(options)
                     initialColor.a)
             end
         end
-
-        self.icon:HookScript("OnShow", function()
-            self.borderFrame:Show()
-        end)
-        self.icon:HookScript("OnHide", function()
-            self.borderFrame:Hide()
-        end)
     end
 
 
@@ -3735,6 +3734,20 @@ function GGUI.ClassIcon:new(options)
             owner = self.icon,
             text = initialText,
         }
+    end
+end
+
+function GGUI.ClassIcon:Show()
+    self.frame:Show()
+    if self.borderFrame then
+        self.borderFrame:Show()
+    end
+end
+
+function GGUI.ClassIcon:Hide()
+    self.frame:Hide()
+    if self.borderFrame then
+        self.borderFrame:Hide()
     end
 end
 
