@@ -1349,6 +1349,7 @@ end
 ---@field fixedWidth? number
 ---@field fontOptions? GGUI.FontOptions
 ---@field tooltipOptions? GGUI.TooltipOptions
+---@field hide? boolean
 
 ---@class GGUI.JustifyOptions
 ---@field type "H" | "V" | "HV"
@@ -1388,6 +1389,10 @@ function GGUI.Text:new(options)
         text:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
     end
     text:SetScale(options.scale)
+
+    if options.hide then
+        self.text:Hide()
+    end
 
     if options.fontOptions then
         text:SetFont(options.fontOptions.fontFile or nil, options.fontOptions.height or 20,
