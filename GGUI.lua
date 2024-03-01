@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 2)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 3)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -969,13 +969,6 @@ function GGUI.Dropdown:SetData(options)
         local info = UIDropDownMenu_CreateInfo()
         if level == 1 then
             for _, data in pairs(options.data) do
-                -- print("GGUI dropdown: data")
-                -- print("isCategory: " .. tostring(data.isCategory))
-                -- print("label: " .. tostring(data.label))
-                -- print("value: " .. tostring(data.value))
-                -- print("isCategory: " .. tostring(data.isCategory))
-                -- print("tooltipItemLink: " .. tostring(data.tooltipItemLink))
-                -- print("tooltipConcatText: " .. tostring(data.tooltipConcatText))
                 info.text = data.label
                 info.arg1 = data.value
                 if not data.isCategory then
@@ -3759,6 +3752,15 @@ end
 function GGUI.ClassIcon:Desaturate()
     self.frame:GetNormalTexture():SetVertexColor(0.2, 0.2, 0.2)
     self.desaturate = true
+end
+
+---@param saturation boolean
+function GGUI.ClassIcon:SetSaturation(saturation)
+    if saturation then
+        self:Saturate()
+    else
+        self:Desaturate()
+    end
 end
 
 function GGUI.ClassIcon:Saturate()
