@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 3)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 4)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -224,6 +224,42 @@ function GGUI:EnableHyperLinksForFrameAndChilds(frame)
     end
 end
 
+---@param region Region
+---@param anchorPoints GGUI.AnchorPoint[]
+function GGUI:SetPointsByAnchorPoints(region, anchorPoints)
+    region:ClearAllPoints()
+    for _, anchorPoint in ipairs(anchorPoints) do
+        GGUI:SetPointByAnchorPoint(region, anchorPoint)
+    end
+end
+
+---@param region Region
+---@param anchorPoint GGUI.AnchorPoint
+function GGUI:SetPointByAnchorPoint(region, anchorPoint)
+    region:SetPoint(anchorPoint.anchorA or "CENTER", anchorPoint.anchorParent,
+        anchorPoint.anchorB or "CENTER",
+        anchorPoint.offsetX or 0,
+        anchorPoint.offsetY or 0)
+end
+
+---@param backdropFrame BackdropTemplate
+---@param backdropOptions GGUI.BackdropOptions?
+function GGUI:SetBackdropByBackdropOptions(backdropFrame, backdropOptions)
+    if not backdropOptions then return end
+
+    if backdropOptions.backdropInfo then
+        backdropFrame:SetBackdrop(backdropOptions.backdropInfo)
+    end
+    if backdropOptions.backdropRGBA and #backdropOptions.backdropRGBA == 4 then
+        backdropFrame:SetBackdropColor(backdropOptions.backdropRGBA[1], backdropOptions.backdropRGBA[2],
+            backdropOptions.backdropRGBA[3], backdropOptions.backdropRGBA[4])
+    end
+    if backdropOptions.borderRGBA and #backdropOptions.borderRGBA == 4 then
+        backdropFrame:SetBackdropBorderColor(backdropOptions.borderRGBA[1], backdropOptions.borderRGBA[2],
+            backdropOptions.borderRGBA[3], backdropOptions.borderRGBA[4])
+    end
+end
+
 ---- GGUI Widgets
 
 --- GGUI Widget
@@ -285,6 +321,12 @@ function GGUI.Widget:SetPoint(...)
     return self.frame:SetPoint(...)
 end
 
+--- super constructor needs to be called beforehand so that self.frame is existent
+---@param anchorPoints GGUI.AnchorPoint[]
+function GGUI.Widget:SetPointsByAnchorPoints(anchorPoints)
+    GGUI:SetPointsByAnchorPoints(self.frame, anchorPoints)
+end
+
 function GGUI.Widget:Raise()
     self.frame:Raise()
 end
@@ -343,24 +385,9 @@ end
 ---@field hide? boolean
 
 ---@class GGUI.BackdropOptions
----@field colorR? number
----@field colorG? number
----@field colorB? number
----@field colorA? number
----@field bgFile? string
----@field borderOptions? GGUI.BorderOptions
----@field tile? boolean
----@field tileSize? number
-
----@class GGUI.BorderOptions
----@field colorR? number
----@field colorG? number
----@field colorB? number
----@field colorA? number
----@field edgeSize? number
----@field edgeFile? string
----@field insets? backdropInsets
----@field edgeInsets? backdropInsets
+---@field backdropInfo? backdropInfo
+---@field backdropRGBA? table<number>
+---@field borderRGBA? table<number>
 
 ---@param frameTable table the table where your addon stores your frames
 ---@param frameID string The ID string you gave the frame
@@ -1540,11 +1567,12 @@ end
 ---@class GGUI.ButtonConstructorOptions
 ---@field label? string
 ---@field parent? Frame
----@field anchorParent? Region
----@field anchorA? FramePoint
----@field anchorB? FramePoint
----@field offsetX? number
----@field offsetY? number
+---@field anchorPoints? GGUI.AnchorPoint[]
+---@field anchorParent? Region -- DEPRICATED Use anchorPoints
+---@field anchorA? FramePoint -- DEPRICATED Use anchorPoints
+---@field anchorB? FramePoint -- DEPRICATED Use anchorPoints
+---@field offsetX? number -- DEPRICATED Use anchorPoints
+---@field offsetY? number -- DEPRICATED Use anchorPoints
 ---@field sizeX? number
 ---@field sizeY? number
 ---@field adjustWidth? boolean
@@ -1684,7 +1712,11 @@ function GGUI.Button:new(options)
         button:SetSize(options.sizeX, options.sizeY)
     end
 
-    button:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
+    if options.anchorPoints then
+        self:SetPointsByAnchorPoints(options.anchorPoints)
+    else
+        button:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
+    end
 
     -- to not overwrite click script if macro button
     if not self.macro then
@@ -1806,6 +1838,7 @@ end
 ---@field anchorB? FramePoint
 ---@field parent? Frame
 ---@field anchorParent? Region
+---@field backdropOptions? GGUI.BackdropOptions
 
 ---@class GGUI.Tab : GGUI.Widget
 ---@overload fun(options:GGUI.TabConstructorOptions): GGUI.Tab
@@ -1824,9 +1857,11 @@ function GGUI.Tab:new(options)
     self.button = GGUI.Button(options.buttonOptions)
     self.canBeEnabled = options.canBeEnabled or false
 
-    self.content = CreateFrame("Frame", nil, options.parent)
+    self.content = CreateFrame("Frame", nil, options.parent, "BackdropTemplate")
     self.content:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
     self.content:SetSize(options.sizeX, options.sizeY)
+
+    GGUI:SetBackdropByBackdropOptions(self.content, options.backdropOptions)
 end
 
 function GGUI.Tab:EnableHyperLinksForFrameAndChilds()
