@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 5)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 6)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -2918,6 +2918,14 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     ---@field frame? Frame
     self.tooltipOptions = nil
 
+    self.separatorLine = rowFrame:CreateLine()
+    self.separatorLineRGBA = { 1, 1, 1, 1 }
+    self.separatorLineThickness = 2
+    self.separatorLine:SetStartPoint("BOTTOMLEFT", rowFrame)
+    self.separatorLine:SetEndPoint("BOTTOMRIGHT", rowFrame)
+
+    self.separatorLine:Hide()
+
     ---@type function
     local onEnterSelectableRow = nil
     ---@type function
@@ -2995,6 +3003,22 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     end)
     rowConstructor(self.columns, self)
     self:Hide()
+end
+
+---@param visible boolean
+---@param rgba number[]? default: white
+---@param thickness number? default: 2
+function GGUI.FrameList.Row:SetSeparatorLine(visible, rgba, thickness)
+    rgba = rgba or self.separatorLineRGBA
+    thickness = thickness or self.separatorLineThickness
+    self.separatorLine:SetColorTexture(rgba[1], rgba[2], rgba[3],
+        rgba[4])
+    self.separatorLine:SetThickness(thickness)
+    if visible then
+        self.separatorLine:Show()
+    else
+        self.separatorLine:Hide()
+    end
 end
 
 ---@return number? index nil if row is not active
