@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 4)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 5)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -180,20 +180,25 @@ function GGUI:SetTooltipsByTooltipOptions(frame, optionsOwner)
     local function handleTooltipOnEnter()
         if not optionsOwner.tooltipOptions then return end
 
-        GameTooltip:SetOwner(optionsOwner.tooltipOptions.owner, optionsOwner.tooltipOptions.anchor);
+        ---@type GGUI.TooltipOptions
+        local tooltipOptions = optionsOwner.tooltipOptions
 
-        if optionsOwner.tooltipOptions.spellID then
+        GameTooltip:SetOwner(tooltipOptions.owner, tooltipOptions.anchor);
+
+        if tooltipOptions.spellID then
             local _, currentSpellID = GameTooltip:GetSpell()
 
-            if currentSpellID ~= optionsOwner.tooltipOptions.spellID then
+            if currentSpellID ~= tooltipOptions.spellID then
                 -- to not set it again and hide the tooltip..
-                GameTooltip:SetSpellByID(optionsOwner.tooltipOptions.spellID)
+                GameTooltip:SetSpellByID(tooltipOptions.spellID)
             end
-        elseif optionsOwner.tooltipOptions.itemID then
-            GameTooltip:SetItemByID(optionsOwner.tooltipOptions.itemID)
-        elseif optionsOwner.tooltipOptions.text then
-            GameTooltip:SetText(optionsOwner.tooltipOptions.text, nil, nil, nil, nil,
-                optionsOwner.tooltipOptions.textWrap)
+        elseif tooltipOptions.itemID then
+            GameTooltip:SetItemByID(tooltipOptions.itemID)
+        elseif tooltipOptions.text then
+            GameTooltip:SetText(tooltipOptions.text, nil, nil, nil, nil,
+                tooltipOptions.textWrap)
+        elseif tooltipOptions.frame then
+            GameTooltip_InsertFrame(GameTooltip, tooltipOptions.frame)
         end
 
         GameTooltip:Show();
@@ -2910,6 +2915,7 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     ---@field anchor TooltipAnchor
     ---@field text string?
     ---@field textWrap? boolean
+    ---@field frame? Frame
     self.tooltipOptions = nil
 
     ---@type function
