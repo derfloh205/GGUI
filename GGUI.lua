@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 6)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 7)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -75,6 +75,13 @@ GGUI.CONST.EMPTY_TEXTURE = "Interface\\containerframe\\bagsitemslot2x"
 function GGUI:DebugPrint(objectConstructorOptions, text)
     if objectConstructorOptions.debug then
         print(GUTIL:ColorizeText("GGUI Debug: ", GUTIL.COLORS.EPIC) .. tostring(text))
+    end
+end
+
+--- Requires DevTool Addon
+function GGUI:DebugTable(objectConstructorOptions, t, label)
+    if objectConstructorOptions.debug and DevTool then
+        DevTool:AddData(t, "GGUI: " .. label)
     end
 end
 
@@ -487,9 +494,11 @@ function GGUI.Frame:new(options)
     })
 
     frame:SetPoint("TOP", hookFrame, "TOP", 0, 0)
+    GGUI:DebugTable(options, options, "Frame Options")
 
     if options.backdropOptions then
         if options.backdropOptions.backdropInfo then
+            GGUI:DebugPrint(options, "Setting backdrop by backdropoptions")
             GGUI:SetBackdropByBackdropOptions(frame, options.backdropOptions)
         else
             local backdropOptions = options.backdropOptions
@@ -4179,4 +4188,133 @@ end
 
 function GGUI.Texture:SetAlpha(alpha)
     self.frame:SetAlpha(alpha)
+end
+
+---@class GGUI.TooltipOptionsFrame.LineOption
+---@field label string
+---@field disabledLabel? string what will the label look like if its disabled
+---@field initialValue? boolean
+---@field isEnablerLine? boolean automatically sets the key of this option to 'enabled'
+---@field optionsKey? any default: <label> - What will be the key of this option in the optionsTable?
+
+--- GGUI.TooltipOptionsFrame
+---@class GGUI.TooltipOptionsFrameConstructorOptions
+---@field frameOptions? GGUI.FrameConstructorOptions
+---@field lines? GGUI.TooltipOptionsFrame.LineOption[]
+---@field optionsTable? table table to save enabled info
+
+---@class GGUI.TooltipOptionsFrame : GGUI.Frame
+---@overload fun(options:GGUI.TooltipOptionsFrameConstructorOptions): GGUI.TooltipOptionsFrame
+GGUI.TooltipOptionsFrame = GGUI.Frame:extend()
+
+---@param options GGUI.TooltipOptionsFrameConstructorOptions
+function GGUI.TooltipOptionsFrame:new(options)
+    ---@type GGUI.FrameConstructorOptions
+    local frameConstructorOptions = CopyTable(options.frameOptions or {})
+
+    -- default tooltip look
+    frameConstructorOptions.backdropOptions = frameConstructorOptions.backdropOptions or {
+        backdropInfo = {
+            bgFile = "Interface/addons/Arenalogs/Media/Backgrounds/bgRoundedWhite1024",
+            edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+            edgeSize = 16,
+            insets = { left = 0, right = 0, top = 0, bottom = 0 },
+        },
+        backdropRGBA = {
+            0,
+            0,
+            0.3,
+            0.2,
+        },
+    }
+    frameConstructorOptions.debug = true
+    GGUI:DebugPrint(options, "backdropInfo: " .. tostring(frameConstructorOptions.backdropOptions.backdropInfo))
+    GGUI.TooltipOptionsFrame.super.new(self, frameConstructorOptions)
+    options.optionsTable = options.optionsTable or {}
+    self.optionsTable = options.optionsTable
+
+    local frameListOffsetY = -30
+    local rowWidthInsetX = -10
+    ---@class GGUI.TooltipOptionsFrame.LineList : GGUI.FrameList
+    self.content.lineList = GGUI.FrameList {
+        columnOptions = {
+            {
+                -- checkboxes
+                width = (frameConstructorOptions.sizeX + rowWidthInsetX) or 100,
+            },
+        },
+        parent = self.content,
+        anchorPoints = {
+            {
+                anchorParent = self.content, anchorA = "TOPLEFT", anchorB = "TOPLEFT", offsetY = frameListOffsetY,
+            }
+        },
+        hideScrollbar = true,
+        rowConstructor = function(columns, row)
+            ---@class GGUI.TooltipOptionsFrame.LineList.Row : GGUI.FrameList.Row
+            row = row
+            ---@class GGUI.TooltipOptionsFrame.LineList.cbColumn : Frame
+            local cbColumn = columns[1]
+
+            cbColumn.cb = GGUI.Checkbox {
+                parent = cbColumn, anchorParent = cbColumn,
+                anchorA = "LEFT", anchorB = "LEFT", offsetX = 2,
+                labelOptions = {
+                    text = ""
+                },
+            }
+        end,
+        autoAdjustHeight = true,
+        autoAdjustHeightCallback = function(newHeight)
+            self:SetSize(self:GetWidth(), newHeight + -frameListOffsetY)
+        end
+    }
+
+    for _, lineOption in ipairs(options.lines) do
+        self.content.lineList:Add(function(row, columns)
+            ---@class GGUI.TooltipOptionsFrame.LineList.Row : GGUI.FrameList.Row
+            row = row
+            row.isEnablerLine = lineOption.isEnablerLine == true
+            ---@class GGUI.TooltipOptionsFrame.LineList.cbColumn : Frame
+            local cbColumn = columns[1]
+
+            function row:SetOptionLabelByEnabledStatus()
+                local tooltipEnabled = options.optionsTable.enabled == nil or options.optionsTable.enabled
+                if cbColumn.cb:GetChecked() and tooltipEnabled then
+                    cbColumn.cb.labelText:SetText(lineOption.label or "")
+                else
+                    cbColumn.cb.labelText:SetText(lineOption.disabledLabel or lineOption.label or "")
+                end
+            end
+
+            cbColumn.cb:SetChecked(lineOption.initialValue)
+
+            row:SetOptionLabelByEnabledStatus()
+
+            cbColumn.cb.clickCallback = function(checkbox, checked)
+                if lineOption.isEnablerLine then
+                    self.optionsTable.enabled = checked
+                else
+                    self.optionsTable[lineOption.optionsKey or lineOption.label] = checked
+                end
+
+                self:FormatOptionsByEnabledStatus()
+            end
+
+            if lineOption.isEnablerLine then
+                self.optionsTable.enabled = lineOption.initialValue
+            else
+                self.optionsTable[lineOption.optionsKey or lineOption.label] = lineOption.initialValue
+            end
+        end)
+    end
+
+    self.content.lineList:UpdateDisplay()
+
+    function self:FormatOptionsByEnabledStatus()
+        local activeRows = self.content.lineList.activeRows --[[ @as GGUI.TooltipOptionsFrame.LineList.Row[] ]]
+        for _, activeRow in ipairs(activeRows) do
+            activeRow:SetOptionLabelByEnabledStatus()
+        end
+    end
 end
