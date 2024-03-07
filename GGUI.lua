@@ -384,7 +384,8 @@ end
 ---@field collapseable? boolean
 ---@field collapsed? boolean
 ---@field moveable? boolean
----@field frameStrata? FrameStrata
+---@field frameStrata? FrameStrata if omitted will be same as parent
+---@field frameLevel? number if omitted will be 1 higher than parent
 ---@field onCloseCallback? function
 ---@field onCollapseCallback? function
 ---@field onCollapseOpenCallback? function
@@ -445,7 +446,7 @@ function GGUI.Frame:new(options)
     self.closeable = options.closeable or false
     self.collapseable = options.collapseable or false
     self.moveable = options.moveable or false
-    self.frameStrata = options.frameStrata or "HIGH"
+    self.frameStrata = options.frameStrata
     self.collapsed = false
     self.activeStatusID = options.initialStatusID
     ---@type GGUI.FrameStatus[]
@@ -455,6 +456,8 @@ function GGUI.Frame:new(options)
     self.closeOnClickOutside = options.closeOnClickOutside or false
     self.onCloseCallback = options.onCloseCallback
 
+    GGUI:DebugTable(options, options, "Frame Options")
+
     local hookFrame = CreateFrame("frame", nil, options.parent)
     hookFrame:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
     local frame = CreateFrame("frame", options.globalName, hookFrame, "BackdropTemplate")
@@ -463,8 +466,8 @@ function GGUI.Frame:new(options)
     hookFrame:SetSize(options.sizeX, options.sizeY)
     frame:SetSize(options.sizeX, options.sizeY)
     frame:SetScale(options.scale)
-    frame:SetFrameStrata(options.frameStrata or "HIGH")
-    frame:SetFrameLevel(numFrames)
+    frame:SetFrameStrata(options.frameStrata or options.parent:GetFrameStrata())
+    frame:SetFrameLevel(options.frameLevel or (options.parent:GetFrameLevel() + 1))
 
     if options.hide then
         frame:Hide()
@@ -494,7 +497,6 @@ function GGUI.Frame:new(options)
     })
 
     frame:SetPoint("TOP", hookFrame, "TOP", 0, 0)
-    GGUI:DebugTable(options, options, "Frame Options")
 
     if options.backdropOptions then
         if options.backdropOptions.backdropInfo then
@@ -561,7 +563,7 @@ function GGUI.Frame:new(options)
 
         frame.content = scrollChild
     else
-        frame.content = CreateFrame("frame", nil, frame)
+        frame.content = CreateFrame("frame", nil, frame, "BackdropTemplate")
         frame.content:SetPoint("TOP", frame, "TOP")
         frame.content:SetSize(options.sizeX, options.sizeY)
     end
@@ -1875,7 +1877,7 @@ function GGUI.Tab:new(options)
     self.button = GGUI.Button(options.buttonOptions)
     self.canBeEnabled = options.canBeEnabled or false
 
-    self.content = CreateFrame("Frame", nil, options.parent, "BackdropTemplate")
+    self.content = CreateFrame("frame", nil, options.parent, "BackdropTemplate")
     self.content:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
     self.content:SetSize(options.sizeX, options.sizeY)
 
@@ -4193,7 +4195,6 @@ end
 ---@class GGUI.TooltipOptionsFrame.LineOption
 ---@field label string
 ---@field disabledLabel? string what will the label look like if its disabled
----@field initialValue? boolean
 ---@field isEnablerLine? boolean automatically sets the key of this option to 'enabled'
 ---@field optionsKey? any default: <label> - What will be the key of this option in the optionsTable?
 
@@ -4210,7 +4211,7 @@ GGUI.TooltipOptionsFrame = GGUI.Frame:extend()
 ---@param options GGUI.TooltipOptionsFrameConstructorOptions
 function GGUI.TooltipOptionsFrame:new(options)
     ---@type GGUI.FrameConstructorOptions
-    local frameConstructorOptions = CopyTable(options.frameOptions or {})
+    local frameConstructorOptions = options.frameOptions or {}
 
     -- default tooltip look
     frameConstructorOptions.backdropOptions = frameConstructorOptions.backdropOptions or {
@@ -4227,8 +4228,6 @@ function GGUI.TooltipOptionsFrame:new(options)
             0.2,
         },
     }
-    frameConstructorOptions.debug = true
-    GGUI:DebugPrint(options, "backdropInfo: " .. tostring(frameConstructorOptions.backdropOptions.backdropInfo))
     GGUI.TooltipOptionsFrame.super.new(self, frameConstructorOptions)
     options.optionsTable = options.optionsTable or {}
     self.optionsTable = options.optionsTable
@@ -4278,6 +4277,7 @@ function GGUI.TooltipOptionsFrame:new(options)
             ---@class GGUI.TooltipOptionsFrame.LineList.cbColumn : Frame
             local cbColumn = columns[1]
 
+
             function row:SetOptionLabelByEnabledStatus()
                 local tooltipEnabled = options.optionsTable.enabled == nil or options.optionsTable.enabled
                 if cbColumn.cb:GetChecked() and tooltipEnabled then
@@ -4287,7 +4287,11 @@ function GGUI.TooltipOptionsFrame:new(options)
                 end
             end
 
-            cbColumn.cb:SetChecked(lineOption.initialValue)
+            if lineOption.isEnablerLine then
+                cbColumn.cb:SetChecked(self.optionsTable.enabled)
+            else
+                cbColumn.cb:SetChecked(self.optionsTable[lineOption.optionsKey or lineOption.label])
+            end
 
             row:SetOptionLabelByEnabledStatus()
 
@@ -4302,9 +4306,10 @@ function GGUI.TooltipOptionsFrame:new(options)
             end
 
             if lineOption.isEnablerLine then
-                self.optionsTable.enabled = lineOption.initialValue
+                self.optionsTable.enabled = self.optionsTable.enabled == true
             else
-                self.optionsTable[lineOption.optionsKey or lineOption.label] = lineOption.initialValue
+                self.optionsTable[lineOption.optionsKey or lineOption.label] = self.optionsTable
+                    [lineOption.optionsKey or lineOption.label] == true
             end
         end)
     end
