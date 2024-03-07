@@ -489,34 +489,38 @@ function GGUI.Frame:new(options)
     frame:SetPoint("TOP", hookFrame, "TOP", 0, 0)
 
     if options.backdropOptions then
-        local backdropOptions = options.backdropOptions
-        backdropOptions.colorR = backdropOptions.colorR or 0
-        backdropOptions.colorG = backdropOptions.colorG or 0
-        backdropOptions.colorB = backdropOptions.colorB or 0
-        backdropOptions.colorA = backdropOptions.colorA or 1
-        backdropOptions.tile = backdropOptions.tile or false
-        backdropOptions.tileSize = backdropOptions.tileSize or 32
-        backdropOptions.borderOptions = backdropOptions.borderOptions or {}
-        local borderOptions = backdropOptions.borderOptions
-        borderOptions.colorR = borderOptions.colorR or 0
-        borderOptions.colorG = borderOptions.colorG or 0
-        borderOptions.colorB = borderOptions.colorB or 0
-        borderOptions.colorA = borderOptions.colorA or 1
-        borderOptions.edgeSize = borderOptions.edgeSize or 16
-        borderOptions.insets = borderOptions.insets or { left = 8, right = 6, top = 8, bottom = 8 }
-        frame:SetBackdropBorderColor(borderOptions.colorR, borderOptions.colorG, borderOptions.colorB,
-            borderOptions.colorA)
-        frame:SetBackdrop({
-            bgFile = backdropOptions.bgFile,
-            edgeFile = borderOptions.edgeFile,
-            edgeSize = borderOptions.edgeSize,
-            insets = borderOptions.insets,
-            edgeInsets = borderOptions.edgeInsets,
-            tile = backdropOptions.tile,
-            tileSize = backdropOptions.tileSize,
-        })
-        frame:SetBackdropColor(backdropOptions.colorR, backdropOptions.colorG, backdropOptions.colorB,
-            backdropOptions.colorA)
+        if options.backdropOptions.backdropInfo then
+            GGUI:SetBackdropByBackdropOptions(frame, options.backdropOptions)
+        else
+            local backdropOptions = options.backdropOptions
+            backdropOptions.colorR = backdropOptions.colorR or 0
+            backdropOptions.colorG = backdropOptions.colorG or 0
+            backdropOptions.colorB = backdropOptions.colorB or 0
+            backdropOptions.colorA = backdropOptions.colorA or 1
+            backdropOptions.tile = backdropOptions.tile or false
+            backdropOptions.tileSize = backdropOptions.tileSize or 32
+            backdropOptions.borderOptions = backdropOptions.borderOptions or {}
+            local borderOptions = backdropOptions.borderOptions
+            borderOptions.colorR = borderOptions.colorR or 0
+            borderOptions.colorG = borderOptions.colorG or 0
+            borderOptions.colorB = borderOptions.colorB or 0
+            borderOptions.colorA = borderOptions.colorA or 1
+            borderOptions.edgeSize = borderOptions.edgeSize or 16
+            borderOptions.insets = borderOptions.insets or { left = 8, right = 6, top = 8, bottom = 8 }
+            frame:SetBackdropBorderColor(borderOptions.colorR, borderOptions.colorG, borderOptions.colorB,
+                borderOptions.colorA)
+            frame:SetBackdrop({
+                bgFile = backdropOptions.bgFile,
+                edgeFile = borderOptions.edgeFile,
+                edgeSize = borderOptions.edgeSize,
+                insets = borderOptions.insets,
+                edgeInsets = borderOptions.edgeInsets,
+                tile = backdropOptions.tile,
+                tileSize = backdropOptions.tileSize,
+            })
+            frame:SetBackdropColor(backdropOptions.colorR, backdropOptions.colorG, backdropOptions.colorB,
+                backdropOptions.colorA)
+        end
     end
 
     if self.closeable then
