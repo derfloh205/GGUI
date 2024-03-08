@@ -1694,6 +1694,7 @@ function GGUI.Button:new(options)
             button:ClearPushedTexture()
             button:ClearDisabledTexture()
             button:ClearHighlightTexture()
+
             if options.buttonTextureOptions.normal then
                 button:SetNormalTexture(options.buttonTextureOptions.normal)
             end
@@ -3252,6 +3253,7 @@ end
 ---@field text? string
 ---@field acceptButtonLabel? string
 ---@field declineButtonLabel? string
+---@field okButtonLabel? string
 ---@field onAccept? function
 ---@field onDecline? function
 ---@field sizeX? number
@@ -3262,6 +3264,7 @@ end
 ---@field offsetY? number
 ---@field anchorA? FramePoint
 ---@field anchorB? FramePoint
+---@field copyText? string
 
 local popupFrame = nil
 ---@param options GGUI.ShowPopupOptions
@@ -3273,6 +3276,7 @@ function GGUI:ShowPopup(options)
     options.text = options.text or ""
     options.acceptButtonLabel = options.acceptButtonLabel or "Accept"
     options.declineButtonLabel = options.declineButtonLabel or "Decline"
+    options.okButtonLabel = options.okButtonLabel or "Ok"
     options.width = options.width or 300
     options.height = options.height or 300
     options.parent = options.parent or UIParent
@@ -3292,6 +3296,8 @@ function GGUI:ShowPopup(options)
     popupFrame.onDecline = options.onDecline
     popupFrame.content.declineButton.frame:SetText(options.declineButtonLabel)
     popupFrame.content.declineButton.frame:SetWidth(popupFrame.content.declineButton.frame:GetTextWidth() + 15)
+    popupFrame.content.okButton.frame:SetText(options.okButtonLabel)
+    popupFrame.content.okButton.frame:SetWidth(popupFrame.content.okButton.frame:GetTextWidth() + 15)
 
     if options.sizeX then
         popupFrame.frame:SetWidth(options.sizeX)
@@ -3303,11 +3309,30 @@ function GGUI:ShowPopup(options)
     popupFrame.frame:ClearAllPoints()
     popupFrame:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
 
+    if options.copyText then
+        popupFrame.content.copyInput:Show()
+        popupFrame.content.okButton:Show()
+        popupFrame.content.acceptButton:Hide()
+        popupFrame.content.declineButton:Hide()
+        popupFrame.content.copyInput:SetText(options.copyText)
+        local editBox = popupFrame.content.copyInput.frame --[[@as EditBox]]
+        editBox:HighlightText()
+    else
+        popupFrame.content.copyInput:Hide()
+        popupFrame.content.okButton:Hide()
+        popupFrame.content.acceptButton:Show()
+        popupFrame.content.declineButton:Show()
+        popupFrame.content.copyInput:SetText("")
+    end
+
     popupFrame:Show()
 end
 
 ---@class GGUI.InitPopupOptions
 ---@field backdropOptions GGUI.BackdropOptions
+---@field buttonTextureOptions? GGUI.ButtonTextureOptions
+---@field buttonFontOptions? GGUI.FontOptions
+---@field hideCloseButton? boolean
 ---@field title? string
 ---@field sizeX? number
 ---@field sizeY? number
@@ -3324,7 +3349,7 @@ function GGUI:InitializePopup(options)
         frameStrata = "DIALOG",
         frameID = options.frameID,
         title = options.title or "",
-        closeable = true,
+        closeable = not options.hideCloseButton,
     })
 
     popupFrame.content.text = GGUI.Text({
@@ -3339,6 +3364,8 @@ function GGUI:InitializePopup(options)
         offsetX = 10,
         offsetY = 10,
         label = "Accept",
+        buttonTextureOptions = options.buttonTextureOptions,
+        fontOptions = options.buttonFontOptions,
         clickCallback = function()
             if popupFrame.onAccept then
                 popupFrame.onAccept()
@@ -3346,6 +3373,21 @@ function GGUI:InitializePopup(options)
             popupFrame:Hide()
         end
     })
+    popupFrame.content.okButton = GGUI.Button({
+        parent = popupFrame.content,
+        anchorParent = popupFrame.frame,
+        anchorA = "BOTTOM",
+        anchorB = "BOTTOM",
+        offsetX = 10,
+        offsetY = 10,
+        label = "Ok",
+        buttonTextureOptions = options.buttonTextureOptions,
+        fontOptions = options.buttonFontOptions,
+        clickCallback = function()
+            popupFrame:Hide()
+        end
+    })
+    popupFrame.content.okButton:Hide()
     popupFrame.content.declineButton = GGUI.Button({
         parent = popupFrame.content,
         anchorParent = popupFrame.frame,
@@ -3354,6 +3396,8 @@ function GGUI:InitializePopup(options)
         offsetX = -10,
         offsetY = 10,
         label = "Decline",
+        fontOptions = options.buttonFontOptions,
+        buttonTextureOptions = options.buttonTextureOptions,
         clickCallback = function()
             if popupFrame.onDecline then
                 popupFrame.onDecline()
@@ -3361,6 +3405,15 @@ function GGUI:InitializePopup(options)
             popupFrame:Hide()
         end
     })
+
+    popupFrame.content.copyInput = GGUI.TextInput {
+        parent = popupFrame.content, anchorParent = popupFrame.content,
+        sizeX = 150, autoFocus = true,
+    }
+
+    local editBox = popupFrame.content.copyInput.frame --[[@as EditBox]]
+
+    popupFrame.content.copyInput:Hide()
 
     popupFrame:Hide()
 
