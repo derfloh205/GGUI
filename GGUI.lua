@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 7)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 8)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -4269,7 +4269,7 @@ function GGUI.TooltipOptionsFrame:new(options)
     -- default tooltip look
     frameConstructorOptions.backdropOptions = frameConstructorOptions.backdropOptions or {
         backdropInfo = {
-            bgFile = "Interface/addons/Arenalogs/Media/Backgrounds/bgRoundedWhite1024",
+            bgFile = "Interface/Buttons/WHITE8x8",
             edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
             edgeSize = 16,
             insets = { left = 0, right = 0, top = 0, bottom = 0 },
