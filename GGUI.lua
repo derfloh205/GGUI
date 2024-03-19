@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 8)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 9)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -1110,6 +1110,7 @@ end
 ---@class GGUI.CustomDropdownData
 ---@field label string
 ---@field value any
+---@field tooltipOptions? GGUI.TooltipOptions
 ----@field isCategory? boolean
 
 ---@class GGUI.CustomDropdown : GGUI.Widget
@@ -1356,6 +1357,14 @@ function GGUI.CustomDropdown:SetData(options)
                 labelColumn.text:SetText(customDropdownOption.label)
                 row.selectionValue = customDropdownOption.value
                 row.selectionLabel = customDropdownOption.label
+                local tooltipOptions = customDropdownOption.tooltipOptions
+                if tooltipOptions then
+                    tooltipOptions.owner = tooltipOptions.owner or row.frame
+                    tooltipOptions.anchor = tooltipOptions.anchor or "ANCHOR_CURSOR"
+                    row.tooltipOptions = tooltipOptions
+                else
+                    row.tooltipOptions = nil
+                end
             end)
     end
 
