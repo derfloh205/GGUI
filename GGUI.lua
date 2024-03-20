@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 9)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 10)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -205,6 +205,9 @@ function GGUI:SetTooltipsByTooltipOptions(frame, optionsOwner)
             GameTooltip:SetText(tooltipOptions.text, nil, nil, nil, nil,
                 tooltipOptions.textWrap)
         elseif tooltipOptions.frame then
+            if tooltipOptions.frameUpdateCallback then
+                tooltipOptions.frameUpdateCallback(tooltipOptions.frame)
+            end
             GameTooltip_InsertFrame(GameTooltip, tooltipOptions.frame)
         end
 
@@ -2941,6 +2944,7 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     ---@field text string?
     ---@field textWrap? boolean
     ---@field frame? Frame
+    ---@field frameUpdateCallback? fun(tooltipFrame: Frame) if set will be called on the given tooltip frame right before the tooltip is updated. Can be used to update the frame e.g.
     self.tooltipOptions = nil
 
     self.separatorLine = rowFrame:CreateLine()
