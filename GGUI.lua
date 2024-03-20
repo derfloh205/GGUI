@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 10)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 11)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -190,7 +190,7 @@ function GGUI:SetTooltipsByTooltipOptions(frame, optionsOwner)
         ---@type GGUI.TooltipOptions
         local tooltipOptions = optionsOwner.tooltipOptions
 
-        GameTooltip:SetOwner(tooltipOptions.owner, tooltipOptions.anchor);
+        GameTooltip:SetOwner(tooltipOptions.owner or frame, tooltipOptions.anchor);
 
         if tooltipOptions.spellID then
             local _, currentSpellID = GameTooltip:GetSpell()
@@ -209,6 +209,12 @@ function GGUI:SetTooltipsByTooltipOptions(frame, optionsOwner)
                 tooltipOptions.frameUpdateCallback(tooltipOptions.frame)
             end
             GameTooltip_InsertFrame(GameTooltip, tooltipOptions.frame)
+        end
+
+        if tooltipOptions.scale then
+            GameTooltip:SetScale(tooltipOptions.scale)
+        else
+            GameTooltip:SetScale(1)
         end
 
         GameTooltip:Show();
@@ -573,7 +579,7 @@ function GGUI.Frame:new(options)
 
     self.tooltipOptions = options.tooltipOptions
     if self.tooltipOptions then
-        GGUI:SetTooltipsByTooltipOptions(self.frame, self)
+        GGUI:SetTooltipsByTooltipOptions(frame.content, self)
     end
 
     self.content = frame.content
@@ -2939,11 +2945,12 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     ---@class GGUI.TooltipOptions?
     ---@field spellID number?
     ---@field itemID number?
-    ---@field owner Frame
+    ---@field owner? Frame if omitted defaults to optionsOwner.frame
     ---@field anchor TooltipAnchor
     ---@field text string?
     ---@field textWrap? boolean
     ---@field frame? Frame
+    ---@field scale? number
     ---@field frameUpdateCallback? fun(tooltipFrame: Frame) if set will be called on the given tooltip frame right before the tooltip is updated. Can be used to update the frame e.g.
     self.tooltipOptions = nil
 
