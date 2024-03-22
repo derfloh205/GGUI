@@ -4414,6 +4414,7 @@ end
 ---@field isOn? boolean
 ---@field optionsTable? table
 ---@field optionsKey? any
+---@field onToggleCallback? fun(button: GGUI.ToggleButton, newValue: boolean)
 
 ---@class GGUI.ToggleButton : GGUI.Button
 ---@overload fun(options:GGUI.ToggleButtonConstructorOptions): GGUI.ToggleButton
@@ -4425,6 +4426,7 @@ function GGUI.ToggleButton:new(options)
 
     self.optionsTable = options.optionsTable
     self.optionsKey = options.optionsKey
+    self.onToggleCallback = options.onToggleCallback
 
     -- lock states on click
     self.isOn = options.isOn == nil -- default true
@@ -4459,6 +4461,10 @@ function GGUI.ToggleButton:new(options)
 
         if self.optionsTable then
             self.optionsTable[self.optionsKey] = self.isOn
+        end
+
+        if self.onToggleCallback then
+            self.onToggleCallback(self, self.isOn)
         end
     end)
 end
