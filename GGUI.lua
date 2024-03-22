@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 11)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 13)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -70,6 +70,9 @@ GGUI.CONST.EMPTY_TEXTURE = "Interface\\containerframe\\bagsitemslot2x"
 ---@field anchorB FramePoint?
 ---@field offsetX number?
 ---@field offsetY number?
+
+---@class GGUI.ConstructorOptions
+---@field debug? boolean
 
 -- GGUI UTILS
 function GGUI:DebugPrint(objectConstructorOptions, text)
@@ -375,7 +378,7 @@ end
 ---@field title? string
 ---@field activationCallback? function
 
----@class GGUI.FrameConstructorOptions
+---@class GGUI.FrameConstructorOptions : GGUI.ConstructorOptions
 ---@field globalName? string
 ---@field title? string
 ---@field parent? Frame
@@ -760,7 +763,7 @@ end
 
 --- GGUI Icon
 
----@class GGUI.IconConstructorOptions
+---@class GGUI.IconConstructorOptions: GGUI.ConstructorOptions
 ---@field parent? Frame
 ---@field offsetX? number
 ---@field offsetY? number
@@ -888,7 +891,7 @@ end
 
 --- GGUI.QualityIcon
 
----@class GGUI.QualityIconConstructorOptions
+---@class GGUI.QualityIconConstructorOptions : GGUI.ConstructorOptions
 ---@field parent Frame
 ---@field sizeX? number
 ---@field sizeY? number
@@ -946,7 +949,7 @@ end
 
 --- GGUI.Dropdown
 
----@class GGUI.DropdownConstructorOptions
+---@class GGUI.DropdownConstructorOptions : GGUI.ConstructorOptions
 ---@field globalName? string
 ---@field parent? Frame
 ---@field anchorParent? Region
@@ -1088,7 +1091,7 @@ end
 
 --- GGUI.CustomDropdown
 
----@class GGUI.CustomDropdownConstructorOptions
+---@class GGUI.CustomDropdownConstructorOptions : GGUI.ConstructorOptions
 ---@field parent? Frame
 ---@field anchorParent? Region
 ---@field anchorA? FramePoint
@@ -1392,7 +1395,7 @@ end
 
 --- GGUI.Text
 
----@class GGUI.TextConstructorOptions
+---@class GGUI.TextConstructorOptions : GGUI.ConstructorOptions
 ---@field text? string
 ---@field anchorPoints? GGUI.AnchorPoint[]
 ---@field parent? Frame
@@ -1513,7 +1516,7 @@ end
 
 --- GGUI.ScrollingMessageFrame
 
----@class GGUI.ScrollingMessageFrameConstructorOptions
+---@class GGUI.ScrollingMessageFrameConstructorOptions : GGUI.ConstructorOptions
 ---@field parent? Frame
 ---@field anchorParent? Region
 ---@field anchorA? FramePoint
@@ -1602,8 +1605,9 @@ end
 ---@field enabled? boolean
 ---@field activationCallback? function
 
----@class GGUI.ButtonConstructorOptions
+---@class GGUI.ButtonConstructorOptions : GGUI.ConstructorOptions
 ---@field label? string
+---@field labelTextureOptions? GGUI.TextureConstructorOptions
 ---@field parent? Frame
 ---@field anchorPoints? GGUI.AnchorPoint[]
 ---@field anchorParent? Region -- DEPRICATED Use anchorPoints
@@ -1670,7 +1674,7 @@ function GGUI.Button:new(options)
     self.cleanTemplate = options.cleanTemplate or false
 
     ---@type string?
-    local templates = "UIPanelButtonTemplate"
+    local templates = "UIPanelButtonTemplate" -- Note: this template is wierd with custom highlight textures..
 
     if self.cleanTemplate then
         templates = nil
@@ -1745,6 +1749,15 @@ function GGUI.Button:new(options)
     end
 
     button:SetText(options.label)
+    local labelTextureOptions = options.labelTextureOptions
+    if labelTextureOptions then
+        labelTextureOptions.parent = labelTextureOptions.parent or options.parent
+        labelTextureOptions.anchorParent = labelTextureOptions.anchorParent or self.frame
+        labelTextureOptions.sizeX = labelTextureOptions.sizeX or options.sizeX * 0.7
+        labelTextureOptions.sizeY = labelTextureOptions.sizeY or options.sizeY * 0.7
+        self.labelTexture = GGUI.Texture(labelTextureOptions)
+    end
+
     if options.adjustWidth then
         button:SetSize(button:GetTextWidth() + options.sizeX, options.sizeY)
     else
@@ -1866,7 +1879,7 @@ end
 
 --- GGUI.Tab
 
----@class GGUI.TabConstructorOptions
+---@class GGUI.TabConstructorOptions : GGUI.ConstructorOptions
 ---@field buttonOptions? GGUI.ButtonConstructorOptions
 ---@field canBeEnabled? boolean
 ---@field sizeX? number
@@ -1948,7 +1961,7 @@ end
 ---@overload fun(options:GGUI.CheckboxConstructorOptions): GGUI.Checkbox
 GGUI.Checkbox = GGUI.Widget:extend()
 
----@class GGUI.CheckboxConstructorOptions
+---@class GGUI.CheckboxConstructorOptions : GGUI.ConstructorOptions
 ---@field label? string
 ---@field labelOptions? GGUI.TextConstructorOptions
 ---@field tooltip? string
@@ -2030,7 +2043,7 @@ end
 
 --- GGUI.Slider
 
----@class GGUI.SliderConstructorOptions
+---@class GGUI.SliderConstructorOptions : GGUI.ConstructorOptions
 ---@field label? string
 ---@field parent? Frame
 ---@field anchorParent? Region
@@ -2093,7 +2106,7 @@ function GGUI.Slider:new(options)
 end
 
 --- GGUI.HelpIcon
----@class GGUI.HelpIconConstructorOptions
+---@class GGUI.HelpIconConstructorOptions : GGUI.ConstructorOptions
 ---@field text? string
 ---@field parent? Frame
 ---@field anchorParent? Region
@@ -2145,7 +2158,7 @@ end
 
 --- GGUI.ScrollFrame
 
----@class GGUI.ScrollFrameConstructorOptions
+---@class GGUI.ScrollFrameConstructorOptions : GGUI.ConstructorOptions
 ---@field parent? Frame
 ---@field offsetTOP? number
 ---@field offsetLEFT? number
@@ -2240,7 +2253,7 @@ end
 
 --- GGUI.TextInput
 
----@class GGUI.TextInputConstructorOptions
+---@class GGUI.TextInputConstructorOptions : GGUI.ConstructorOptions
 ---@field parent? Frame
 ---@field anchorParent? Region
 ---@field anchorA? FramePoint
@@ -2332,7 +2345,7 @@ end
 
 --- GGUI.CurrencyInput
 
----@class GGUI.CurrencyInputConstructorOptions
+---@class GGUI.CurrencyInputConstructorOptions : GGUI.ConstructorOptions
 ---@field parent? Frame
 ---@field anchorParent? Region
 ---@field anchorA? FramePoint
@@ -2512,7 +2525,7 @@ end
 
 --- GGUI.NumericInput
 
----@class GGUI.NumericInputConstructorOptions
+---@class GGUI.NumericInputConstructorOptions : GGUI.ConstructorOptions
 ---@field parent? Frame
 ---@field anchorParent? Region
 ---@field anchorA? FramePoint
@@ -2753,7 +2766,7 @@ end
 ---@overload fun(options:GGUI.FrameListConstructorOptions): GGUI.FrameList
 GGUI.FrameList = GGUI.Widget:extend()
 
----@class GGUI.FrameListConstructorOptions
+---@class GGUI.FrameListConstructorOptions : GGUI.ConstructorOptions
 ---@field parent? Frame
 ---@field rowHeight? number
 ---@field columnOptions GGUI.FrameList.ColumnOption[]
@@ -3443,7 +3456,7 @@ end
 --- GGUI.ItemSelector
 ---@class GGUI.ItemSelector
 
----@class GGUI.ItemSelectorConstructorOptions
+---@class GGUI.ItemSelectorConstructorOptions : GGUI.ConstructorOptions
 ---@field parent? Frame
 ---@field anchorParent? Frame
 ---@field anchorA? FramePoint
@@ -3625,7 +3638,7 @@ end
 ---@field initialValue? boolean
 ---@field tooltip? string
 
----@class GGUI.CheckboxSelectorConstructorOptions
+---@class GGUI.CheckboxSelectorConstructorOptions : GGUI.ConstructorOptions
 ---@field buttonOptions? GGUI.ButtonConstructorOptions
 ---@field selectionFrameOptions? GGUI.FrameConstructorOptions
 ---@field initialItems? GGUI.CheckboxSelector.CheckboxItem[]
@@ -3773,7 +3786,7 @@ GGUI.CONST.CLASS_ICONS = {
     EVOKER = "Interface\\Icons\\classicon_evoker",
 }
 
----@class GGUI.ClassIconConstructorOptions
+---@class GGUI.ClassIconConstructorOptions : GGUI.ConstructorOptions
 ---@field parent? Frame
 ---@field offsetX? number
 ---@field offsetY? number
@@ -3963,7 +3976,7 @@ function GGUI.ClassIcon:SetClass(classOrSpec)
     end
 end
 
----@class GGUI.SpellIconConstructorOptions
+---@class GGUI.SpellIconConstructorOptions : GGUI.ConstructorOptions
 ---@field parent? Frame
 ---@field offsetX? number
 ---@field offsetY? number
@@ -4115,7 +4128,7 @@ end
 ---@field label string
 ---@field tooltipOptions? GGUI.TooltipOptions
 
----@class GGUI.BlizzardTabConstructorOptions
+---@class GGUI.BlizzardTabConstructorOptions : GGUI.ConstructorOptions
 ---@field buttonOptions GGUI.BlizzardTabButtonOptions
 ---@field sizeX? number
 ---@field sizeY? number
@@ -4198,7 +4211,7 @@ end
 
 --- GGUI Texture
 
----@class GGUI.TextureConstructorOptions
+---@class GGUI.TextureConstructorOptions : GGUI.ConstructorOptions
 ---@field parent? Frame
 ---@field offsetX? number
 ---@field offsetY? number
@@ -4272,7 +4285,7 @@ end
 ---@field optionsKey? any default: <label> - What will be the key of this option in the optionsTable?
 
 --- GGUI.TooltipOptionsFrame
----@class GGUI.TooltipOptionsFrameConstructorOptions
+---@class GGUI.TooltipOptionsFrameConstructorOptions : GGUI.ConstructorOptions
 ---@field frameOptions? GGUI.FrameConstructorOptions
 ---@field lines? GGUI.TooltipOptionsFrame.LineOption[]
 ---@field optionsTable? table table to save enabled info
@@ -4395,4 +4408,57 @@ function GGUI.TooltipOptionsFrame:new(options)
             activeRow:SetOptionLabelByEnabledStatus()
         end
     end
+end
+
+---@class GGUI.ToggleButtonConstructorOptions : GGUI.ButtonConstructorOptions
+---@field isOn? boolean
+---@field optionsTable? table
+---@field optionsKey? any
+
+---@class GGUI.ToggleButton : GGUI.Button
+---@overload fun(options:GGUI.ToggleButtonConstructorOptions): GGUI.ToggleButton
+GGUI.ToggleButton = GGUI.Button:extend()
+
+---@param options GGUI.ToggleButtonConstructorOptions
+function GGUI.ToggleButton:new(options)
+    GGUI.ToggleButton.super.new(self, options)
+
+    self.optionsTable = options.optionsTable
+    self.optionsKey = options.optionsKey
+
+    -- lock states on click
+    self.isOn = options.isOn == nil -- default true
+
+    if self.optionsTable then
+        if not self.optionsKey then
+            error("GGUI: ToggleButton Options Table given without key")
+        end
+
+        -- init
+        self.optionsTable[self.optionsKey] = self.isOn
+    end
+
+    self.frame:HookScript("OnClick", function()
+        GGUI:DebugPrint(options, "Clicked ToggleButton")
+
+        self.isOn = not self.isOn
+
+        if self.isOn then
+            self.button:DesaturateHierarchy(0)
+
+            if self.labelTexture then
+                self.labelTexture:SetDesatured(false)
+            end
+        else
+            self.button:DesaturateHierarchy(1)
+
+            if self.labelTexture then
+                self.labelTexture:SetDesatured(true)
+            end
+        end
+
+        if self.optionsTable then
+            self.optionsTable[self.optionsKey] = self.isOn
+        end
+    end)
 end
