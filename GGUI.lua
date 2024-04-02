@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 13)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 14)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -307,10 +307,16 @@ end
 
 function GGUI.Widget:Show()
     self.frame:Show()
+    if self.frame.hookFrame then
+        self.frame.hookFrame:Show()
+    end
 end
 
 function GGUI.Widget:Hide()
     self.frame:Hide()
+    if self.frame.hookFrame then
+        self.frame.hookFrame:Hide()
+    end
 end
 
 function GGUI.Widget:SetEnabled(enabled)
@@ -483,6 +489,7 @@ function GGUI.Frame:new(options)
 
     if options.hide then
         frame:Hide()
+        hookFrame:Hide()
     end
 
     if self.closeOnClickOutside then
