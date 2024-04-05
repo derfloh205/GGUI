@@ -481,10 +481,6 @@ function GGUI.Frame:new(options)
     frame:SetFrameStrata(options.frameStrata or options.parent:GetFrameStrata())
     frame:SetFrameLevel(options.frameLevel or (options.parent:GetFrameLevel() + 1))
 
-    -- tie hookFrame visibility to frame visibility
-    frame:HookScript("OnShow", hookFrame.Show)
-    frame:HookScript("OnHide", hookFrame.Hide)
-
     if options.hide then
         frame:Hide()
     end
@@ -592,6 +588,18 @@ function GGUI.Frame:new(options)
     self.content = frame.content
     options.frameTable[self.frameID] = self
     return frame
+end
+
+function GGUI.Frame:Show()
+    self.frame:Show()
+    self.frame.hookFrame:Show()
+    self.content:Show()
+end
+
+function GGUI.Frame:Hide()
+    self.frame:Hide()
+    self.frame.hookFrame:Hide()
+    self.content:Hide()
 end
 
 function GGUI.Frame:SetSize(x, y)
