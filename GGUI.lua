@@ -382,11 +382,12 @@ end
 ---@field globalName? string
 ---@field title? string
 ---@field parent? Frame
----@field anchorParent? Region
----@field anchorA? FramePoint
----@field anchorB? FramePoint
----@field offsetX? number
----@field offsetY? number
+---@field anchorParent? Region DEPRICATED use anchorPoints
+---@field anchorA? FramePoint DEPRICATED use anchorPoints
+---@field anchorB? FramePoint DEPRICATED use anchorPoints
+---@field offsetX? number DEPRICATED use anchorPoints
+---@field offsetY? number DEPRICATED use anchorPoints
+---@field anchorPoints? GGUI.AnchorPoint[]
 ---@field sizeX? number
 ---@field sizeY? number
 ---@field scale? number
@@ -471,7 +472,11 @@ function GGUI.Frame:new(options)
     GGUI:DebugTable(options, options, "Frame Options")
 
     local hookFrame = CreateFrame("frame", nil, options.parent)
-    hookFrame:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
+    if not options.anchorPoints then
+        hookFrame:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
+    else
+        GGUI:SetPointsByAnchorPoints(hookFrame, options.anchorPoints)
+    end
     local frame = CreateFrame("frame", options.globalName, hookFrame, "BackdropTemplate")
     GGUI.Frame.super.new(self, frame)
     frame.hookFrame = hookFrame
