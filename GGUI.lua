@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 15)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 16)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -3003,10 +3003,8 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
                         frameList.selectionOptions.selectedRGBA[4])
                     if frameList.selectedRow then
                         -- revert color
-                        if self.originalBackdropColor then
-                            frameList.selectedRow.frame:SetBackdropColor(self.originalBackdropColor.r,
-                                self.originalBackdropColor.g,
-                                self.originalBackdropColor.b, self.originalBackdropColor.a)
+                        if self.originalBackdropOptions then
+                            GGUI:SetBackdropByBackdropOptions(frameList.selectedRow.frame, self.originalBackdropOptions)
                         else
                             frameList.selectedRow.frame:SetBackdropColor(0, 0, 0, 0)
                         end
@@ -3019,11 +3017,8 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
         end
         rowFrame:SetBackdrop({
             bgFile = "Interface\\Buttons\\WHITE8x8", -- You can use any texture here or a solid color
-            --edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border", -- Optional: border texture
-            --edgeSize = 12, -- Optional: size of the border
-            --insets = { left = 3, right = 3, top = 3, bottom = 3 } -- Optional: spacing inside the border
         })
-        rowFrame:SetBackdropColor(0, 0, 0, 0) -- make colorless
+        rowFrame:SetBackdropColor(0, 0, 0, 0)        -- make colorless
 
         onEnterSelectableRow =
             function()
@@ -3036,9 +3031,8 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
         onLeaveSelectableRow =
             function()
                 if self ~= frameList.selectedRow or frameList.selectionOptions.noSelectionColor then
-                    if self.originalBackdropColor then
-                        rowFrame:SetBackdropColor(self.originalBackdropColor.r, self.originalBackdropColor.g,
-                            self.originalBackdropColor.b, self.originalBackdropColor.a)
+                    if self.originalBackdropOptions then
+                        GGUI:SetBackdropByBackdropOptions(rowFrame, self.originalBackdropOptions)
                     else
                         rowFrame:SetBackdropColor(0, 0, 0, 0)
                     end
@@ -3255,27 +3249,23 @@ function GGUI.FrameList:UpdateDisplay(sortFunc)
         end
         if self.rowBackdrops and #self.rowBackdrops > 0 then
             local backdropOptions = self.rowBackdrops[#self.rowBackdrops - (index % #self.rowBackdrops)]
-            local borderOptions = backdropOptions.borderOptions or {}
-            row.frame:SetBackdrop({
-                bgFile = backdropOptions.bgFile,
-                edgeFile = borderOptions.edgeFile,
-                edgeSize = borderOptions.edgeSize,
-                insets = borderOptions.insets,
-                tile = backdropOptions.tile,
-                tileSize = backdropOptions.tileSize,
-            })
-            row.frame:SetBackdropColor(backdropOptions.colorR or 1, backdropOptions.colorG or 1,
-                backdropOptions.colorB or 1, backdropOptions.colorA or 1)
-            row.frame:SetBackdropBorderColor(borderOptions.colorR or 1, borderOptions.colorG or 1,
-                borderOptions.colorB or 1, borderOptions.colorA or 1)
+            -- local borderOptions = backdropOptions.borderOptions or {}
+            -- row.frame:SetBackdrop({
+            --     bgFile = backdropOptions.bgFile,
+            --     edgeFile = borderOptions.edgeFile,
+            --     edgeSize = borderOptions.edgeSize,
+            --     insets = borderOptions.insets,
+            --     tile = backdropOptions.tile,
+            --     tileSize = backdropOptions.tileSize,
+            -- })
+            -- row.frame:SetBackdropColor(backdropOptions.colorR or 1, backdropOptions.colorG or 1,
+            --     backdropOptions.colorB or 1, backdropOptions.colorA or 1)
+            -- row.frame:SetBackdropBorderColor(borderOptions.colorR or 1, borderOptions.colorG or 1,
+            --     borderOptions.colorB or 1, borderOptions.colorA or 1)
 
-            row.originalBackdropColor = {
-                r = backdropOptions.colorR,
-                g = backdropOptions.colorG,
-                b = backdropOptions
-                    .colorB,
-                a = backdropOptions.colorA
-            }
+            GGUI:SetBackdropByBackdropOptions(row.frame, backdropOptions)
+
+            row.originalBackdropOptions = backdropOptions
         end
         lastRow = row
     end
