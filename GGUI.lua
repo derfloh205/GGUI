@@ -1197,9 +1197,17 @@ function GGUI.CustomDropdown:new(options)
         fontOptions = options.buttonOptions.fontOptions
     }
     self.button                                = GGUI.Button(defaultButtonOptions)
-    self.button.button:GetFontString():SetJustifyH("LEFT")
-    self.button.button:GetFontString():SetWidth(self.button.button:GetWidth() - 10)
+    local fontString                           = self.button.button:GetFontString()
+    fontString:SetJustifyH("LEFT")
+    print(fontString:GetJustifyH())
+    fontString:ClearAllPoints()
+    fontString:ClearPointsOffset()
+    fontString:SetPoint("LEFT", self.button.button, "LEFT")
+    fontString:AdjustPointsOffset(10, 0) -- I dont know why but giving the offset above in SetPoint does not work
+
     GGUI.CustomDropdown.super.new(self, self.button)
+
+    print("fontstring width:" .. fontString:GetWidth())
 
     ---@class GGUI.CustomDropdown.ArrowTexture : GGUI.Texture
     self.arrow = GGUI.Texture {
