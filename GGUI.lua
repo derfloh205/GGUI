@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 16)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 17)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -1381,6 +1381,7 @@ end
 
 ---@param options GGUI.CustomDropdownSetDataOptions
 function GGUI.CustomDropdown:SetData(options)
+    self.selectionList:Remove()
     for _, customDropdownOption in ipairs(options.data) do
         self.selectionList:Add(
         ---@param row GGUI.CustomDropdown.SelectionRow
