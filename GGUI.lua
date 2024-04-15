@@ -4428,6 +4428,8 @@ end
 ---@field optionsTable? table
 ---@field optionsKey? any
 ---@field onToggleCallback? fun(button: GGUI.ToggleButton, newValue: boolean)
+---@field labelOn? string
+---@field labelOff? string
 
 ---@class GGUI.ToggleButton : GGUI.Button
 ---@overload fun(options:GGUI.ToggleButtonConstructorOptions): GGUI.ToggleButton
@@ -4435,14 +4437,15 @@ GGUI.ToggleButton = GGUI.Button:extend()
 
 ---@param options GGUI.ToggleButtonConstructorOptions
 function GGUI.ToggleButton:new(options)
+    -- lock states on click
+    self.isOn = options.isOn == nil -- default true
+
+    options.label = (self.isOn and options.labelOn) or options.labelOff or options.label
     GGUI.ToggleButton.super.new(self, options)
 
     self.optionsTable = options.optionsTable
     self.optionsKey = options.optionsKey
     self.onToggleCallback = options.onToggleCallback
-
-    -- lock states on click
-    self.isOn = options.isOn == nil -- default true
 
     if self.optionsTable then
         if not self.optionsKey then
@@ -4464,12 +4467,16 @@ function GGUI.ToggleButton:new(options)
             if self.labelTexture then
                 self.labelTexture:SetDesatured(false)
             end
+
+            self:SetText(options.labelOn)
         else
             self.button:DesaturateHierarchy(1)
 
             if self.labelTexture then
                 self.labelTexture:SetDesatured(true)
             end
+
+            self:SetText(options.labelOff)
         end
 
         if self.optionsTable then
