@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 19)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 20)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -4475,15 +4475,18 @@ function GGUI.ToggleButton:new(options)
                 self.labelTexture:SetDesatured(false)
             end
 
-            self:SetText(options.labelOn)
+            if self.button:GetFontString() then
+                self:SetText(options.labelOn)
+            end
         else
             self.button:DesaturateHierarchy(1)
 
             if self.labelTexture then
                 self.labelTexture:SetDesatured(true)
             end
-
-            self:SetText(options.labelOff)
+            if self.button:GetFontString() then
+                self:SetText(options.labelOff)
+            end
         end
 
         if self.optionsTable then
