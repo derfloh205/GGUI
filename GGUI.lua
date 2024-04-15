@@ -1650,6 +1650,7 @@ end
 ---@field buttonTextureOptions? GGUI.ButtonTextureOptions
 ---@field fontOptions? GGUI.FontOptions
 ---@field cleanTemplate? boolean
+---@field hideBackground? boolean
 ---@field tooltipOptions? GGUI.TooltipOptions
 
 ---@class GGUI.FontOptions
@@ -1714,6 +1715,12 @@ function GGUI.Button:new(options)
     local button = CreateFrame("Button", nil, options.parent, templates)
     GGUI.Button.super.new(self, button)
     button:SetScale(options.scale)
+
+    if options.hideBackground then
+        button.Left:Hide();
+        button.Middle:Hide();
+        button.Right:Hide();
+    end
 
     if options.buttonTextureOptions then
         if options.buttonTextureOptions.isAtlas then
