@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 21)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 22)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -4453,6 +4453,9 @@ function GGUI.ToggleButton:new(options)
     self.isOn = options.isOn == nil -- default true
 
     options.label = (self.isOn and options.labelOn) or options.labelOff or options.label
+
+    self.labelOn = options.labelOn
+    self.labelOff = options.labelOff
     GGUI.ToggleButton.super.new(self, options)
 
     self.optionsTable = options.optionsTable
@@ -4471,35 +4474,40 @@ function GGUI.ToggleButton:new(options)
     self.frame:HookScript("OnClick", function()
         GGUI:DebugPrint(options, "Clicked ToggleButton")
 
-        self.isOn = not self.isOn
-
-        if self.isOn then
-            self.button:DesaturateHierarchy(0)
-
-            if self.labelTexture then
-                self.labelTexture:SetDesatured(false)
-            end
-
-            if self.button:GetFontString() then
-                self:SetText(options.labelOn)
-            end
-        else
-            self.button:DesaturateHierarchy(1)
-
-            if self.labelTexture then
-                self.labelTexture:SetDesatured(true)
-            end
-            if self.button:GetFontString() then
-                self:SetText(options.labelOff)
-            end
-        end
-
-        if self.optionsTable then
-            self.optionsTable[self.optionsKey] = self.isOn
-        end
-
-        if self.onToggleCallback then
-            self.onToggleCallback(self, self.isOn)
-        end
+        self:SetToggle(not self.isOn)
     end)
+end
+
+---@param toggle boolean
+function GGUI.ToggleButton:SetToggle(toggle)
+    self.isOn = toggle
+
+    if self.isOn then
+        self.button:DesaturateHierarchy(0)
+
+        if self.labelTexture then
+            self.labelTexture:SetDesatured(false)
+        end
+
+        if self.button:GetFontString() then
+            self:SetText(self.labelOn)
+        end
+    else
+        self.button:DesaturateHierarchy(1)
+
+        if self.labelTexture then
+            self.labelTexture:SetDesatured(true)
+        end
+        if self.button:GetFontString() then
+            self:SetText(self.labelOff)
+        end
+    end
+
+    if self.optionsTable then
+        self.optionsTable[self.optionsKey] = self.isOn
+    end
+
+    if self.onToggleCallback then
+        self.onToggleCallback(self, self.isOn)
+    end
 end
