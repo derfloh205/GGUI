@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 22)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 23)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -88,24 +88,29 @@ function GGUI:DebugTable(objectConstructorOptions, t, label)
     end
 end
 
-function GGUI:MakeFrameCloseable(frame, onCloseCallback)
-    frame.closeButton = GGUI.Button({
-        parent = frame,
-        anchorParent = frame,
-        offsetX = -20,
-        offsetY = -10,
-        label = "X",
-        anchorA = "TOP",
-        anchorB = "TOPRIGHT",
-        sizeX = 25,
-        sizeY = 20,
-        clickCallback = function()
-            frame:Hide()
-            if onCloseCallback then
-                onCloseCallback(frame)
-            end
+---@generic T
+---@param frame T | GGUI.Frame
+---@param onCloseCallback? fun(frame : T)
+---@param closeButtonOptions? GGUI.ButtonConstructorOptions
+function GGUI:MakeFrameCloseable(frame, onCloseCallback, closeButtonOptions)
+    closeButtonOptions = closeButtonOptions or {}
+    closeButtonOptions.parent = closeButtonOptions.parent or frame
+    closeButtonOptions.anchorParent = closeButtonOptions.anchorParent or frame
+    closeButtonOptions.anchorA = closeButtonOptions.anchorA or "TOP"
+    closeButtonOptions.anchorB = closeButtonOptions.anchorB or "TOPRIGHT"
+    closeButtonOptions.sizeX = closeButtonOptions.sizeX or 25
+    closeButtonOptions.sizeY = closeButtonOptions.sizeY or 20
+    closeButtonOptions.offsetX = closeButtonOptions.offsetX or -20
+    closeButtonOptions.offsetY = closeButtonOptions.offsetY or -10
+    closeButtonOptions.anchorPoints = closeButtonOptions.anchorPoints
+    closeButtonOptions.label = closeButtonOptions.label or "X"
+    closeButtonOptions.clickCallback = function()
+        frame:Hide()
+        if onCloseCallback then
+            onCloseCallback(frame)
         end
-    })
+    end
+    frame.closeButton = GGUI.Button(closeButtonOptions)
 end
 
 function GGUI:MakeFrameMoveable(gFrame)
@@ -381,6 +386,7 @@ end
 ---@class GGUI.FrameConstructorOptions : GGUI.ConstructorOptions
 ---@field globalName? string
 ---@field title? string
+---@field titleOptions? GGUI.TextConstructorOptions
 ---@field parent? Frame
 ---@field anchorParent? Region DEPRICATED use anchorPoints
 ---@field anchorA? FramePoint DEPRICATED use anchorPoints
@@ -394,6 +400,7 @@ end
 ---@field frameID? string
 ---@field scrollableContent? boolean
 ---@field closeable? boolean
+---@field closeButtonOptions? GGUI.ButtonConstructorOptions
 ---@field collapseable? boolean
 ---@field collapsed? boolean
 ---@field moveable? boolean
@@ -433,7 +440,6 @@ GGUI.Frame = GGUI.Widget:extend()
 function GGUI.Frame:new(options)
     options = options or {}
     -- handle defaults
-    options.title = options.title or ""
     options.anchorA = options.anchorA or "CENTER"
     options.anchorB = options.anchorB or "CENTER"
     options.offsetX = options.offsetX or 0
@@ -504,14 +510,18 @@ function GGUI.Frame:new(options)
         end)
     end
 
-    self.title = GGUI.Text({
-        parent = frame,
-        anchorParent = frame,
-        text = options.title,
-        offsetY = -15,
-        anchorA = "TOP",
-        anchorB = "TOP"
-    })
+    local titleOptions = options.titleOptions or {}
+
+    titleOptions.parent = titleOptions.parent or frame
+    titleOptions.anchorPoints = titleOptions.anchorPoints or {}
+    titleOptions.anchorPoints[1] = titleOptions.anchorPoints[1] or {}
+    titleOptions.anchorPoints[1].anchorParent = titleOptions.anchorPoints[1].anchorParent or frame
+    titleOptions.anchorPoints[1].anchorA = titleOptions.anchorPoints[1].anchorA or "TOP"
+    titleOptions.anchorPoints[1].anchorB = titleOptions.anchorPoints[1].anchorB or "TOP"
+    titleOptions.anchorPoints[1].offsetY = titleOptions.anchorPoints[1].offsetY or -15
+    titleOptions.text = options.title or titleOptions.text
+
+    self.title = GGUI.Text(titleOptions)
 
     frame:SetPoint("TOP", hookFrame, "TOP", 0, 0)
 
@@ -552,7 +562,7 @@ function GGUI.Frame:new(options)
     end
 
     if self.closeable then
-        GGUI:MakeFrameCloseable(frame, options.onCloseCallback)
+        GGUI:MakeFrameCloseable(frame, options.onCloseCallback, options.closeButtonOptions)
     end
 
     if self.collapseable then
