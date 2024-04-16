@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 20)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 21)
 if not GGUI then return end -- if version already exists
 
 local GUTIL = GGUI_GUTIL
@@ -3808,15 +3808,16 @@ GGUI.CONST.CLASS_ICONS = {
 
 ---@class GGUI.ClassIconConstructorOptions : GGUI.ConstructorOptions
 ---@field parent? Frame
----@field offsetX? number
----@field offsetY? number
+---@field anchorA? FramePoint DEPRICATED: use anchorPoints
+---@field anchorB? FramePoint DEPRICATED: use anchorPoints
+---@field anchorParent? Region DEPRICATED: use anchorPoints
+---@field offsetX? number DEPRICATED: use anchorPoints
+---@field offsetY? number DEPRICATED: use anchorPoints
+---@field anchorPoints? GGUI.AnchorPoint[]
 ---@field initialClass? ClassFile
 ---@field initialSpecID? number
 ---@field sizeX? number
 ---@field sizeY? number
----@field anchorA? FramePoint
----@field anchorB? FramePoint
----@field anchorParent? Region
 ---@field enableMouse? boolean
 ---@field showBorder? boolean
 ---@field borderSize? number
@@ -3854,7 +3855,11 @@ function GGUI.ClassIcon:new(options)
 
     self.icon = CreateFrame("Button", nil, options.parent, "GameMenuButtonTemplate")
     GGUI.Icon.super.new(self, self.icon)
-    self.icon:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
+    if options.anchorPoints then
+        GGUI:SetPointsByAnchorPoints(self.icon, options.anchorPoints)
+    else
+        self.icon:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
+    end
     self.icon:SetSize(options.sizeX, options.sizeY)
 
     if options.showBorder then
