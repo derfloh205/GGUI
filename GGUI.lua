@@ -1,7 +1,8 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 23)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 24)
 if not GGUI then return end -- if version already exists
 
+---@type GGUI_GUTIL
 local GUTIL = GGUI_GUTIL
 
 --- CLASSICS insert
@@ -79,6 +80,11 @@ function GGUI:DebugPrint(objectConstructorOptions, text)
     if objectConstructorOptions.debug then
         print(GUTIL:ColorizeText("GGUI Debug: ", GUTIL.COLORS.EPIC) .. tostring(text))
     end
+end
+
+---@param errorMessage string
+function GGUI:ThrowError(message)
+    error(GUTIL:ColorizeText("GGUI Error: ", GUTIL.COLORS.RED) .. tostring(message))
 end
 
 --- Requires DevTool Addon
@@ -718,7 +724,7 @@ function GGUI.Frame:SetStatusList(statusList)
     -- map statuslist to their ids
     table.foreach(statusList, function(_, status)
         if not status.statusID then
-            error("GGUI: FrameStatus without statusID")
+            GGUI:ThrowError("FrameStatus without statusID")
         end
         self.statusList[status.statusID] = status
     end)
@@ -1836,8 +1842,7 @@ end
 --- Can be used to set the macro text of the button (only available if macro option was set)
 function GGUI.Button:SetMacroText(macroText)
     if not self.macro then
-        print("GGUI Error: Trying to set a macro text on a button without macro property set to true")
-        return
+        GGUI:ThrowError("Trying to set a macro text on a button without macro property set to true")
     end
     self.macroText = macroText
     self:SetAttribute("macrotext", self.macroText)
@@ -1867,7 +1872,7 @@ function GGUI.Button:SetStatusList(statusList)
     -- map statuslist to their ids
     table.foreach(statusList, function(_, status)
         if not status.statusID then
-            error("GGUI: ButtonStatus without statusID")
+            GGUI:ThrowError("ButtonStatus without statusID")
         end
         self.statusList[status.statusID] = status
     end)
@@ -2807,27 +2812,27 @@ end
 GGUI.FrameList = GGUI.Widget:extend()
 
 ---@class GGUI.FrameListConstructorOptions : GGUI.ConstructorOptions
----@field parent? Frame
+---@field private parent? Frame
 ---@field rowHeight? number
 ---@field columnOptions GGUI.FrameList.ColumnOption[]
 ---@field rowConstructor fun(columns: Frame[], row: GGUI.FrameList.Row) used to construct the rows and fill the column frames with content, columns are forwarded as params (...)
 ---@field showBorder? boolean
----@field anchorPoints? GGUI.AnchorPoint[]
----@field anchorParent? Frame -- DEPRICATED Use anchorPoints
----@field anchorA? FramePoint -- DEPRICATED Use anchorPoints
----@field anchorB? FramePoint -- DEPRICATED Use anchorPoints
----@field offsetX? number -- DEPRICATED Use anchorPoints
----@field offsetY? number -- DEPRICATED Use anchorPoints
+---@field private anchorPoints? GGUI.AnchorPoint[]
+---@field private anchorParent? Frame -- DEPRICATED Use anchorPoints
+---@field private anchorA? FramePoint -- DEPRICATED Use anchorPoints
+---@field private anchorB? FramePoint -- DEPRICATED Use anchorPoints
+---@field private offsetX? number -- DEPRICATED Use anchorPoints
+---@field private offsetY? number -- DEPRICATED Use anchorPoints
 ---@field sizeX? number if omitted will adjust to row width
----@field sizeY? number will be ignored when autoAdjustHeight is set
----@field headerOffsetX? number
+---@field private sizeY? number will be ignored when autoAdjustHeight is set
+---@field private headerOffsetX? number
 ---@field scale? number
 ---@field rowScale? number
 ---@field selectionOptions? GGUI.FrameList.SelectionOptions
 ---@field rowBackdrops? GGUI.BackdropOptions[] rows will alternate backdroplist
 ---@field hideScrollbar? boolean
----@field autoAdjustHeight? boolean
----@field autoAdjustHeightCallback? fun(newHeight: number)
+---@field private autoAdjustHeight? boolean
+---@field private autoAdjustHeightCallback? fun(newHeight: number)
 ---@field disableScrolling? boolean
 
 ---@class GGUI.FrameList.SelectionOptions
@@ -2875,11 +2880,11 @@ function GGUI.FrameList:new(options)
     self.selectedRow = nil
 
     if not options.columnOptions or #options.columnOptions == 0 then
-        error("GGUI Error: FrameList needs a least one column! (columnOptions)")
+        GGUI:ThrowError("FrameList needs a least one column! (columnOptions)")
     end
 
     if not options.rowConstructor then
-        error("GGUI Error: FrameList needs a rowConstructor function!")
+        GGUI:ThrowError("FrameList needs a rowConstructor function!")
     end
 
     local firstColumnOffsetX = 0
@@ -2887,7 +2892,7 @@ function GGUI.FrameList:new(options)
 
     table.foreach(options.columnOptions, function(_, columnOption)
         if not columnOption.width then
-            error("GGUI Error: All columnOptions need a width property!")
+            GGUI:ThrowError("All Column Options need a width property!")
         end
         rowWidth = rowWidth + columnOption.width
     end)
@@ -2992,6 +2997,8 @@ GGUI.FrameList.Row = GGUI.Widget:extend()
 ---@param frameList GGUI.FrameList
 function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     GGUI.FrameList.Row.super.new(self, rowFrame)
+    ---@type Frame
+    self.frame = self.frame
     self.columns = columns
     self.active = false
     self.frameList = frameList
@@ -3014,6 +3021,10 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     self.separatorLine:SetEndPoint("BOTTOMRIGHT", rowFrame)
 
     self.separatorLine:Hide()
+
+    self.subFrameListEnabled = false
+    ---@type GGUI.FrameList?
+    self.subFrameList = nil
 
     ---@type function
     local onEnterSelectableRow = nil
@@ -3066,13 +3077,16 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
                     end
                 end
             end
-        -- OnMouseDown handler - Mouse click
-        rowFrame:SetScript("OnMouseDown", function()
-            if frameList.selectionEnabled then
-                self:Select(true)
-            end
-        end)
     end
+    -- OnMouseDown handler - Mouse click
+    rowFrame:SetScript("OnMouseDown", function()
+        -- subFrameList toggle has authority over selection!
+        if self.subFrameListEnabled and self.subFrameList then
+            self:SetSubFrameListVisible(not self.subFrameListVisible)
+        elseif frameList.selectionEnabled and frameList.selectionOptions then
+            self:Select(true)
+        end
+    end)
     rowFrame:HookScript("OnEnter", function()
         if not frameList.selectionEnabled then return end
         if onEnterSelectableRow then
@@ -3112,6 +3126,65 @@ function GGUI.FrameList.Row:GetActiveRowIndex()
         end
     end
     return nil
+end
+
+---@class GGUI.SubFrameListConstructorOptions : GGUI.FrameListConstructorOptions
+---@field offsetX? number frameListOffsetX
+---@field offsetY? number frameListOffsetY
+
+---@param subFrameListOptions? GGUI.SubFrameListConstructorOptions
+function GGUI.FrameList.Row:CreateSubFrameList(subFrameListOptions)
+    subFrameListOptions = subFrameListOptions or {}
+    -- set some defaults for anchoring, offsets and scale
+
+    --self.subFrameListVisible = true
+
+    GGUI:DebugPrint(subFrameListOptions, "Creating SubFrameList")
+
+    if subFrameListOptions.sizeY then
+        GGUI:ThrowError("Sub FrameList sizeY should not be set")
+    end
+    local hasLabels = table.foreach(subFrameListOptions.columnOptions, function(_, columnOption)
+        if columnOption.label then
+            return true
+        end
+    end)
+    GGUI:DebugPrint(subFrameListOptions, "noLabel: " .. tostring(headerOffsetY))
+    local headerOffsetY = -20
+    if not hasLabels then
+        headerOffsetY = 0
+    end
+    GGUI:DebugPrint(subFrameListOptions, "headerOffsetY: " .. tostring(headerOffsetY))
+    local frameListOffsetX = (subFrameListOptions.offsetX or 0) + 10
+    local frameListOffsetY = (subFrameListOptions.offsetY or 0) + -self.frameList.rowHeight + headerOffsetY
+    subFrameListOptions.parent = subFrameListOptions.parent or self.frame
+    subFrameListOptions.sizeY = 100
+    subFrameListOptions.anchorPoints = subFrameListOptions.anchorPoints or
+        { { anchorParent = self.frame, anchorA = "TOPLEFT", anchorB = "TOPLEFT", offsetX = frameListOffsetX, offsetY = frameListOffsetY } }
+    subFrameListOptions.autoAdjustHeight = true
+    subFrameListOptions.autoAdjustHeightCallback = function(newHeight)
+        if self.subFrameListVisible then
+            self.frame:SetSize(self.frame:GetWidth(), self.frameList.rowHeight + newHeight + math.abs(headerOffsetY))
+        end
+    end
+
+
+    self.subFrameList = GGUI.FrameList(subFrameListOptions)
+
+    self.subFrameList:Hide()
+end
+
+---@param visible boolean
+function GGUI.FrameList.Row:SetSubFrameListVisible(visible)
+    if visible then
+        self.subFrameListVisible = true
+        self.subFrameList:Show()
+        self.subFrameList:AdjustHeight() -- predefined adjust height callback should now resize the rowFrame accordingly
+    else
+        self.subFrameListVisible = false
+        self.frame:SetSize(self.frame:GetWidth(), self.frameList.rowHeight)
+        self.subFrameList:Hide()
+    end
 end
 
 ---@param index number
@@ -3299,15 +3372,19 @@ function GGUI.FrameList:UpdateDisplay(sortFunc)
     end
 
     if self.autoAdjustHeight then
-        -- adjust framelist height depending on activeRow Count and call callback if existing
-        local headerOffset = 10
-        local newHeight = (#self.activeRows * self.rowHeight) + headerOffset
+        self:AdjustHeight()
+    end
+end
 
-        self.frame:SetSize(self.frame:GetWidth(), newHeight)
+function GGUI.FrameList:AdjustHeight()
+    -- adjust framelist height depending on activeRow Count and call callback if existing
+    local headerOffset = 10
+    local newHeight = (#self.activeRows * self.rowHeight) + headerOffset
 
-        if self.autoAdjustHeightCallback then
-            self.autoAdjustHeightCallback(newHeight)
-        end
+    self.frame:SetSize(self.frame:GetWidth(), newHeight)
+
+    if self.autoAdjustHeightCallback then
+        self.autoAdjustHeightCallback(newHeight)
     end
 end
 
@@ -3333,7 +3410,7 @@ local popupFrame = nil
 ---@param options GGUI.ShowPopupOptions
 function GGUI:ShowPopup(options)
     if not popupFrame then
-        error("GGUI Error: Popup Frame not initialized")
+        GGUI:ThrowError("Popup Frame not initialized")
     end
     options.title = options.title or nil
     options.text = options.text or ""
@@ -4129,7 +4206,7 @@ function GGUI.BlizzardTabSystem:new(tabList)
     end
 
     if GGUI_GUTIL:Count(tabList, function(tab) return tab.initialTab end) ~= 1 then
-        error("GGUI Error: BlizzardTabSystem needs exactly one tab with property initialTab = true")
+        GGUI:ThrowError("BlizzardTabSystem needs exactly one tab with property initialTab = true")
     end
 
     for _, tab in pairs(tabList) do
@@ -4474,7 +4551,7 @@ function GGUI.ToggleButton:new(options)
 
     if self.optionsTable then
         if not self.optionsKey then
-            error("GGUI: ToggleButton Options Table given without key")
+            GGUI:ThrowError("ToggleButton Options Table given without key")
         end
 
         -- init
