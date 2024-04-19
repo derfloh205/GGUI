@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 24)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 254)
 if not GGUI then return end -- if version already exists
 
 ---@type GGUI_GUTIL
@@ -422,6 +422,7 @@ end
 ---@field closeOnClickOutside? boolean
 ---@field tooltipOptions? GGUI.TooltipOptions
 ---@field hide? boolean
+---@field raiseOnClick? boolean
 
 ---@class GGUI.BackdropOptions
 ---@field backdropInfo? backdropInfo
@@ -497,6 +498,12 @@ function GGUI.Frame:new(options)
     frame:SetScale(options.scale)
     frame:SetFrameStrata(options.frameStrata or options.parent:GetFrameStrata())
     frame:SetFrameLevel(options.frameLevel or (options.parent:GetFrameLevel() + 1))
+
+    if options.raiseOnClick then
+        frame:HookScript("OnClick", function()
+            self:Raise()
+        end)
+    end
 
     if options.hide then
         frame:Hide()
