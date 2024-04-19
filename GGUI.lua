@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 254)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 26)
 if not GGUI then return end -- if version already exists
 
 ---@type GGUI_GUTIL
@@ -119,14 +119,18 @@ function GGUI:MakeFrameCloseable(frame, onCloseCallback, closeButtonOptions)
     frame.closeButton = GGUI.Button(closeButtonOptions)
 end
 
+---@param gFrame GGUI.Frame
 function GGUI:MakeFrameMoveable(gFrame)
     gFrame.frame.hookFrame:SetMovable(true)
-    gFrame.frame:SetScript("OnMouseDown", function(self, button)
+    gFrame.frame:HookScript("OnMouseDown", function(self, button)
+        if gFrame.raiseOnClick then
+            gFrame:Raise()
+        end
         local anchorParent = select(2, gFrame.frame.hookFrame:GetPoint())
         gFrame.preMoveAnchorParent = anchorParent
         gFrame.frame.hookFrame:StartMoving()
     end)
-    gFrame.frame:SetScript("OnMouseUp", function(self, button)
+    gFrame.frame:HookScript("OnMouseUp", function(self, button)
         gFrame.frame.hookFrame:StopMovingOrSizing()
         local x, y = gFrame.frame.hookFrame:GetCenter()
         local relativeX, relativeY = gFrame.preMoveAnchorParent:GetCenter()
@@ -499,11 +503,7 @@ function GGUI.Frame:new(options)
     frame:SetFrameStrata(options.frameStrata or options.parent:GetFrameStrata())
     frame:SetFrameLevel(options.frameLevel or (options.parent:GetFrameLevel() + 1))
 
-    if options.raiseOnClick then
-        frame:HookScript("OnClick", function()
-            self:Raise()
-        end)
-    end
+    self.raiseOnClick = options.raiseOnClick
 
     if options.hide then
         frame:Hide()
@@ -606,6 +606,8 @@ function GGUI.Frame:new(options)
         frame.content = CreateFrame("frame", nil, frame, "BackdropTemplate")
         frame.content:SetPoint("TOP", frame, "TOP")
         frame.content:SetSize(options.sizeX, options.sizeY)
+        frame.content:SetFrameStrata(frame:GetFrameStrata())
+        frame.content:SetFrameLevel(frame:GetFrameLevel() + 1)
     end
 
     self.tooltipOptions = options.tooltipOptions
@@ -628,6 +630,16 @@ function GGUI.Frame:Hide()
     self.frame:Hide()
     self.frame.hookFrame:Hide()
     self.content:Hide()
+end
+
+function GGUI.Frame:Raise()
+    self.frame:Raise()
+    self.content:Raise()
+end
+
+function GGUI.Frame:Lower()
+    self.content:Lower()
+    self.frame:Lower()
 end
 
 function GGUI.Frame:SetSize(x, y)
