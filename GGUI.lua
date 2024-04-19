@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 26)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 27)
 if not GGUI then return end -- if version already exists
 
 ---@type GGUI_GUTIL
@@ -123,9 +123,6 @@ end
 function GGUI:MakeFrameMoveable(gFrame)
     gFrame.frame.hookFrame:SetMovable(true)
     gFrame.frame:HookScript("OnMouseDown", function(self, button)
-        if gFrame.raiseOnClick then
-            gFrame:Raise()
-        end
         local anchorParent = select(2, gFrame.frame.hookFrame:GetPoint())
         gFrame.preMoveAnchorParent = anchorParent
         gFrame.frame.hookFrame:StartMoving()
@@ -426,7 +423,7 @@ end
 ---@field closeOnClickOutside? boolean
 ---@field tooltipOptions? GGUI.TooltipOptions
 ---@field hide? boolean
----@field raiseOnClick? boolean
+---@field raiseOnInteraction? boolean
 
 ---@class GGUI.BackdropOptions
 ---@field backdropInfo? backdropInfo
@@ -503,7 +500,9 @@ function GGUI.Frame:new(options)
     frame:SetFrameStrata(options.frameStrata or options.parent:GetFrameStrata())
     frame:SetFrameLevel(options.frameLevel or (options.parent:GetFrameLevel() + 1))
 
-    self.raiseOnClick = options.raiseOnClick
+    if options.raiseOnInteraction then
+        frame:SetToplevel(true)
+    end
 
     if options.hide then
         frame:Hide()
