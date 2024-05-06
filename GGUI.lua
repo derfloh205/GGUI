@@ -3217,6 +3217,23 @@ function GGUI.FrameList:SelectRow(index)
     end
 end
 
+---@param predicate fun(row: GGUI.FrameList.Row): boolean
+---@param defaultIndex number?
+---@return number? selectedIndex
+function GGUI.FrameList:SelectRowWhere(predicate, defaultIndex)
+    for rowIndex, activeRow in ipairs(self.activeRows) do
+        if predicate(activeRow) then
+            self:SelectRow(rowIndex)
+            return rowIndex
+        end
+    end
+
+    if defaultIndex then
+        self:SelectRow(defaultIndex)
+        return defaultIndex
+    end
+end
+
 function GGUI.FrameList:CreateRow()
     local rowFrame = CreateFrame("Frame", nil, self.scrollFrame.content, "BackdropTemplate")
     rowFrame:SetSize(self.rowWidth, self.rowHeight)
