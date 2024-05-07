@@ -622,7 +622,9 @@ end
 function GGUI.Frame:Show()
     self.frame:Show()
     self.frame.hookFrame:Show()
-    self.content:Show()
+    if not self.collapsed then
+        self.content:Show()
+    end
 end
 
 function GGUI.Frame:Hide()
