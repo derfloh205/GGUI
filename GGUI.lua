@@ -1529,11 +1529,16 @@ function GGUI.Text:new(options)
 
     if options.justifyOptions then
         if options.justifyOptions.type == "V" and options.justifyOptions.align then
+            -- retroactive compatible fix for 10.2.7
+            options.justifyOptions.align = options.justifyOptions.align == "CENTER" and "MIDDLE" or
+                options.justifyOptions.align
             text:SetJustifyV(options.justifyOptions.align)
         elseif options.justifyOptions.type == "H" and options.justifyOptions.align then
             text:SetJustifyH(options.justifyOptions.align)
         elseif options.justifyOptions.type == "HV" and options.justifyOptions.alignH and options.justifyOptions.alignV then
             text:SetJustifyH(options.justifyOptions.alignH)
+            options.justifyOptions.alignV = options.justifyOptions.alignV == "CENTER" and "MIDDLE" or
+                options.justifyOptions.alignV
             text:SetJustifyV(options.justifyOptions.alignV)
         end
     end
