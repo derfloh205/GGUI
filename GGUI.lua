@@ -820,7 +820,7 @@ end
 ---@field parent? Frame
 ---@field offsetX? number
 ---@field offsetY? number
----@field texturePath? string
+---@field texturePath? string | number
 ---@field sizeX? number
 ---@field sizeY? number
 ---@field qualityIconScale? number
