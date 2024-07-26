@@ -4166,7 +4166,7 @@ function GGUI.SpellIcon:new(options)
     self.icon:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
     self.icon:SetSize(options.sizeX, options.sizeY)
 
-    local texture = GetSpellTexture(self.spellID)
+    local texture = C_Spell.GetSpellTexture(self.spellID)
     if texture then
         local buttonTexture = self.icon:CreateTexture(nil, "BACKGROUND")
         buttonTexture:SetAllPoints()
@@ -4209,7 +4209,7 @@ end
 
 ---@param spellID number
 function GGUI.SpellIcon:SetSpell(spellID)
-    local texture = GetSpellTexture(spellID)
+    local texture = C_Spell.GetSpellTexture(spellID)
     self.spellID = spellID
     if texture then
         self.icon:SetNormalTexture(texture)
