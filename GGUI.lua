@@ -2118,6 +2118,13 @@ function GGUI.Checkbox:SetLabel(label)
     end
 end
 
+function GGUI.Checkbox:SetVisible(visible)
+    GGUI.Checkbox.super.SetVisible(self, visible)
+    if self.labelText then
+        self.labelText:SetVisible(visible)
+    end
+end
+
 --- GGUI.Slider
 
 ---@class GGUI.SliderConstructorOptions : GGUI.ConstructorOptions
