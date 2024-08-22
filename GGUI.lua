@@ -1579,7 +1579,7 @@ function GGUI.Text:SetText(text)
     self.frame:SetText(text)
 end
 
----@param color GUTIL.COLORS
+---@param color GUTIL.COLORS?
 function GGUI.Text:SetColor(color)
     local text = GUTIL:StripColor(self:GetText())
     if color then
