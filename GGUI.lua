@@ -129,6 +129,7 @@ function GGUI:MakeFrameMoveable(gFrame)
     end)
     gFrame.frame:HookScript("OnMouseUp", function(self, button)
         gFrame.frame.hookFrame:StopMovingOrSizing()
+        if not gFrame.preMoveAnchorParent then return end
         local x, y = gFrame.frame.hookFrame:GetCenter()
         local relativeX, relativeY = gFrame.preMoveAnchorParent:GetCenter()
 
