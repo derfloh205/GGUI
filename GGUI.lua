@@ -2928,6 +2928,7 @@ function GGUI.FrameList:new(options)
     options.rowScale = options.rowScale or 1
     self.autoAdjustHeight = options.autoAdjustHeight or false
     self.autoAdjustHeightCallback = options.autoAdjustHeightCallback
+    self.maxAutoAdjustHeight = options.maxAutoAdjustHeight
     self.rowBackdrops = options.rowBackdrops
     self.rowScale = options.rowScale
     self.rowHeight = options.rowHeight
@@ -3459,6 +3460,11 @@ function GGUI.FrameList:AdjustHeight()
     -- adjust framelist height depending on activeRow Count and call callback if existing
     local headerOffset = 10
     local newHeight = (#self.activeRows * self.rowHeight) + headerOffset
+
+    if self.maxAutoAdjustHeight then
+        -- limit to maxHeightAdjustment
+        newHeight = math.min(self.maxAutoAdjustHeight, newHeight)
+    end
 
     self.frame:SetSize(self.frame:GetWidth(), newHeight)
 
