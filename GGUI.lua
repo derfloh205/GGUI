@@ -1870,8 +1870,8 @@ function GGUI.Button:new(options)
 
         button:RegisterForClicks("AnyUp", "AnyDown")
 
-        button:SetScript("OnClick", function(_, button)
-            if self.clickCallback then
+        button:SetScript("OnClick", function(_, button, down)
+            if down and self.clickCallback then
                 self.clickCallback(self, button)
             end
         end)
