@@ -1868,7 +1868,7 @@ function GGUI.Button:new(options)
     if not self.macro then
         self.clickCallback = options.clickCallback
 
-        button:SetScript("OnClick", function()
+        button:SetScript("OnMouseDown", function()
             if self.clickCallback then
                 self.clickCallback(self)
             end
