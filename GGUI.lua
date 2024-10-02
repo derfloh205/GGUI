@@ -1883,9 +1883,7 @@ function GGUI.Button:new(options)
         button:RegisterForClicks("AnyUp", "AnyDown")
 
         button:SetScript("OnClick", function(_, button, down)
-            GGUI:DebugPrint(options, "Hi")
             if down and self.clickCallback then
-                GGUI:DebugPrint(options, "Hi click")
                 self.clickCallback(self, button)
             end
         end)
