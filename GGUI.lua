@@ -501,6 +501,13 @@ function GGUI.Frame:new(options)
     frame:SetFrameStrata(options.frameStrata or options.parent:GetFrameStrata())
     frame:SetFrameLevel(options.frameLevel or (options.parent:GetFrameLevel() + 1))
 
+    ---@type number sourced by GetTime() which gives the id of the current render frame
+    self.onShowRenderFrameTimestamp = 0
+
+    frame:HookScript("OnShow", function()
+        self.onShowRenderFrameTimestamp = tonumber(GUTIL:Round(GetTime(), 1))
+    end)
+
     if options.raiseOnInteraction then
         frame:SetToplevel(true)
     end
@@ -514,9 +521,14 @@ function GGUI.Frame:new(options)
         frame:HookScript("OnUpdate", function()
             if IsMouseButtonDown("LeftButton") and frame:IsShown() then
                 if not frame:IsMouseOver() then
-                    frame:Hide()
-                    if self.onCloseCallback then
-                        self.onCloseCallback()
+                    local renderFrameTimestamp = tonumber(GUTIL:Round(GetTime(), 1))
+                    -- if render frame time stamp is younger than 2 secs
+                    -- due to the frame being able to set to visible by a button that is not in its mouse over area
+                    if renderFrameTimestamp > (self.onShowRenderFrameTimestamp + 0.3) then
+                        frame:Hide()
+                        if self.onCloseCallback then
+                            self.onCloseCallback()
+                        end
                     end
                 end
             end
@@ -1871,7 +1883,9 @@ function GGUI.Button:new(options)
         button:RegisterForClicks("AnyUp", "AnyDown")
 
         button:SetScript("OnClick", function(_, button, down)
+            GGUI:DebugPrint(options, "Hi")
             if down and self.clickCallback then
+                GGUI:DebugPrint(options, "Hi click")
                 self.clickCallback(self, button)
             end
         end)
