@@ -1493,6 +1493,7 @@ end
 
 ---@class GGUI.TextConstructorOptions : GGUI.ConstructorOptions
 ---@field text? string
+---@field prefix? string
 ---@field anchorPoints? GGUI.AnchorPoint[]
 ---@field parent? Frame
 ---@field anchorParent? Region -- DEPRICATED: Use anchorPoints
@@ -1529,12 +1530,14 @@ function GGUI.Text:new(options)
     options.font = options.font or "GameFontHighlight"
     options.scale = options.scale or 1
 
+    self.prefix = options.prefix or ""
+
     GGUI:DebugPrint(options, "Debug Text " .. tostring(options.text))
 
     local text = options.parent:CreateFontString(nil, "OVERLAY", options.font)
     self.text = text
     GGUI.Text.super.new(self, text)
-    text:SetText(options.text)
+    text:SetText(self.prefix .. options.text)
     if options.anchorPoints then
         for _, anchorPoint in ipairs(options.anchorPoints) do
             GGUI:DebugPrint(options, "- Set Anchor OffsetY " .. tostring(anchorPoint.offsetY))
@@ -1590,7 +1593,7 @@ function GGUI.Text:GetText()
 end
 
 function GGUI.Text:SetText(text)
-    self.frame:SetText(text)
+    self.frame:SetText(self.prefix .. text)
 end
 
 ---@param color GUTIL.COLORS?
