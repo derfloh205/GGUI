@@ -217,6 +217,8 @@ function GGUI:SetTooltipsByTooltipOptions(frame, optionsOwner)
             end
         elseif tooltipOptions.itemID then
             GameTooltip:SetItemByID(tooltipOptions.itemID)
+        elseif tooltipOptions.itemLink then
+            GameTooltip:SetHyperlink(tooltipOptions.itemLink)
         elseif tooltipOptions.text then
             GameTooltip:SetText(tooltipOptions.text, nil, nil, nil, nil,
                 tooltipOptions.textWrap)
@@ -1624,6 +1626,7 @@ end
 ---@field maxLines? number
 ---@field sizeX? number
 ---@field sizeY? number
+---@field scale? number
 ---@field font? string
 ---@field fading? boolean
 ---@field enableScrolling? boolean
@@ -1641,14 +1644,17 @@ function GGUI.ScrollingMessageFrame:new(options)
     options.offsetY = options.offsetY or 0
     options.sizeX = options.sizeX or 150
     options.sizeY = options.sizeY or 100
-    options.font = options.font or "GameFontHighlight"
+    options.font = options.font or GameFontHighlight
     options.fading = options.fading or false
     options.enableScrolling = options.enableScrolling or false
     local scrollingFrame = CreateFrame("ScrollingMessageFrame", nil, options.parent)
     GGUI.ScrollingMessageFrame.super.new(self, scrollingFrame)
+    ---@type ScrollingMessageFrame
+    self.frame = self.frame
     scrollingFrame:SetSize(options.sizeX, options.sizeY)
     scrollingFrame:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
     scrollingFrame:SetFontObject(options.font)
+    scrollingFrame:SetScale(options.scale or 1)
     if options.maxLines then
         scrollingFrame:SetMaxLines(options.maxLines)
     end
@@ -3099,6 +3105,7 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     ---@class GGUI.TooltipOptions?
     ---@field spellID number?
     ---@field itemID number?
+    ---@field itemLink string?
     ---@field owner? Frame if omitted defaults to optionsOwner.frame
     ---@field anchor TooltipAnchor
     ---@field text string?
