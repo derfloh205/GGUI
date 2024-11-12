@@ -1634,6 +1634,7 @@ end
 ---@field fading? boolean
 ---@field enableScrolling? boolean
 ---@field justifyOptions? GGUI.JustifyOptions
+---@field showScrollBar? boolean
 
 ---@class GGUI.ScrollingMessageFrame
 ---@overload fun(options:GGUI.ScrollingMessageFrameConstructorOptions): GGUI.ScrollingMessageFrame
@@ -1681,6 +1682,13 @@ function GGUI.ScrollingMessageFrame:new(options)
             scrollingFrame:ScrollDown()
         end
     end)
+
+    if options.showScrollBar then
+        self.scrollBar = CreateFrame("EventFrame", nil, self.frame, "MinimalScrollBar")
+        self.scrollBar:SetPoint("TOPRIGHT", self.frame, "TOPRIGHT")
+
+        --ScrollUtil.
+    end
 end
 
 function GGUI.ScrollingMessageFrame:AddMessage(message)
