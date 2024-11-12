@@ -2947,6 +2947,7 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field private autoAdjustHeight? boolean
 ---@field private autoAdjustHeightCallback? fun(newHeight: number)
 ---@field disableScrolling? boolean
+---@field label? string
 
 ---@class GGUI.FrameList.SelectionOptions
 ---@field noSelectionColor boolean?
@@ -3077,6 +3078,14 @@ function GGUI.FrameList:new(options)
         end
 
         lastHeaderColumn = headerColumn
+    end
+
+    if options.label then
+        self.label = GGUI.Text {
+            parent = options.parent,
+            anchorPoints = { { anchorParent = mainFrame, anchorA = "BOTTOM", anchorB = "TOP", offsetY = 5 } },
+            text = options.label
+        }
     end
 
     GGUI.FrameList.super.new(self, mainFrame)
