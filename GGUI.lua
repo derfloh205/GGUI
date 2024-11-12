@@ -97,7 +97,7 @@ end
 ---@generic T
 ---@param frame T | GGUI.Frame
 ---@param onCloseCallback? fun(frame : T)
----@param closeButtonOptions? GGUI.ButtonConstructorOptions
+---@param closeButtonOptions? GGUI.Button.ConstructorOptions
 function GGUI:MakeFrameCloseable(frame, onCloseCallback, closeButtonOptions)
     closeButtonOptions = closeButtonOptions or {}
     closeButtonOptions.parent = closeButtonOptions.parent or frame
@@ -410,7 +410,7 @@ end
 ---@field frameID? string
 ---@field scrollableContent? boolean
 ---@field closeable? boolean
----@field closeButtonOptions? GGUI.ButtonConstructorOptions
+---@field closeButtonOptions? GGUI.Button.ConstructorOptions
 ---@field collapseable? boolean
 ---@field collapsed? boolean
 ---@field moveable? boolean
@@ -1190,7 +1190,7 @@ end
 ---@field offsetX? number
 ---@field offsetY? number
 ---@field width? number
----@field buttonOptions GGUI.ButtonConstructorOptions? options to partially overwrite the default widget options
+---@field buttonOptions GGUI.Button.ConstructorOptions? options to partially overwrite the default widget options
 ---@field selectionFrameOptions GGUI.FrameConstructorOptions? options to partially overwrite the default widget options
 ---@field frameListOptions GGUI.FrameListConstructorOptions? options to partially overwrite the default widget options
 ---@field labelOptions GGUI.TextConstructorOptions? options to partially overwrite the default widget options
@@ -1236,7 +1236,7 @@ function GGUI.CustomDropdown:new(options)
     self.selectedValue                         = nil
     self.clickCallback                         = options.clickCallback
 
-    ---@type GGUI.ButtonConstructorOptions
+    ---@type GGUI.Button.ConstructorOptions
     local defaultButtonOptions                 = {
         parent = options.parent or options.buttonOptions.parent,
         anchorParent = options.anchorParent or options.buttonOptions.anchorParent,
@@ -1635,6 +1635,7 @@ end
 ---@field enableScrolling? boolean
 ---@field justifyOptions? GGUI.JustifyOptions
 ---@field showScrollBar? boolean
+---@field copyable? boolean
 
 ---@class GGUI.ScrollingMessageFrame
 ---@overload fun(options:GGUI.ScrollingMessageFrameConstructorOptions): GGUI.ScrollingMessageFrame
@@ -1683,6 +1684,11 @@ function GGUI.ScrollingMessageFrame:new(options)
         end
     end)
 
+    scrollingFrame:SetTextCopyable(options.copyable)
+    if options.copyable then
+        scrollingFrame:EnableMouse(true)
+    end
+
 
     if options.showScrollBar then
         self.scrollBar = CreateFrame("EventFrame", nil, self.frame, "MinimalScrollBar")
@@ -1722,7 +1728,7 @@ end
 ---@field enabled? boolean
 ---@field activationCallback? function
 
----@class GGUI.ButtonConstructorOptions : GGUI.ConstructorOptions
+---@class GGUI.Button.ConstructorOptions : GGUI.ConstructorOptions
 ---@field label? string
 ---@field labelTextureOptions? GGUI.TextureConstructorOptions
 ---@field parent? Frame
@@ -1761,9 +1767,9 @@ end
 ---@field highlightBlendmode? BlendMode
 
 ---@class GGUI.Button : GGUI.Widget
----@overload fun(options:GGUI.ButtonConstructorOptions): GGUI.Button
+---@overload fun(options:GGUI.Button.ConstructorOptions): GGUI.Button
 GGUI.Button = GGUI.Widget:extend()
----@param options GGUI.ButtonConstructorOptions
+---@param options GGUI.Button.ConstructorOptions
 function GGUI.Button:new(options)
     self.statusList = {}
     options = options or {}
@@ -2012,7 +2018,7 @@ end
 --- GGUI.Tab
 
 ---@class GGUI.TabConstructorOptions : GGUI.ConstructorOptions
----@field buttonOptions? GGUI.ButtonConstructorOptions
+---@field buttonOptions? GGUI.Button.ConstructorOptions
 ---@field canBeEnabled? boolean
 ---@field sizeX? number
 ---@field sizeY? number
@@ -2321,15 +2327,22 @@ function GGUI.ScrollFrame:new(options)
     self.hideScrollbar = options.hideScrollbar or false
 
     local scrollFrame = CreateFrame("ScrollFrame", nil, options.parent, "UIPanelScrollFrameTemplate, BackdropTemplate")
+    local scrollBarOffsetX = 7
+    self.scrollBar = CreateFrame("EventFrame", nil, scrollFrame, "MinimalScrollBar")
+    self.scrollBar:SetPoint("TOPLEFT", scrollFrame, "TOPRIGHT", scrollBarOffsetX, 0)
+    self.scrollBar:SetPoint("BOTTOMLEFT", scrollFrame, "BOTTOMRIGHT", scrollBarOffsetX, 0)
+
+    ScrollUtil.InitScrollFrameWithScrollBar(scrollFrame, self.scrollBar);
 
     scrollFrame.ScrollBar:HookScript("OnShow", function()
-        if self.hideScrollbar then
-            scrollFrame.ScrollBar:Hide();
+        -- always hide default scroll bar
+        scrollFrame.ScrollBar:Hide();
+
+        if self.hideScrollbar then -- also hide custom scroll bar
+            scrollFrame.scrollBar:Hide()
         end
-    end) -- need to use this solution because otherwise scrolling is no longer possible
-    -- if self.hideScrollbar then
-    --     scrollFrame.ScrollBar:ClearAllPoints() -- hack much
-    -- end
+    end)
+
     if options.showBorder then
         -- border around scrollframe
         local borderFrame = CreateFrame("Frame", nil, options.parent, "BackdropTemplate")
@@ -2350,18 +2363,6 @@ function GGUI.ScrollFrame:new(options)
             edgeSize = 16,
         })
         borderFrame:SetFrameLevel(scrollFrame:GetFrameLevel() + 1)
-
-        if not self.hideScrollbar then
-            -- separator between scroll bar and content
-            local separatorFrame = CreateFrame("Frame", nil, options.parent, "BackdropTemplate")
-            separatorFrame:SetSize(5, options.parent:GetHeight() + 0.5)
-            separatorFrame:SetPoint("TOPRIGHT", options.parent, "TOPRIGHT", 0, 0)
-            separatorFrame:SetBackdrop({
-                edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
-                edgeSize = 16,
-            })
-            separatorFrame:SetFrameLevel(scrollFrame:GetFrameLevel() + 1)
-        end
     end
     scrollFrame.scrollChild = CreateFrame("frame")
     local scrollChild = scrollFrame.scrollChild
@@ -4582,7 +4583,7 @@ function GGUI.TooltipOptionsFrame:new(options)
     end
 end
 
----@class GGUI.ToggleButtonConstructorOptions : GGUI.ButtonConstructorOptions
+---@class GGUI.ToggleButtonConstructorOptions : GGUI.Button.ConstructorOptions
 ---@field isOn? boolean
 ---@field optionsTable? table
 ---@field optionsKey? any
@@ -4657,4 +4658,36 @@ function GGUI.ToggleButton:SetToggle(toggle)
     if self.onToggleCallback then
         self.onToggleCallback(self, self.isOn)
     end
+end
+
+--- GGUI.FilterButton
+
+---@class GGUI.FilterButton : GGUI.Widget
+---@overload fun(options:GGUI.FilterButton.ConstructorOptions): GGUI.FilterButton
+GGUI.FilterButton = GGUI.Widget:extend()
+
+---@class GGUI.FilterButton.ConstructorOptions
+---@field label? string
+---@field parent? Frame
+---@field anchorPoints GGUI.AnchorPoint[]
+---@field sizeX? number default: 100
+---@field sizeY? number default: 25
+---@field scale? number default: 1
+---@field menuUtilCallback fun(ownerRegion: Region, rootDescription: any)
+
+---@param options GGUI.FilterButton.ConstructorOptions
+function GGUI.FilterButton:new(options)
+    local button = CreateFrame("DropdownButton", nil, options.parent,
+        "WowStyle1FilterDropdownTemplate") --[[@as Button]]
+    GGUI.Widget.new(self, button)
+    button:SetText(options.label or "")
+    button:SetSize(options.sizeX or 100, options.sizeY or 25)
+    button:SetScale(options.scale or 1)
+    GGUI:SetPointsByAnchorPoints(button, options.anchorPoints)
+
+    button:SetScript("OnClick", function()
+        MenuUtil.CreateContextMenu(options.parent, function(ownerRegion, rootDescription)
+            options.menuUtilCallback(ownerRegion, rootDescription)
+        end)
+    end)
 end
