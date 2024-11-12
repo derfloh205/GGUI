@@ -1683,11 +1683,13 @@ function GGUI.ScrollingMessageFrame:new(options)
         end
     end)
 
+
     if options.showScrollBar then
         self.scrollBar = CreateFrame("EventFrame", nil, self.frame, "MinimalScrollBar")
-        self.scrollBar:SetPoint("TOPRIGHT", self.frame, "TOPRIGHT")
+        self.scrollBar:SetPoint("TOPLEFT", self.frame, "TOPRIGHT")
+        self.scrollBar:SetHeight(options.sizeY)
 
-        --ScrollUtil.
+        ScrollUtil.InitScrollingMessageFrameWithScrollBar(self.frame, self.scrollBar, not options.enableScrolling);
     end
 end
 
