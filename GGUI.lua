@@ -3634,7 +3634,12 @@ function GGUI:InitializePopup(options)
     })
 
     popupFrame.content.text = GGUI.Text({
-        parent = popupFrame.content, anchorParent = popupFrame.title.frame, anchorA = "TOP", anchorB = "BOTTOM", offsetY = -20,
+        parent = popupFrame.content,
+        anchorParent = popupFrame.title.frame,
+        anchorA = "TOP",
+        anchorB = "BOTTOM",
+        offsetY = -20,
+        wrap = true,
     })
 
     popupFrame.content.acceptButton = GGUI.Button({
