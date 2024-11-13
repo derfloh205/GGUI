@@ -2339,7 +2339,9 @@ function GGUI.ScrollFrame:new(options)
         scrollFrame.ScrollBar:Hide();
 
         if self.hideScrollbar then -- also hide custom scroll bar
-            scrollFrame.scrollBar:Hide()
+            if scrollFrame.scrollBar then
+                scrollFrame.scrollBar:Hide()
+            end
         end
     end)
 
