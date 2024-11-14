@@ -2334,15 +2334,15 @@ function GGUI.ScrollFrame:new(options)
 
     ScrollUtil.InitScrollFrameWithScrollBar(scrollFrame, self.scrollBar);
 
+    self.scrollBar:HookScript("OnShow", function()
+        if self.hideScrollbar then
+            self.scrollBar:Hide()
+        end
+    end)
+
     scrollFrame.ScrollBar:HookScript("OnShow", function()
         -- always hide default scroll bar
         scrollFrame.ScrollBar:Hide();
-
-        if self.hideScrollbar then -- also hide custom scroll bar
-            if scrollFrame.scrollBar then
-                scrollFrame.scrollBar:Hide()
-            end
-        end
     end)
 
     if options.showBorder then
