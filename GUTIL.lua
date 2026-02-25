@@ -70,9 +70,17 @@ end
 ---Returns the quality of the item based on an item link if the item has a quality
 ---@param itemLink string
 ---@return number? qualityID
+---@return boolean? simplified
 function GUTIL:GetQualityIDFromLink(itemLink)
-  local qualityID = string.match(itemLink, "Quality%-Tier(%d+)")
-  return tonumber(qualityID)
+  
+  local simplified = string.find(itemLink, "Quality%-12%-Tier")
+  local qualityID
+  if simplified then
+    qualityID = string.match(itemLink, "Quality%-12%-Tier(%d+)")
+  else
+    qualityID = string.match(itemLink, "Quality%-Tier(%d+)")
+  end
+  return tonumber(qualityID), simplified and true or false
 end
 
 ---Returns the tooltip of an item as one string

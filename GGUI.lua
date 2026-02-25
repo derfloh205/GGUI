@@ -943,8 +943,12 @@ function GGUI.Icon:SetItem(idLinkOrMixin, options)
         if options.overrideQuality then
             gIcon.qualityIcon:SetQuality(options.overrideQuality)
         else
-            local qualityID = GUTIL:GetQualityIDFromLink(item:GetItemLink())
-            gIcon.qualityIcon:SetQuality(qualityID)
+            local qualityID, simplified = GUTIL:GetQualityIDFromLink(item:GetItemLink())
+            if simplified then
+                gIcon.qualityIcon:SetQualitySimplified(qualityID)
+            else
+                gIcon.qualityIcon:SetQuality(qualityID)
+            end
         end
 
         if self.hideQualityIcon then
