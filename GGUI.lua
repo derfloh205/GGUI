@@ -1037,6 +1037,22 @@ function GGUI.QualityIcon:SetQuality(qualityID)
     self.frame:SetAtlas("Professions-Icon-Quality-Tier" .. qualityID)
 end
 
+---@param qualityID number
+function GGUI.QualityIcon:SetQualitySimplified(qualityID)
+    if not qualityID or type(qualityID) ~= 'number' then
+        self.frame:Hide()
+        return
+    end
+    self.frame:Show()
+    if qualityID > 2 then
+        qualityID = 2
+    elseif qualityID < 1 then
+        qualityID = 1
+    end
+    self.frame:SetTexture("Interface\\Professions\\professions12")
+    self.frame:SetAtlas("Professions-Icon-Quality-12-Tier" .. qualityID)
+end
+
 --- GGUI.Dropdown
 
 ---@class GGUI.DropdownConstructorOptions : GGUI.ConstructorOptions
