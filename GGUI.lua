@@ -398,6 +398,7 @@ end
 ---@field title? string
 ---@field titleOptions? GGUI.TextConstructorOptions
 ---@field parent? Frame
+---@field fitFrame? Frame if set, anchors will be ignored and frame will be set to all points of fitFrame
 ---@field anchorParent? Region DEPRICATED use anchorPoints
 ---@field anchorA? FramePoint DEPRICATED use anchorPoints
 ---@field anchorB? FramePoint DEPRICATED use anchorPoints
@@ -491,6 +492,9 @@ function GGUI.Frame:new(options)
     local hookFrame = CreateFrame("frame", nil, options.parent)
     if not options.anchorPoints then
         hookFrame:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
+    elseif options.fitFrame then
+        hookFrame:ClearAllPoints()
+        hookFrame:SetAllPoints(options.fitFrame)
     else
         GGUI:SetPointsByAnchorPoints(hookFrame, options.anchorPoints)
     end
@@ -499,7 +503,13 @@ function GGUI.Frame:new(options)
     frame.hookFrame = hookFrame
     hookFrame:SetSize(options.sizeX, options.sizeY)
     frame:SetSize(options.sizeX, options.sizeY)
-    frame:SetScale(options.scale)
+    if not options.fitFrame then
+        frame:SetScale(options.scale)
+    else
+        frame:ClearAllPoints()
+        frame:SetAllPoints(options.fitFrame)
+    end
+    
     frame:SetFrameStrata(options.frameStrata or options.parent:GetFrameStrata())
     frame:SetFrameLevel(options.frameLevel or (options.parent:GetFrameLevel() + 1))
 
@@ -2724,6 +2734,7 @@ end
 ---@field onValidationChangedCallback? fun(valid:boolean)
 ---@field onTabPressedCallback? fun(input:GGUI.NumericInput)
 ---@field onEnterPressedCallback? fun(input:GGUI.NumericInput, value)
+---@field mouseWheelStep? number
 ---@field incrementOneButtons? boolean
 ---@field incrementFiveButtons? boolean
 ---@field buttonsScale? number
@@ -2882,6 +2893,30 @@ function GGUI.NumericInput:new(options)
         })
     end
 
+    if options.mouseWheelStep then
+        self.textInput.frame:EnableMouseWheel(true)
+        self.textInput.frame:SetScript("OnMouseWheel", function(_, delta)
+            local input = tonumber(numericInput.textInput:GetText())
+            if input then
+                local newValue = input + (delta * options.mouseWheelStep)
+                local valid = GUTIL:ValidateNumberString(tostring(newValue), self.minValue, self.maxValue,
+                    self.allowDecimals)
+
+                if valid then
+                    numericInput.currentValue = newValue
+                    numericInput.textInput:SetText(newValue)
+                    if numericInput.onNumberValidCallback then
+                        numericInput.onNumberValidCallback(numericInput)
+                    end
+                end
+
+                if numericInput.onValidationChangedCallback then
+                    numericInput.onValidationChangedCallback(valid)
+                end
+            end
+        end)
+    end
+
     local validationBorder = CreateFrame("Frame", nil, self.textInput.frame, "BackdropTemplate")
     self.border = validationBorder
     validationBorder:SetSize(self.textInput.frame:GetWidth() * 1.3 * options.borderAdjustWidth,
@@ -2926,6 +2961,15 @@ function GGUI.NumericInput:new(options)
         self.tooltipOptions = options.tooltipOptions
         GGUI:SetTooltipsByTooltipOptions(self.textInput.frame, self)
     end
+end
+
+---@param value number
+function GGUI.NumericInput:SetValue(value)
+    if type(value) ~= "number" then
+        GGUI:ThrowError("GGUI.NumericInput:SetValue(value) - value needs to be a number!")
+    end
+    self.textInput:SetText(tostring(value), false)
+    self.currentValue = value
 end
 
 function GGUI.NumericInput:SetVisible(visible)
