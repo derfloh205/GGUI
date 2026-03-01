@@ -1535,10 +1535,12 @@ end
 ---@field scale? number
 ---@field justifyOptions? GGUI.JustifyOptions
 ---@field fixedWidth? number
+---@field fixedHeight? number
 ---@field fontOptions? GGUI.FontOptions
 ---@field tooltipOptions? GGUI.TooltipOptions
 ---@field hide? boolean
 ---@field wrap? boolean
+---@field onClickCallback? fun(self:GGUI.Text)
 
 ---@class GGUI.JustifyOptions
 ---@field type "H" | "V" | "HV"
@@ -1596,6 +1598,10 @@ function GGUI.Text:new(options)
         text:SetWidth(options.fixedWidth)
     end
 
+    if options.fixedHeight then
+        text:SetHeight(options.fixedHeight)
+    end
+
     if options.justifyOptions then
         if options.justifyOptions.type == "V" and options.justifyOptions.align then
             -- retroactive compatible fix for 10.2.7
@@ -1615,6 +1621,13 @@ function GGUI.Text:new(options)
     self.tooltipOptions = options.tooltipOptions
     if self.tooltipOptions then
         GGUI:SetTooltipsByTooltipOptions(self.frame, self)
+    end
+
+    if options.onClickCallback then
+        self.frame:EnableMouse(true)
+        self.frame:SetScript("OnMouseDown", function()
+            options.onClickCallback(self)
+        end)
     end
 end
 
@@ -3028,6 +3041,7 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field backdropOptions? GGUI.BackdropOptions
 ---@field tooltipOptions? GGUI.TooltipOptions
 ---@field fontOptions? GGUI.FontOptions
+---@field onClickCallback? fun(column: Frame, columnIndex: number)
 
 function GGUI.FrameList:new(options)
     self.isGGUI = true
@@ -3129,12 +3143,14 @@ function GGUI.FrameList:new(options)
 
         headerColumn.text = GGUI.Text({
             fixedWidth = columnOption.width,
+            fixedHeight = 25,
             text = columnOption.label or "",
             parent = headerColumn,
             anchorParent = headerColumn,
             justifyOptions = columnOption.justifyOptions or { type = "H", align = "LEFT" },
             fontOptions = columnOption.fontOptions,
             tooltipOptions = columnTooltipOptions,
+            onClickCallback = columnOption.onClickCallback,
         })
 
         if index == 1 then
