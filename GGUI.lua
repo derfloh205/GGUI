@@ -3129,6 +3129,7 @@ function GGUI.FrameList:new(options)
     header:SetPoint("BOTTOMLEFT", mainFrame, "TOPLEFT")
     header:SetSize(rowWidth, 25)
 
+    self.headerColumns = {}
     local lastHeaderColumn = nil
     for index, columnOption in pairs(options.columnOptions) do
         local headerColumn = CreateFrame("Frame", nil, header)
@@ -3160,6 +3161,7 @@ function GGUI.FrameList:new(options)
         end
 
         lastHeaderColumn = headerColumn
+        self.headerColumns[index] = headerColumn
     end
 
     if options.label then
