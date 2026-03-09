@@ -967,6 +967,52 @@ function GGUI.Icon:SetItem(idLinkOrMixin, options)
     end)
 end
 
+---@class GGUI.IconSetCurrencyOptions
+---@field tooltipOwner? Frame
+---@field tooltipAnchor? TooltipAnchor
+---@field overrideQuality? number
+
+---@param currencyID number?
+---@param options GGUI.IconSetCurrencyOptions?
+function GGUI.Icon:SetCurrency(currencyID, options)
+    options = options or {}
+    local gIcon = self
+    self.item = nil
+    if not currencyID then
+        gIcon.frame:SetScript("OnEnter", nil)
+        gIcon.frame:SetScript("OnLeave", nil)
+        gIcon.qualityIcon:Hide()
+        if self.isAtlas then
+            gIcon.frame:SetNormalAtlas(self.defaultTexture)
+        else
+            gIcon.frame:SetNormalTexture(self.defaultTexture)
+        end
+        return
+    end
+    local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(currencyID)
+    if not currencyInfo then return end
+    gIcon.frame:SetNormalTexture(currencyInfo.iconFileID)
+    gIcon.frame:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(options.tooltipOwner or gIcon.frame, options.tooltipAnchor or "ANCHOR_RIGHT")
+        local link = C_CurrencyInfo.GetCurrencyLink(currencyID)
+        if link then
+            GameTooltip:SetHyperlink(link)
+        else
+            GameTooltip:SetText(currencyInfo.name)
+        end
+        GameTooltip:Show()
+    end)
+    gIcon.frame:SetScript("OnLeave", function()
+        GameTooltip:Hide()
+    end)
+    if options.overrideQuality and options.overrideQuality > 0 and not self.hideQualityIcon then
+        gIcon.qualityIcon:SetQuality(options.overrideQuality)
+        gIcon.qualityIcon:Show()
+    else
+        gIcon.qualityIcon:Hide()
+    end
+end
+
 ---@param qualityID number
 function GGUI.Icon:SetQuality(qualityID)
     if qualityID then
@@ -3817,7 +3863,7 @@ end
 ---@field label? string
 ---@field initialItems? ItemMixin[]
 ---@field initialItem? ItemMixin
----@field onSelectCallback? fun(itemSelector: GGUI.ItemSelector, selectedItem: ItemMixin)
+---@field onSelectCallback? fun(itemSelector: GGUI.ItemSelector, selectedItem: ItemMixin?, selectedCurrencyID: number?)
 ---@field selectedItem? ItemMixin
 ---@field selectionFrameColumns? number
 ---@field emptyIcon? string
@@ -3846,6 +3892,8 @@ function GGUI.ItemSelector:new(options)
     self.onSelectCallback = options.onSelectCallback or function() end
     ---@type ItemMixin?
     self.selectedItem = nil
+    ---@type number?
+    self.selectedCurrencyID = nil
     self.emptyIcon = options.emptyIcon or GGUI.CONST.EMPTY_TEXTURE
 
     self.icon = GGUI.Icon {
@@ -3853,6 +3901,7 @@ function GGUI.ItemSelector:new(options)
         offsetX = options.offsetX, offsetY = options.offsetY, qualityIconScale = options.qualityIconScale,
         sizeX = options.sizeX, sizeY = options.sizeY, texturePath = self.emptyIcon, isAtlas = options.isAtlas
     }
+    self.button = self.icon.frame
 
     if options.label then
         GGUI.Text {
@@ -3905,9 +3954,20 @@ function GGUI.ItemSelector:new(options)
     GGUI.ItemSelector.super.new(self, self.icon)
 end
 
----@param item ItemMixin?
+---@class GGUI.ItemSelectorEntryItem
+---@field type "item"
+---@field item ItemMixin
+
+---@class GGUI.ItemSelectorEntryCurrency
+---@field type "currency"
+---@field currencyID number
+---@field qualityID? number
+
+---@alias GGUI.ItemSelectorEntry GGUI.ItemSelectorEntryItem|GGUI.ItemSelectorEntryCurrency
+
+---@param itemOrEntry ItemMixin?|GGUI.ItemSelectorEntry?
 ---@return GGUI.Icon
-function GGUI.ItemSelector:AddSlotIcon(item)
+function GGUI.ItemSelector:AddSlotIcon(itemOrEntry)
     local iconSizeX = 25
     local iconSizeY = 25
 
@@ -3923,17 +3983,41 @@ function GGUI.ItemSelector:AddSlotIcon(item)
         anchorB = "TOPLEFT", offsetX = offsetX, offsetY = offsetY, sizeX = 25, sizeY = 25
     }
 
-    if item then
-        icon:SetItem(item)
+    local isEntry = type(itemOrEntry) == "table" and itemOrEntry.type
+    if isEntry then
+        icon.entry = itemOrEntry
+        if itemOrEntry.type == "currency" then
+            -- Currency entries do not show a quality badge
+            icon:SetCurrency(itemOrEntry.currencyID)
+        else
+            icon:SetItem(itemOrEntry.item)
+        end
+        table.insert(self.selectionFrame.itemSlots, icon)
+    elseif itemOrEntry then
+        icon:SetItem(itemOrEntry)
         table.insert(self.selectionFrame.itemSlots, icon)
     end
 
-
     icon.frame:SetScript("OnClick", function()
-        self.selectedItem = icon.item
         self.selectionFrame:Hide()
-        self.icon:SetItem(icon.item)
-        self.onSelectCallback(self, icon.item)
+        if icon.entry then
+            if icon.entry.type == "currency" then
+                self.selectedItem = nil
+                self.selectedCurrencyID = icon.entry.currencyID
+                -- Main selector icon for currency without quality badge
+                self.icon:SetCurrency(icon.entry.currencyID)
+            else
+                self.selectedItem = icon.entry.item
+                self.selectedCurrencyID = nil
+                self.icon:SetItem(icon.entry.item)
+            end
+            self.onSelectCallback(self, self.selectedItem, self.selectedCurrencyID)
+        else
+            self.selectedItem = icon.item
+            self.selectedCurrencyID = nil
+            self.icon:SetItem(icon.item)
+            self.onSelectCallback(self, self.selectedItem, self.selectedCurrencyID)
+        end
     end)
 
 
@@ -3947,7 +4031,7 @@ function GGUI.ItemSelector:AddSlotIcon(item)
     return icon
 end
 
----@param items? ItemMixin[]
+---@param items? ItemMixin[]|GGUI.ItemSelectorEntry[]
 function GGUI.ItemSelector:SetItems(items)
     items = items or {}
     local itemSlots = self.selectionFrame.itemSlots
@@ -3955,12 +4039,32 @@ function GGUI.ItemSelector:SetItems(items)
     local maxSlots = math.max(#items, #itemSlots)
     for i = 1, maxSlots do
         local itemSlot = itemSlots[i]
-        local item = items[i]
-        if not itemSlot and item then
-            itemSlot = self:AddSlotIcon(item)
-            itemSlot:SetItem(item)
-        elseif item then
-            itemSlot:SetItem(item)
+        local itemOrEntry = items[i]
+        if not itemSlot and itemOrEntry then
+            itemSlot = self:AddSlotIcon(itemOrEntry)
+            if itemSlot.entry then
+                if itemSlot.entry.type == "currency" then
+                    -- Currency entries do not show a quality badge
+                    itemSlot:SetCurrency(itemSlot.entry.currencyID)
+                else
+                    itemSlot:SetItem(itemSlot.entry.item)
+                end
+            else
+                itemSlot:SetItem(itemOrEntry)
+            end
+        elseif itemOrEntry then
+            if type(itemOrEntry) == "table" and itemOrEntry.type then
+                itemSlot.entry = itemOrEntry
+                if itemOrEntry.type == "currency" then
+                    -- Currency entries do not show a quality badge
+                    itemSlot:SetCurrency(itemOrEntry.currencyID)
+                else
+                    itemSlot:SetItem(itemOrEntry.item)
+                end
+            else
+                itemSlot.entry = nil
+                itemSlot:SetItem(itemOrEntry)
+            end
             itemSlot:Show()
         elseif itemSlot then
             itemSlot:Hide()
@@ -3971,7 +4075,17 @@ end
 ---@param item ItemMixin?
 function GGUI.ItemSelector:SetSelectedItem(item)
     self.selectedItem = item
+    self.selectedCurrencyID = nil
     self.icon:SetItem(item)
+end
+
+---@param currencyID number?
+---@param qualityID? number
+function GGUI.ItemSelector:SetSelectedCurrency(currencyID, qualityID)
+    self.selectedItem = nil
+    self.selectedCurrencyID = currencyID
+    -- Currency selection uses icon without quality badge, even if a qualityID exists
+    self.icon:SetCurrency(currencyID)
 end
 
 --- GGUI.CheckboxSelector
