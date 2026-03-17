@@ -4813,6 +4813,10 @@ function GGUI.ToggleButton:new(options)
     self.isOn = options.isOn == nil -- default true
 
     options.label = (self.isOn and options.labelOn) or options.labelOff or options.label
+    options.buttonTextureOptions = {
+        normal = "128-RedButton-UP",
+        isAtlas = true,
+    }
 
     self.labelOn = options.labelOn
     self.labelOff = options.labelOff
@@ -4831,15 +4835,18 @@ function GGUI.ToggleButton:new(options)
         self.optionsTable[self.optionsKey] = self.isOn
     end
 
-    self.frame:HookScript("OnClick", function()
+    self.frame:HookScript("OnMouseDown", function()
         GGUI:DebugPrint(options, "Clicked ToggleButton")
 
-        self:SetToggle(not self.isOn)
+        self:SetToggle(not self.isOn, true)
     end)
+
+    self:SetToggle(self.isOn)
 end
 
 ---@param toggle boolean
-function GGUI.ToggleButton:SetToggle(toggle)
+---@param userInput? boolean whether this toggle change was triggered by user input (click) or programmatically by calling SetToggle. Default: false
+function GGUI.ToggleButton:SetToggle(toggle, userInput)
     self.isOn = toggle
 
     if self.isOn then
@@ -4867,7 +4874,7 @@ function GGUI.ToggleButton:SetToggle(toggle)
         self.optionsTable[self.optionsKey] = self.isOn
     end
 
-    if self.onToggleCallback then
+    if userInput and self.onToggleCallback then
         self.onToggleCallback(self, self.isOn)
     end
 end
