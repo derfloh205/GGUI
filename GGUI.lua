@@ -1817,6 +1817,12 @@ end
 ---@field enabled? boolean
 ---@field activationCallback? function
 
+---@class GGUI.BorderOptions
+---@field showBorder? boolean
+---@field borderSize? number
+---@field colorRGBA? number[]
+
+
 ---@class GGUI.Button.ConstructorOptions : GGUI.ConstructorOptions
 ---@field label? string
 ---@field labelTextureOptions? GGUI.TextureConstructorOptions
@@ -1841,17 +1847,18 @@ end
 ---@field cleanTemplate? boolean
 ---@field hideBackground? boolean
 ---@field tooltipOptions? GGUI.TooltipOptions
+---@field borderOptions? GGUI.BorderOptions
 
 ---@class GGUI.FontOptions
 ---@field fontFile? string
 ---@field height? number
----@field flags? "MONOCHROME" | "OUTLINE" | "THICK"
+---@field flags? "MONOCHROME" | "OUTLINE" | "THICK" |"THICKOUTLINE"
 
 ---@class GGUI.ButtonTextureOptions
----@field highlight? string
----@field normal? string
----@field pushed? string
----@field disabled? string
+---@field highlight? string | number
+---@field normal? string | number
+---@field pushed? string | number
+---@field disabled? string | number
 ---@field isAtlas? boolean
 ---@field highlightBlendmode? BlendMode
 
@@ -1912,11 +1919,11 @@ function GGUI.Button:new(options)
     end
 
     if options.buttonTextureOptions then
+        button:ClearNormalTexture()
+        button:ClearPushedTexture()
+        button:ClearDisabledTexture()
+        button:ClearHighlightTexture()
         if options.buttonTextureOptions.isAtlas then
-            button:ClearNormalTexture()
-            button:ClearPushedTexture()
-            button:ClearDisabledTexture()
-            button:ClearHighlightTexture()
             if options.buttonTextureOptions.normal then
                 button:SetNormalAtlas(options.buttonTextureOptions.normal)
             end
@@ -1931,10 +1938,6 @@ function GGUI.Button:new(options)
                     options.buttonTextureOptions.highlightBlendmode or "ADD")
             end
         else
-            button:ClearNormalTexture()
-            button:ClearPushedTexture()
-            button:ClearDisabledTexture()
-            button:ClearHighlightTexture()
 
             if options.buttonTextureOptions.normal then
                 button:SetNormalTexture(options.buttonTextureOptions.normal)
@@ -2004,6 +2007,43 @@ function GGUI.Button:new(options)
 
     self.button = button
 
+    local borderOptions = options.borderOptions
+    if borderOptions then
+        local borderSize = borderOptions.borderSize or 10
+        self.borderFrame = CreateFrame("Frame", nil, options.parent, "BackdropTemplate")
+        self.borderFrame:SetSize(options.sizeX + borderSize, options.sizeY + borderSize)
+        self.borderFrame:SetScale(self.button:GetScale())
+        self.borderFrame:SetPoint("CENTER", self.button, "CENTER")
+        self.borderFrame:SetBackdrop {
+            edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+            edgeSize = 20,
+        }
+        self.borderFrame:SetFrameLevel(self.button:GetFrameLevel() + 10)
+        self.borderFrame:SetBackdropBorderColor(
+            borderOptions.colorRGBA[1] or 1,
+            borderOptions.colorRGBA[2] or 1,
+            borderOptions.colorRGBA[3] or 1,
+            borderOptions.colorRGBA[4] or 1
+        )
+
+        if borderOptions.showBorder then
+            self.borderFrame:Show()
+        else
+            self.borderFrame:Hide()
+        end
+
+        self.button:SetScript("OnShow", function()
+            if borderOptions.showBorder then
+                self.borderFrame:Show()
+            end
+        end)
+
+        self.button:SetScript("OnHide", function()
+            self.borderFrame:Hide()
+        end)
+    end
+
+
     self.tooltipOptions = options.tooltipOptions
     if self.tooltipOptions then
         GGUI:SetTooltipsByTooltipOptions(self.button, self)
@@ -2028,6 +2068,45 @@ function GGUI.Button:SetMacroText(macroText)
     end
     self.macroText = macroText
     self:SetAttribute("macrotext", self.macroText)
+end
+
+---@param textureOptions GGUI.ButtonTextureOptions
+function GGUI.Button:SetTexture(textureOptions)
+    local button = self.button
+    button:ClearNormalTexture()
+    button:ClearPushedTexture()
+    button:ClearDisabledTexture()
+    button:ClearHighlightTexture()
+    if textureOptions.isAtlas then
+        
+        if textureOptions.normal then
+            button:SetNormalAtlas(textureOptions.normal)
+        end
+        if textureOptions.pushed then
+            button:SetPushedAtlas(textureOptions.pushed)
+        end
+        if textureOptions.disabled then
+            button:SetDisabledAtlas(textureOptions.disabled)
+        end
+        if textureOptions.highlight then
+            button:SetHighlightAtlas(textureOptions.highlight,
+                textureOptions.highlightBlendmode or "ADD")
+        end
+    else
+        if textureOptions.normal then
+            button:SetNormalTexture(textureOptions.normal)
+        end
+        if textureOptions.pushed then
+            button:SetPushedTexture(textureOptions.pushed)
+        end
+        if textureOptions.disabled then
+            button:SetDisabledTexture(textureOptions.disabled)
+        end
+        if textureOptions.highlight then
+            button:SetHighlightTexture(textureOptions.highlight,
+                textureOptions.highlightBlendmode or "ADD")
+        end
+    end
 end
 
 ---@param text string
@@ -2102,6 +2181,24 @@ end
 ---@return string statusID
 function GGUI.Button:GetStatus()
     return tostring(self.activeStatusID)
+end
+
+function GGUI.Button:SetBorder(visibility, color)
+    if self.borderFrame then
+        if visibility then
+            self.borderFrame:Show()
+            if color then
+                self.borderFrame:SetBackdropBorderColor(
+                    color[1] or 1,
+                    color[2] or 1,
+                    color[3] or 1,
+                    color[4] or 1
+                )
+            end
+        else
+            self.borderFrame:Hide()
+        end
+    end
 end
 
 --- GGUI.Tab
@@ -2394,6 +2491,7 @@ end
 
 ---@class GGUI.ScrollFrameConstructorOptions : GGUI.ConstructorOptions
 ---@field parent? Frame
+---@field horizontal? boolean
 ---@field offsetTOP? number
 ---@field offsetLEFT? number
 ---@field offsetRIGHT? number
@@ -2414,12 +2512,14 @@ function GGUI.ScrollFrame:new(options)
     options.offsetRIGHT = options.offsetRIGHT or 0
     options.offsetBOTTOM = options.offsetBOTTOM or 0
     self.hideScrollbar = options.hideScrollbar or false
+    self.horizontal = options.horizontal or false
 
     local scrollFrame = CreateFrame("ScrollFrame", nil, options.parent, "UIPanelScrollFrameTemplate, BackdropTemplate")
     local scrollBarOffsetX = 7
     self.scrollBar = CreateFrame("EventFrame", nil, scrollFrame, "MinimalScrollBar")
     self.scrollBar:SetPoint("TOPLEFT", scrollFrame, "TOPRIGHT", scrollBarOffsetX, 0)
     self.scrollBar:SetPoint("BOTTOMLEFT", scrollFrame, "BOTTOMRIGHT", scrollBarOffsetX, 0)
+    
 
     ScrollUtil.InitScrollFrameWithScrollBar(scrollFrame, self.scrollBar);
 
@@ -2474,8 +2574,13 @@ function GGUI.ScrollFrame:new(options)
     self.content = scrollChild
 end
 
-function GGUI.ScrollFrame:ScrollDown()
-    self.scrollFrame:SetVerticalScroll(self.scrollFrame:GetVerticalScrollRange())
+---@param horizontal boolean|nil if true scrolls horizontal, else vertical
+function GGUI.ScrollFrame:ScrollDown(horizontal)
+    if horizontal then
+        self.scrollFrame:SetHorizontalScroll(self.scrollFrame:GetHorizontalScrollRange())
+    else
+        self.scrollFrame:SetVerticalScroll(self.scrollFrame:GetVerticalScrollRange())
+    end
 end
 
 function GGUI.ScrollFrame:EnableHyperLinksForFrameAndChilds()
@@ -3055,6 +3160,7 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field columnOptions GGUI.FrameList.ColumnOption[]
 ---@field rowConstructor fun(columns: Frame[], row: GGUI.FrameList.Row) used to construct the rows and fill the column frames with content, columns are forwarded as params (...)
 ---@field showBorder? boolean
+---@field horizontal? boolean -- TODO: does not support horizontal scrolling yet
 ---@field private anchorPoints? GGUI.AnchorPoint[]
 ---@field private anchorParent? Frame -- DEPRICATED Use anchorPoints
 ---@field private anchorA? FramePoint -- DEPRICATED Use anchorPoints
@@ -3104,6 +3210,7 @@ function GGUI.FrameList:new(options)
     options.headerOffsetX = options.headerOffsetX or 5
     options.scale = options.scale or 1
     options.rowScale = options.rowScale or 1
+    self.horizontal = options.horizontal or false
     self.autoAdjustHeight = options.autoAdjustHeight or false
     self.autoAdjustHeightCallback = options.autoAdjustHeightCallback
     self.maxAutoAdjustHeight = options.maxAutoAdjustHeight
@@ -3164,6 +3271,7 @@ function GGUI.FrameList:new(options)
         showBorder = options.showBorder,
         hideScrollbar = options.hideScrollbar,
         disableScrolling = options.disableScrolling,
+        horizontal = self.horizontal,
     })
 
     ---@type GGUI.FrameList.Row
@@ -3203,7 +3311,11 @@ function GGUI.FrameList:new(options)
         if index == 1 then
             headerColumn:SetPoint("TOPLEFT", header, "TOPLEFT", options.headerOffsetX, 0)
         else
-            headerColumn:SetPoint("LEFT", lastHeaderColumn, "RIGHT")
+            if self.horizontal then
+                headerColumn:SetPoint("TOP", lastHeaderColumn, "BOTTOM")
+            else
+                headerColumn:SetPoint("LEFT", lastHeaderColumn, "RIGHT")
+            end
         end
 
         lastHeaderColumn = headerColumn
@@ -3235,7 +3347,7 @@ function GGUI.FrameList:SetSelectionEnabled(enabled)
 end
 
 function GGUI.FrameList:ScrollDown()
-    self.scrollFrame:ScrollDown()
+    self.scrollFrame:ScrollDown(self.horizontal)
 end
 
 --- GGUI.FrameList.Row
@@ -3271,8 +3383,13 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
     self.separatorLine = rowFrame:CreateLine()
     self.separatorLineRGBA = { 1, 1, 1, 1 }
     self.separatorLineThickness = 2
-    self.separatorLine:SetStartPoint("BOTTOMLEFT", rowFrame)
-    self.separatorLine:SetEndPoint("BOTTOMRIGHT", rowFrame)
+    if frameList.horizontal then
+        self.separatorLine:SetStartPoint("BOTTOMRIGHT", rowFrame)
+        self.separatorLine:SetEndPoint("TOPRIGHT", rowFrame)
+    else
+        self.separatorLine:SetStartPoint("BOTTOMLEFT", rowFrame)
+        self.separatorLine:SetEndPoint("BOTTOMRIGHT", rowFrame)
+    end
 
     self.separatorLine:Hide()
 
@@ -3422,6 +3539,7 @@ function GGUI.FrameList.Row:CreateSubFrameList(subFrameListOptions)
         end
     end
 
+    subFrameListOptions.horizontal = self.frameList.horizontal
 
     self.subFrameList = GGUI.FrameList(subFrameListOptions)
 
@@ -3436,7 +3554,11 @@ function GGUI.FrameList.Row:SetSubFrameListVisible(visible)
         self.subFrameList:AdjustHeight() -- predefined adjust height callback should now resize the rowFrame accordingly
     else
         self.subFrameListVisible = false
-        self.frame:SetSize(self.frame:GetWidth(), self.frameList.rowHeight)
+        if self.frameList.horizontal then
+            self.frame:SetSize(self.frameList.rowHeight, self.frame:GetHeight())
+        else
+            self.frame:SetSize(self.frame:GetWidth(), self.frameList.rowHeight)
+        end
         self.subFrameList:Hide()
     end
 end
@@ -3472,24 +3594,46 @@ end
 
 function GGUI.FrameList:CreateRow()
     local rowFrame = CreateFrame("Frame", nil, self.scrollFrame.content, "BackdropTemplate")
-    rowFrame:SetSize(self.rowWidth, self.rowHeight)
-    rowFrame:SetScale(self.rowScale)
-    if #self.rows == 0 then
-        rowFrame:SetPoint("TOPLEFT", self.scrollFrame.content, "TOPLEFT")
+    if self.horizontal then
+        rowFrame:SetSize(self.rowHeight, self.rowWidth)
     else
-        rowFrame:SetPoint("TOPLEFT", self.rows[#self.rows].frame, "BOTTOMLEFT")
+        rowFrame:SetSize(self.rowWidth, self.rowHeight)
+    end
+    rowFrame:SetScale(self.rowScale)
+
+    if self.horizontal then
+        if #self.rows == 0 then
+            rowFrame:SetPoint("TOPLEFT", self.scrollFrame.content, "TOPLEFT")
+        else
+            rowFrame:SetPoint("TOPLEFT", self.rows[#self.rows].frame, "TOPRIGHT")
+        end
+    else
+        if #self.rows == 0 then
+            rowFrame:SetPoint("TOPLEFT", self.scrollFrame.content, "TOPLEFT")
+        else
+            rowFrame:SetPoint("TOPLEFT", self.rows[#self.rows].frame, "BOTTOMLEFT")
+        end
     end
 
     local columns = {}
     local lastColumn = nil
     for index, columnOption in pairs(self.columnOptions) do
         local columnFrame = CreateFrame("Frame", nil, rowFrame, "BackdropTemplate")
-        columnFrame:SetSize(columnOption.width, self.rowHeight)
-
-        if index == 1 then
-            columnFrame:SetPoint("TOPLEFT", rowFrame, "TOPLEFT", 0, 0)
+        if self.horizontal then
+            columnFrame:SetSize(self.rowHeight, columnOption.width)
+            if index == 1 then
+                columnFrame:SetPoint("TOP", rowFrame, "TOP", 0, 0)
+            else
+                columnFrame:SetPoint("TOP", lastColumn, "BOTTOM")
+            end
         else
-            columnFrame:SetPoint("LEFT", lastColumn, "RIGHT")
+            columnFrame:SetSize(columnOption.width, self.rowHeight)
+
+            if index == 1 then
+                columnFrame:SetPoint("LEFT", rowFrame, "LEFT", 0, 0)
+            else
+                columnFrame:SetPoint("LEFT", lastColumn, "RIGHT")
+            end
         end
 
         if columnOption.backdropOptions then
@@ -3616,28 +3760,25 @@ function GGUI.FrameList:UpdateDisplay(sortFunc)
 
     local lastRow = nil
     for index, row in pairs(self.activeRows) do
-        if index == 1 then
-            row:SetPoint("TOPLEFT", self.scrollFrame.content, "TOPLEFT")
+        if self.horizontal then
+            if index == 1 then
+                row:SetPoint("TOPLEFT", self.scrollFrame.content, "TOPLEFT")
+            else
+                if lastRow then
+                    row:SetPoint("TOPLEFT", lastRow.frame, "TOPRIGHT")
+                end
+            end
         else
-            if lastRow then
-                row:SetPoint("TOPLEFT", lastRow.frame, "BOTTOMLEFT")
+            if index == 1 then
+                row:SetPoint("TOPLEFT", self.scrollFrame.content, "TOPLEFT")
+            else
+                if lastRow then
+                    row:SetPoint("TOPLEFT", lastRow.frame, "BOTTOMLEFT")
+                end
             end
         end
         if self.rowBackdrops and #self.rowBackdrops > 0 then
             local backdropOptions = self.rowBackdrops[#self.rowBackdrops - (index % #self.rowBackdrops)]
-            -- local borderOptions = backdropOptions.borderOptions or {}
-            -- row.frame:SetBackdrop({
-            --     bgFile = backdropOptions.bgFile,
-            --     edgeFile = borderOptions.edgeFile,
-            --     edgeSize = borderOptions.edgeSize,
-            --     insets = borderOptions.insets,
-            --     tile = backdropOptions.tile,
-            --     tileSize = backdropOptions.tileSize,
-            -- })
-            -- row.frame:SetBackdropColor(backdropOptions.colorR or 1, backdropOptions.colorG or 1,
-            --     backdropOptions.colorB or 1, backdropOptions.colorA or 1)
-            -- row.frame:SetBackdropBorderColor(borderOptions.colorR or 1, borderOptions.colorG or 1,
-            --     borderOptions.colorB or 1, borderOptions.colorA or 1)
 
             GGUI:SetBackdropByBackdropOptions(row.frame, backdropOptions)
 
@@ -3661,7 +3802,11 @@ function GGUI.FrameList:AdjustHeight()
         newHeight = math.min(self.maxAutoAdjustHeight, newHeight)
     end
 
-    self.frame:SetSize(self.frame:GetWidth(), newHeight)
+    if self.horizontal then
+        self.frame:SetSize(newHeight, self.frame:GetHeight())
+    else
+        self.frame:SetSize(self.frame:GetWidth(), newHeight)
+    end
 
     if self.autoAdjustHeightCallback then
         self.autoAdjustHeightCallback(newHeight)
