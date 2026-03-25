@@ -3184,7 +3184,7 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field noSelectionColor boolean?
 ---@field hoverRGBA? table<number>
 ---@field selectedRGBA? table<number>
----@field selectionCallback? fun(row: GGUI.FrameList.Row, userInput:boolean)
+---@field selectionCallback? fun(row: GGUI.FrameList.Row, userInput:boolean, alreadySelected:boolean)
 
 ---@class GGUI.FrameList.ColumnOption
 ---@field width? number
@@ -3406,7 +3406,8 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
 
     if frameList.selectionOptions then
         self.Select = function(_, userInput)
-            if self ~= frameList.selectedRow or frameList.selectionOptions.noSelectionColor then
+            local alreadySelected = self == frameList.selectedRow
+            if not alreadySelected or frameList.selectionOptions.noSelectionColor then
                 if not frameList.selectionOptions.noSelectionColor then
                     rowFrame:SetBackdropColor(frameList.selectionOptions.selectedRGBA[1],
                         frameList.selectionOptions.selectedRGBA[2], frameList.selectionOptions.selectedRGBA[3],
@@ -3421,9 +3422,8 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
                     end
                 end
                 frameList.selectedRow = self
-
-                frameList.selectionOptions.selectionCallback(self, userInput)
             end
+            frameList.selectionOptions.selectionCallback(self, userInput, alreadySelected)
         end
         rowFrame:SetBackdrop({
             bgFile = "Interface\\Buttons\\WHITE8x8", -- You can use any texture here or a solid color
