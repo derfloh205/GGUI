@@ -3272,6 +3272,7 @@ function GGUI.FrameList:new(options)
     scrollBox:SetPoint("BOTTOM", mainFrame, "BOTTOM", 0, 5)
     scrollBox:SetPoint("RIGHT", mainFrame, "RIGHT", -5, 0)
 
+    -- Small gap so the MinimalScrollBar sits just outside the scroll area
     local scrollBarOffsetX = 7
     local scrollBar = CreateFrame("EventFrame", nil, mainFrame, "MinimalScrollBar")
     scrollBar:SetPoint("TOPLEFT", scrollBox, "TOPRIGHT", scrollBarOffsetX, 0)
@@ -3517,11 +3518,11 @@ function GGUI.FrameList:new(options)
             sepLine:Hide()
         end
 
-        -- Alternating row backdrop
+        -- Alternating row backdrop: map display index to a one-based cycle over rowBackdrops
         row.originalBackdropOptions = nil
         if frameList.rowBackdrops and #frameList.rowBackdrops > 0 then
             local index = row._ggui_displayIndex or 1
-            local backdropOptions = frameList.rowBackdrops[#frameList.rowBackdrops - (index % #frameList.rowBackdrops)]
+            local backdropOptions = frameList.rowBackdrops[((index - 1) % #frameList.rowBackdrops) + 1]
             GGUI:SetBackdropByBackdropOptions(rowFrame, backdropOptions)
             row.originalBackdropOptions = backdropOptions
         end
@@ -3869,6 +3870,10 @@ end
 ---Add row data into the list.
 ---The fillFunc is stored and called by the ScrollBoxList element initialiser each
 ---time the row scrolls into view, so that the UI always reflects the latest data.
+---
+---Note: when a row object is reused (after Remove + Add), only internal _ggui_*
+---state is reset automatically.  Any custom fields set on the row by a previous
+---fillFunc (e.g. row.itemID) will persist until the new fillFunc overwrites them.
 ---@param fillFunc? fun(row: GGUI.FrameList.Row, columns: Frame[]) function that receives a row to populate with data
 function GGUI.FrameList:Add(fillFunc)
     -- Reuse an inactive row data object to avoid unnecessary allocations
