@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 27)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 28)
 if not GGUI then return end -- if version already exists
 
 ---@type GGUI_GUTIL
@@ -3149,6 +3149,9 @@ function GGUI.NumericInput:Show()
 end
 
 --- GGUI.FrameList
+--- Refactored to use WowScrollBoxList + CreateScrollBoxListLinearView + CreateDataProvider
+--- for virtual scrolling: only visible rows are rendered as UI frames, giving better
+--- performance for large lists. The public API is backward-compatible.
 
 ---@class GGUI.FrameList : GGUI.Widget
 ---@overload fun(options:GGUI.FrameListConstructorOptions): GGUI.FrameList
@@ -3261,22 +3264,309 @@ function GGUI.FrameList:new(options)
     mainFrame:SetSize(options.sizeX or (rowWidth + 10), options.sizeY)
     mainFrame:SetScale(options.scale)
 
-    ---@type GGUI.ScrollFrame
-    self.scrollFrame = GGUI.ScrollFrame({
-        parent = mainFrame,
-        offsetTOP = -5,
-        offsetLEFT = 5,
-        offsetRIGHT = -5,
-        offsetBOTTOM = 5,
-        showBorder = options.showBorder,
-        hideScrollbar = options.hideScrollbar,
-        disableScrolling = options.disableScrolling,
-        horizontal = self.horizontal,
-    })
+    -- WowScrollBoxList provides virtualised rendering: only rows scrolled into view
+    -- are backed by real UI frames, giving better performance for large data sets.
+    local scrollBox = CreateFrame("Frame", nil, mainFrame, "WowScrollBoxList")
+    scrollBox:SetPoint("TOP", mainFrame, "TOP", 0, -5)
+    scrollBox:SetPoint("LEFT", mainFrame, "LEFT", 5, 0)
+    scrollBox:SetPoint("BOTTOM", mainFrame, "BOTTOM", 0, 5)
+    scrollBox:SetPoint("RIGHT", mainFrame, "RIGHT", -5, 0)
 
-    ---@type GGUI.FrameList.Row
+    local scrollBarOffsetX = 7
+    local scrollBar = CreateFrame("EventFrame", nil, mainFrame, "MinimalScrollBar")
+    scrollBar:SetPoint("TOPLEFT", scrollBox, "TOPRIGHT", scrollBarOffsetX, 0)
+    scrollBar:SetPoint("BOTTOMLEFT", scrollBox, "BOTTOMRIGHT", scrollBarOffsetX, 0)
+    scrollBar:HookScript("OnShow", function()
+        if options.hideScrollbar then
+            scrollBar:Hide()
+        end
+    end)
+
+    if options.showBorder then
+        local borderFrame = CreateFrame("Frame", nil, mainFrame, "BackdropTemplate")
+        if options.hideScrollbar then
+            borderFrame:SetPoint("TOP", mainFrame, "TOP", 0, 0)
+            borderFrame:SetPoint("LEFT", mainFrame, "LEFT", 0, 0)
+            borderFrame:SetPoint("RIGHT", mainFrame, "RIGHT", 0, 0)
+            borderFrame:SetPoint("BOTTOM", mainFrame, "BOTTOM", 0, -1)
+        else
+            borderFrame:SetPoint("TOP", mainFrame, "TOP", 0, 0)
+            borderFrame:SetPoint("LEFT", mainFrame, "LEFT", 0, 0)
+            borderFrame:SetPoint("RIGHT", mainFrame, "RIGHT", 21, 0)
+            borderFrame:SetPoint("BOTTOM", mainFrame, "BOTTOM", 0, -1)
+        end
+        borderFrame:SetBackdrop({
+            edgeFile = "Interface/Tooltips/UI-Tooltip-Border",
+            edgeSize = 16,
+        })
+        borderFrame:SetFrameLevel(scrollBox:GetFrameLevel() + 1)
+    end
+
+    if options.disableScrolling then
+        scrollBox:EnableMouseWheel(false)
+    end
+
+    -- Capture self for use in closures below
+    local frameList = self
+
+    -- Linear list view with a row-height calculator that supports rows expanded
+    -- by sub-frame lists.
+    local view = CreateScrollBoxListLinearView()
+    view:SetElementExtentCalculator(function(_, elementData)
+        ---@type GGUI.FrameList.Row
+        local row = elementData
+        if row.subFrameListVisible and row._ggui_expandedHeight then
+            return row._ggui_expandedHeight
+        end
+        return frameList.rowHeight * frameList.rowScale
+    end)
+
+    -- Element initialiser: called by ScrollBoxList each time a recycled frame is
+    -- bound to a row's data.  On the very first use of a given frame the column
+    -- sub-frames are created and rowConstructor is called once.  On every
+    -- subsequent bind the fill function is re-applied together with visual state
+    -- (separator, backdrop, selection highlight).
+    view:SetElementInitializer("Frame", function(rowFrame, elementData)
+        ---@type GGUI.FrameList.Row
+        local row = elementData
+
+        -- ── First-time frame setup ──────────────────────────────────────────────
+        if not rowFrame.ggui_initialized then
+            rowFrame.ggui_initialized = true
+
+            if frameList.horizontal then
+                rowFrame:SetSize(frameList.rowHeight, frameList.rowWidth)
+            else
+                rowFrame:SetSize(frameList.rowWidth, frameList.rowHeight)
+            end
+            rowFrame:SetScale(frameList.rowScale)
+
+            -- Column sub-frames
+            local columns = {}
+            local lastColumn = nil
+            for index, columnOption in ipairs(frameList.columnOptions) do
+                local col = CreateFrame("Frame", nil, rowFrame, "BackdropTemplate")
+                if frameList.horizontal then
+                    col:SetSize(frameList.rowHeight, columnOption.width)
+                    if index == 1 then
+                        col:SetPoint("TOP", rowFrame, "TOP", 0, 0)
+                    else
+                        col:SetPoint("TOP", lastColumn, "BOTTOM")
+                    end
+                else
+                    col:SetSize(columnOption.width, frameList.rowHeight)
+                    if index == 1 then
+                        col:SetPoint("LEFT", rowFrame, "LEFT", 0, 0)
+                    else
+                        col:SetPoint("LEFT", lastColumn, "RIGHT")
+                    end
+                end
+
+                if columnOption.backdropOptions then
+                    local borderOptions = columnOption.backdropOptions.borderOptions or {}
+                    col:SetBackdrop({
+                        bgFile = columnOption.backdropOptions.bgFile,
+                        edgeFile = borderOptions.edgeFile,
+                        edgeSize = borderOptions.edgeSize,
+                        insets = borderOptions.insets,
+                        tile = columnOption.backdropOptions.tile,
+                        tileSize = columnOption.backdropOptions.tileSize,
+                    })
+                    col:SetBackdropColor(columnOption.backdropOptions.colorR or 0,
+                        columnOption.backdropOptions.colorG or 0, columnOption.backdropOptions.colorB or 0,
+                        columnOption.backdropOptions.colorA or 1)
+                    col:SetBackdropBorderColor(borderOptions.colorR or 0, borderOptions.colorG or 0,
+                        borderOptions.colorB or 0, borderOptions.colorA or 1)
+                end
+
+                table.insert(columns, col)
+                lastColumn = col
+            end
+            rowFrame.ggui_columns = columns
+
+            -- Separator line
+            local sepLine = rowFrame:CreateLine()
+            if frameList.horizontal then
+                sepLine:SetStartPoint("BOTTOMRIGHT", rowFrame)
+                sepLine:SetEndPoint("TOPRIGHT", rowFrame)
+            else
+                sepLine:SetStartPoint("BOTTOMLEFT", rowFrame)
+                sepLine:SetEndPoint("BOTTOMRIGHT", rowFrame)
+            end
+            sepLine:Hide()
+            rowFrame.ggui_separatorLine = sepLine
+
+            -- Backdrop required for selection/hover colour changes
+            if frameList.selectionOptions then
+                rowFrame:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8" })
+                rowFrame:SetBackdropColor(0, 0, 0, 0)
+            end
+
+            -- Mouse-click: delegates to the currently bound row (rowFrame.ggui_row)
+            rowFrame:SetScript("OnMouseDown", function()
+                local r = rowFrame.ggui_row
+                if not r then return end
+                if r.subFrameListEnabled and r.subFrameList then
+                    r:SetSubFrameListVisible(not r.subFrameListVisible)
+                elseif frameList.selectionEnabled and frameList.selectionOptions then
+                    r:Select(true)
+                end
+            end)
+
+            -- Hover highlight for selection
+            if frameList.selectionOptions then
+                rowFrame:HookScript("OnEnter", function()
+                    if not frameList.selectionEnabled then return end
+                    local r = rowFrame.ggui_row
+                    if not r then return end
+                    if r ~= frameList.selectedRow or frameList.selectionOptions.noSelectionColor then
+                        rowFrame:SetBackdropColor(
+                            frameList.selectionOptions.hoverRGBA[1],
+                            frameList.selectionOptions.hoverRGBA[2],
+                            frameList.selectionOptions.hoverRGBA[3],
+                            frameList.selectionOptions.hoverRGBA[4])
+                    end
+                end)
+                rowFrame:HookScript("OnLeave", function()
+                    local r = rowFrame.ggui_row
+                    if not r then return end
+                    if r ~= frameList.selectedRow or frameList.selectionOptions.noSelectionColor then
+                        if r.originalBackdropOptions then
+                            GGUI:SetBackdropByBackdropOptions(rowFrame, r.originalBackdropOptions)
+                        else
+                            rowFrame:SetBackdropColor(0, 0, 0, 0)
+                        end
+                    end
+                end)
+            end
+
+            -- Tooltip scripts read from the currently bound row so that each row
+            -- can carry its own tooltipOptions without needing a permanent frame.
+            rowFrame:HookScript("OnEnter", function()
+                local r = rowFrame.ggui_row
+                if not r or not r.tooltipOptions then return end
+                local tooltipOptions = r.tooltipOptions
+                GameTooltip:SetOwner(tooltipOptions.owner or rowFrame, tooltipOptions.anchor)
+                if tooltipOptions.spellID then
+                    local _, currentSpellID = GameTooltip:GetSpell()
+                    if currentSpellID ~= tooltipOptions.spellID then
+                        GameTooltip:SetSpellByID(tooltipOptions.spellID)
+                    end
+                elseif tooltipOptions.itemID then
+                    GameTooltip:SetItemByID(tooltipOptions.itemID)
+                elseif tooltipOptions.itemLink then
+                    GameTooltip:SetHyperlink(tooltipOptions.itemLink)
+                elseif tooltipOptions.text then
+                    GameTooltip:SetText(tooltipOptions.text, nil, nil, nil, nil, tooltipOptions.textWrap)
+                elseif tooltipOptions.frame then
+                    if tooltipOptions.frameUpdateCallback then
+                        tooltipOptions.frameUpdateCallback(tooltipOptions.frame)
+                    end
+                    GameTooltip_InsertFrame(GameTooltip, tooltipOptions.frame)
+                end
+                if tooltipOptions.scale then
+                    GameTooltip:SetScale(tooltipOptions.scale)
+                else
+                    GameTooltip:SetScale(1)
+                end
+                GameTooltip:Show()
+            end)
+            rowFrame:HookScript("OnLeave", function()
+                local r = rowFrame.ggui_row
+                if not r or not r.tooltipOptions then return end
+                GameTooltip:Hide()
+            end)
+
+            -- Bind this frame and call rowConstructor for the one-time widget setup
+            row.frame = rowFrame
+            row.columns = rowFrame.ggui_columns
+            rowFrame.ggui_row = row
+            frameList.rowConstructor(rowFrame.ggui_columns, row)
+        end
+
+        -- ── Per-bind updates (run on every bind, including first) ───────────────
+
+        -- Attach current row data to this recycled frame
+        row.frame = rowFrame
+        row.columns = rowFrame.ggui_columns
+        rowFrame.ggui_row = row
+
+        -- Re-attach sub-frame list so it follows the correct recycled frame
+        if row.subFrameList then
+            row.subFrameList.frame:SetParent(rowFrame)
+            if row.subFrameListVisible then
+                row.subFrameList:Show()
+            else
+                row.subFrameList:Hide()
+            end
+        end
+
+        -- Apply the user-supplied fill function to populate the row's UI
+        if row._ggui_fillFunc then
+            row._ggui_fillFunc(row, row.columns)
+        end
+
+        -- Separator line
+        local sepLine = rowFrame.ggui_separatorLine
+        if row._ggui_separatorVisible then
+            local rgba = row._ggui_separatorRGBA or { 1, 1, 1, 1 }
+            sepLine:SetColorTexture(rgba[1], rgba[2], rgba[3], rgba[4])
+            sepLine:SetThickness(row._ggui_separatorThickness or 2)
+            sepLine:Show()
+        else
+            sepLine:Hide()
+        end
+
+        -- Alternating row backdrop
+        row.originalBackdropOptions = nil
+        if frameList.rowBackdrops and #frameList.rowBackdrops > 0 then
+            local index = row._ggui_displayIndex or 1
+            local backdropOptions = frameList.rowBackdrops[#frameList.rowBackdrops - (index % #frameList.rowBackdrops)]
+            GGUI:SetBackdropByBackdropOptions(rowFrame, backdropOptions)
+            row.originalBackdropOptions = backdropOptions
+        end
+
+        -- Selection highlight
+        if frameList.selectionOptions then
+            if frameList.selectedRow == row and not frameList.selectionOptions.noSelectionColor then
+                rowFrame:SetBackdropColor(
+                    frameList.selectionOptions.selectedRGBA[1],
+                    frameList.selectionOptions.selectedRGBA[2],
+                    frameList.selectionOptions.selectedRGBA[3],
+                    frameList.selectionOptions.selectedRGBA[4])
+            else
+                if row.originalBackdropOptions then
+                    GGUI:SetBackdropByBackdropOptions(rowFrame, row.originalBackdropOptions)
+                else
+                    rowFrame:SetBackdropColor(0, 0, 0, 0)
+                end
+            end
+        end
+    end)
+
+    -- Wire up the scroll bar
+    ScrollUtil.InitScrollBoxListWithScrollBar(scrollBox, scrollBar, view)
+
+    -- DataProvider holds the active row data objects; modifications trigger
+    -- automatic re-rendering of visible rows by the ScrollBoxList.
+    local dataProvider = CreateDataProvider()
+    scrollBox:SetDataProvider(dataProvider)
+
+    self.scrollBox = scrollBox
+    self.scrollBar = scrollBar
+    self.dataProvider = dataProvider
+    self.view = view
+
+    -- Backward-compatible stub so that existing code referencing
+    -- frameList.scrollFrame.content still compiles without errors.
+    self.scrollFrame = {
+        scrollFrame = scrollBox,
+        content = scrollBox,
+    }
+
+    ---@type GGUI.FrameList.Row[]
     self.rows = {}
-    ---@type GGUI.FrameList.Row
+    ---@type GGUI.FrameList.Row[]
     self.activeRows = {}
 
     local header = CreateFrame("Frame", nil, mainFrame)
@@ -3337,8 +3627,8 @@ end
 function GGUI.FrameList:SetAnchorPoints(anchorPoints)
     self.frame:ClearAllPoints()
     for _, anchorPoint in ipairs(anchorPoints) do
-        self.frame:SetPoint(anchorPoint.anchorA, anchorPoint.anchorParent, anchorPoint.anchorB, anchorPoint.offsetX or 0,
-            anchorPoint.offsetY or 0)
+        self.frame:SetPoint(anchorPoint.anchorA, anchorPoint.anchorParent, anchorPoint.anchorB,
+            anchorPoint.offsetX or 0, anchorPoint.offsetY or 0)
     end
 end
 
@@ -3347,75 +3637,72 @@ function GGUI.FrameList:SetSelectionEnabled(enabled)
 end
 
 function GGUI.FrameList:ScrollDown()
-    self.scrollFrame:ScrollDown(self.horizontal)
+    self.scrollBox:SetVerticalScroll(self.scrollBox:GetVerticalScrollRange())
 end
 
 --- GGUI.FrameList.Row
+--- Row is now a data object whose UI frame is bound lazily by the ScrollBoxList.
+--- row.frame and row.columns are valid inside rowConstructor / fillFunc callbacks
+--- and in UpdateRows callbacks, but may be nil when the row is scrolled off-screen.
 
----@class GGUI.FrameList.Row : GGUI.Widget
----@overload fun(rowFrame: Frame, columns: Frame[], rowConstructor:fun(columns: Frame[]), frameList: GGUI.FrameList): GGUI.FrameList.Row
-GGUI.FrameList.Row = GGUI.Widget:extend()
+---@class GGUI.FrameList.Row : Object
+---@overload fun(frameList: GGUI.FrameList): GGUI.FrameList.Row
+---@field frame Frame? current bound row frame; nil when not visible
+---@field columns Frame[]? current bound column frames; nil when not visible
+---@field active boolean
+---@field tooltipOptions GGUI.TooltipOptions?
+---@field originalBackdropOptions GGUI.BackdropOptions?
+---@field frameList GGUI.FrameList
+---@field subFrameList GGUI.FrameList?
+---@field subFrameListEnabled boolean
+---@field subFrameListVisible boolean
+GGUI.FrameList.Row = GGUI.Object:extend()
 
----@param rowFrame Frame
----@param columns Frame[]
----@param rowConstructor fun(columns: Frame[], row: GGUI.FrameList.Row)
 ---@param frameList GGUI.FrameList
-function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
-    GGUI.FrameList.Row.super.new(self, rowFrame)
-    ---@type Frame
-    self.frame = self.frame
-    self.columns = columns
+function GGUI.FrameList.Row:new(frameList)
     self.active = false
     self.frameList = frameList
-    ---@class GGUI.TooltipOptions?
-    ---@field spellID number?
-    ---@field itemID number?
-    ---@field itemLink string?
-    ---@field owner? Frame if omitted defaults to optionsOwner.frame
-    ---@field anchor TooltipAnchor
-    ---@field text string?
-    ---@field textWrap? boolean
-    ---@field frame? Frame
-    ---@field scale? number
-    ---@field frameUpdateCallback? fun(tooltipFrame: Frame) if set will be called on the given tooltip frame right before the tooltip is updated. Can be used to update the frame e.g.
+    -- frame / columns are nil until the row is scrolled into view
+    self.frame = nil
+    ---@type Frame[]
+    self.columns = {}
+    ---@type GGUI.TooltipOptions?
     self.tooltipOptions = nil
+    self.originalBackdropOptions = nil
 
-    self.separatorLine = rowFrame:CreateLine()
-    self.separatorLineRGBA = { 1, 1, 1, 1 }
-    self.separatorLineThickness = 2
-    if frameList.horizontal then
-        self.separatorLine:SetStartPoint("BOTTOMRIGHT", rowFrame)
-        self.separatorLine:SetEndPoint("TOPRIGHT", rowFrame)
-    else
-        self.separatorLine:SetStartPoint("BOTTOMLEFT", rowFrame)
-        self.separatorLine:SetEndPoint("BOTTOMRIGHT", rowFrame)
-    end
+    -- Internal state (prefixed _ggui_ to minimise conflicts with user-set fields)
+    self._ggui_fillFunc = nil
+    self._ggui_separatorVisible = false
+    self._ggui_separatorRGBA = { 1, 1, 1, 1 }
+    self._ggui_separatorThickness = 2
+    self._ggui_displayIndex = nil
+    self._ggui_expandedHeight = nil
 
-    self.separatorLine:Hide()
-
+    -- Sub-frame list fields (kept public for backward compatibility)
     self.subFrameListEnabled = false
     ---@type GGUI.FrameList?
     self.subFrameList = nil
+    self.subFrameListVisible = false
 
-    ---@type function
-    local onEnterSelectableRow = nil
-    ---@type function
-    local onLeaveSelectableRow = nil
-
-    GGUI:SetTooltipsByTooltipOptions(rowFrame, self)
-
+    -- Selection method: only created when the parent FrameList has selectionOptions
     if frameList.selectionOptions then
         self.Select = function(_, userInput)
             local alreadySelected = self == frameList.selectedRow
             if not alreadySelected or frameList.selectionOptions.noSelectionColor then
                 if not frameList.selectionOptions.noSelectionColor then
-                    rowFrame:SetBackdropColor(frameList.selectionOptions.selectedRGBA[1],
-                        frameList.selectionOptions.selectedRGBA[2], frameList.selectionOptions.selectedRGBA[3],
-                        frameList.selectionOptions.selectedRGBA[4])
-                    if frameList.selectedRow then
-                        -- revert color
-                        if self.originalBackdropOptions then
-                            GGUI:SetBackdropByBackdropOptions(frameList.selectedRow.frame, self.originalBackdropOptions)
+                    -- Apply selected colour to current frame, if visible
+                    if self.frame then
+                        self.frame:SetBackdropColor(
+                            frameList.selectionOptions.selectedRGBA[1],
+                            frameList.selectionOptions.selectedRGBA[2],
+                            frameList.selectionOptions.selectedRGBA[3],
+                            frameList.selectionOptions.selectedRGBA[4])
+                    end
+                    -- Revert the previously selected row
+                    if frameList.selectedRow and frameList.selectedRow.frame then
+                        if frameList.selectedRow.originalBackdropOptions then
+                            GGUI:SetBackdropByBackdropOptions(frameList.selectedRow.frame,
+                                frameList.selectedRow.originalBackdropOptions)
                         else
                             frameList.selectedRow.frame:SetBackdropColor(0, 0, 0, 0)
                         end
@@ -3425,67 +3712,38 @@ function GGUI.FrameList.Row:new(rowFrame, columns, rowConstructor, frameList)
             end
             frameList.selectionOptions.selectionCallback(self, userInput, alreadySelected)
         end
-        rowFrame:SetBackdrop({
-            bgFile = "Interface\\Buttons\\WHITE8x8", -- You can use any texture here or a solid color
-        })
-        rowFrame:SetBackdropColor(0, 0, 0, 0)        -- make colorless
-
-        onEnterSelectableRow =
-            function()
-                if self ~= frameList.selectedRow or frameList.selectionOptions.noSelectionColor then
-                    rowFrame:SetBackdropColor(frameList.selectionOptions.hoverRGBA[1],
-                        frameList.selectionOptions.hoverRGBA[2], frameList.selectionOptions.hoverRGBA[3],
-                        frameList.selectionOptions.hoverRGBA[4])
-                end
-            end
-        onLeaveSelectableRow =
-            function()
-                if self ~= frameList.selectedRow or frameList.selectionOptions.noSelectionColor then
-                    if self.originalBackdropOptions then
-                        GGUI:SetBackdropByBackdropOptions(rowFrame, self.originalBackdropOptions)
-                    else
-                        rowFrame:SetBackdropColor(0, 0, 0, 0)
-                    end
-                end
-            end
     end
-    -- OnMouseDown handler - Mouse click
-    rowFrame:SetScript("OnMouseDown", function()
-        -- subFrameList toggle has authority over selection!
-        if self.subFrameListEnabled and self.subFrameList then
-            self:SetSubFrameListVisible(not self.subFrameListVisible)
-        elseif frameList.selectionEnabled and frameList.selectionOptions then
-            self:Select(true)
-        end
-    end)
-    rowFrame:HookScript("OnEnter", function()
-        if not frameList.selectionEnabled then return end
-        if onEnterSelectableRow then
-            onEnterSelectableRow()
-        end
-    end)
-    rowFrame:HookScript("OnLeave", function()
-        if onLeaveSelectableRow then
-            onLeaveSelectableRow()
-        end
-    end)
-    rowConstructor(self.columns, self)
-    self:Hide()
+end
+
+-- Backward-compatible Show / Hide stubs.
+-- Visibility is now managed automatically by the DataProvider / ScrollBoxList.
+function GGUI.FrameList.Row:Show()
+    self.active = true
+end
+
+function GGUI.FrameList.Row:Hide()
+    self.active = false
 end
 
 ---@param visible boolean
 ---@param rgba number[]? default: white
 ---@param thickness number? default: 2
 function GGUI.FrameList.Row:SetSeparatorLine(visible, rgba, thickness)
-    rgba = rgba or self.separatorLineRGBA
-    thickness = thickness or self.separatorLineThickness
-    self.separatorLine:SetColorTexture(rgba[1], rgba[2], rgba[3],
-        rgba[4])
-    self.separatorLine:SetThickness(thickness)
-    if visible then
-        self.separatorLine:Show()
-    else
-        self.separatorLine:Hide()
+    self._ggui_separatorRGBA = rgba or self._ggui_separatorRGBA
+    self._ggui_separatorThickness = thickness or self._ggui_separatorThickness
+    self._ggui_separatorVisible = visible
+    -- Apply immediately when the row frame is currently bound
+    if self.frame and self.frame.ggui_separatorLine then
+        local sepLine = self.frame.ggui_separatorLine
+        if visible then
+            sepLine:SetColorTexture(
+                self._ggui_separatorRGBA[1], self._ggui_separatorRGBA[2],
+                self._ggui_separatorRGBA[3], self._ggui_separatorRGBA[4])
+            sepLine:SetThickness(self._ggui_separatorThickness)
+            sepLine:Show()
+        else
+            sepLine:Hide()
+        end
     end
 end
 
@@ -3506,9 +3764,6 @@ end
 ---@param subFrameListOptions? GGUI.SubFrameListConstructorOptions
 function GGUI.FrameList.Row:CreateSubFrameList(subFrameListOptions)
     subFrameListOptions = subFrameListOptions or {}
-    -- set some defaults for anchoring, offsets and scale
-
-    --self.subFrameListVisible = true
 
     GGUI:DebugPrint(subFrameListOptions, "Creating SubFrameList")
 
@@ -3520,7 +3775,6 @@ function GGUI.FrameList.Row:CreateSubFrameList(subFrameListOptions)
             return true
         end
     end)
-    GGUI:DebugPrint(subFrameListOptions, "noLabel: " .. tostring(headerOffsetY))
     local headerOffsetY = -20
     if not hasLabels then
         headerOffsetY = 0
@@ -3528,21 +3782,36 @@ function GGUI.FrameList.Row:CreateSubFrameList(subFrameListOptions)
     GGUI:DebugPrint(subFrameListOptions, "headerOffsetY: " .. tostring(headerOffsetY))
     local frameListOffsetX = (subFrameListOptions.offsetX or 0) + 10
     local frameListOffsetY = (subFrameListOptions.offsetY or 0) + -self.frameList.rowHeight + headerOffsetY
-    subFrameListOptions.parent = subFrameListOptions.parent or self.frame
+    -- Use current row frame as parent if available, otherwise fall back to the
+    -- parent FrameList's main frame; the element initialiser re-parents when the
+    -- row scrolls into view.
+    subFrameListOptions.parent = subFrameListOptions.parent or self.frame or self.frameList.frame
     subFrameListOptions.sizeY = 100
     subFrameListOptions.anchorPoints = subFrameListOptions.anchorPoints or
-        { { anchorParent = self.frame, anchorA = "TOPLEFT", anchorB = "TOPLEFT", offsetX = frameListOffsetX, offsetY = frameListOffsetY } }
+        {
+            {
+                anchorParent = subFrameListOptions.parent,
+                anchorA = "TOPLEFT",
+                anchorB = "TOPLEFT",
+                offsetX = frameListOffsetX,
+                offsetY = frameListOffsetY,
+            }
+        }
     subFrameListOptions.autoAdjustHeight = true
+    local rowRef = self
+    local frameList = self.frameList
     subFrameListOptions.autoAdjustHeightCallback = function(newHeight)
-        if self.subFrameListVisible then
-            self.frame:SetSize(self.frame:GetWidth(), self.frameList.rowHeight + newHeight + math.abs(headerOffsetY))
+        if rowRef.subFrameListVisible then
+            rowRef._ggui_expandedHeight = (frameList.rowHeight * frameList.rowScale)
+                + newHeight + math.abs(headerOffsetY)
+            -- Rebuild the DataProvider so the ScrollBoxList recalculates row heights
+            frameList:UpdateDisplay()
         end
     end
 
     subFrameListOptions.horizontal = self.frameList.horizontal
 
     self.subFrameList = GGUI.FrameList(subFrameListOptions)
-
     self.subFrameList:Hide()
 end
 
@@ -3550,16 +3819,21 @@ end
 function GGUI.FrameList.Row:SetSubFrameListVisible(visible)
     if visible then
         self.subFrameListVisible = true
-        self.subFrameList:Show()
-        self.subFrameList:AdjustHeight() -- predefined adjust height callback should now resize the rowFrame accordingly
+        if self.subFrameList then
+            if self.frame then
+                self.subFrameList.frame:SetParent(self.frame)
+            end
+            self.subFrameList:Show()
+            self.subFrameList:AdjustHeight()
+        end
     else
         self.subFrameListVisible = false
-        if self.frameList.horizontal then
-            self.frame:SetSize(self.frameList.rowHeight, self.frame:GetHeight())
-        else
-            self.frame:SetSize(self.frame:GetWidth(), self.frameList.rowHeight)
+        self._ggui_expandedHeight = nil
+        if self.subFrameList then
+            self.subFrameList:Hide()
         end
-        self.subFrameList:Hide()
+        -- Rebuild DataProvider to restore the normal row height
+        self.frameList:UpdateDisplay()
     end
 end
 
@@ -3592,92 +3866,27 @@ function GGUI.FrameList:SelectRowWhere(predicate, defaultIndex)
     end
 end
 
-function GGUI.FrameList:CreateRow()
-    local rowFrame = CreateFrame("Frame", nil, self.scrollFrame.content, "BackdropTemplate")
-    if self.horizontal then
-        rowFrame:SetSize(self.rowHeight, self.rowWidth)
-    else
-        rowFrame:SetSize(self.rowWidth, self.rowHeight)
-    end
-    rowFrame:SetScale(self.rowScale)
-
-    if self.horizontal then
-        if #self.rows == 0 then
-            rowFrame:SetPoint("TOPLEFT", self.scrollFrame.content, "TOPLEFT")
-        else
-            rowFrame:SetPoint("TOPLEFT", self.rows[#self.rows].frame, "TOPRIGHT")
-        end
-    else
-        if #self.rows == 0 then
-            rowFrame:SetPoint("TOPLEFT", self.scrollFrame.content, "TOPLEFT")
-        else
-            rowFrame:SetPoint("TOPLEFT", self.rows[#self.rows].frame, "BOTTOMLEFT")
-        end
-    end
-
-    local columns = {}
-    local lastColumn = nil
-    for index, columnOption in pairs(self.columnOptions) do
-        local columnFrame = CreateFrame("Frame", nil, rowFrame, "BackdropTemplate")
-        if self.horizontal then
-            columnFrame:SetSize(self.rowHeight, columnOption.width)
-            if index == 1 then
-                columnFrame:SetPoint("TOP", rowFrame, "TOP", 0, 0)
-            else
-                columnFrame:SetPoint("TOP", lastColumn, "BOTTOM")
-            end
-        else
-            columnFrame:SetSize(columnOption.width, self.rowHeight)
-
-            if index == 1 then
-                columnFrame:SetPoint("LEFT", rowFrame, "LEFT", 0, 0)
-            else
-                columnFrame:SetPoint("LEFT", lastColumn, "RIGHT")
-            end
-        end
-
-        if columnOption.backdropOptions then
-            local borderOptions = columnOption.backdropOptions.borderOptions or {}
-            columnFrame:SetBackdrop({
-                bgFile = columnOption.backdropOptions.bgFile,
-                edgeFile = borderOptions.edgeFile,
-                edgeSize = borderOptions.edgeSize,
-                insets = borderOptions.insets,
-                tile = columnOption.backdropOptions.tile,
-                tileSize = columnOption.backdropOptions.tileSize,
-            })
-            columnFrame:SetBackdropColor(columnOption.backdropOptions.colorR or 0,
-                columnOption.backdropOptions.colorG or 0, columnOption.backdropOptions.colorB or 0,
-                columnOption.backdropOptions.colorA or 1)
-            columnFrame:SetBackdropBorderColor(borderOptions.colorR or 0, borderOptions.colorG or 0,
-                borderOptions.colorB or 0, borderOptions.colorA or 1)
-        end
-
-        table.insert(columns, columnFrame)
-
-        lastColumn = columnFrame
-    end
-
-    local newRow = GGUI.FrameList.Row(rowFrame, columns, self.rowConstructor, self)
-
-    table.insert(self.rows, newRow)
-
-    return newRow
-end
-
----Add row data into the list
----@param fillFunc? fun(row: GGUI.FrameList.Row, columns: Frame[]) function that receives a free row to add to the list
+---Add row data into the list.
+---The fillFunc is stored and called by the ScrollBoxList element initialiser each
+---time the row scrolls into view, so that the UI always reflects the latest data.
+---@param fillFunc? fun(row: GGUI.FrameList.Row, columns: Frame[]) function that receives a row to populate with data
 function GGUI.FrameList:Add(fillFunc)
-    -- get an inactive row from the list of rows, call fillFunc on it
+    -- Reuse an inactive row data object to avoid unnecessary allocations
     local freeRow = GUTIL:Find(self.rows, function(row) return not row.active end)
 
     if not freeRow then
-        -- create a new row if no row is free
-        freeRow = self:CreateRow()
+        freeRow = GGUI.FrameList.Row(self)
+        table.insert(self.rows, freeRow)
     end
-    if fillFunc then
-        fillFunc(freeRow, freeRow.columns)
-    end
+
+    -- Reset internal per-row state when reusing
+    freeRow._ggui_fillFunc = fillFunc
+    freeRow._ggui_separatorVisible = false
+    freeRow._ggui_separatorRGBA = { 1, 1, 1, 1 }
+    freeRow._ggui_separatorThickness = 2
+    freeRow._ggui_displayIndex = nil
+    freeRow._ggui_expandedHeight = nil
+    freeRow.subFrameListVisible = false
     freeRow.active = true
 end
 
@@ -3733,58 +3942,32 @@ function GGUI.FrameList:Remove(filterFunc, limit)
     end
 end
 
---- Update the list display, optionally filter then show all active rows
----@param sortFunc? fun(rowA:GGUI.FrameList.Row, rowB:GGUI.FrameList.Row): boolean optional sorting before updating the display
+--- Update the list display: collect active rows, optionally sort them, then
+--- repopulate the DataProvider so the ScrollBoxList re-renders visible rows.
+---@param sortFunc? fun(rowA:GGUI.FrameList.Row, rowB:GGUI.FrameList.Row): boolean optional sort applied before updating the display
 function GGUI.FrameList:UpdateDisplay(sortFunc)
-    -- filter and show active rows and hide all inactive
-    -- but keep reference!!
     wipe(self.activeRows)
-    tAppendAll(self.activeRows, GUTIL:Filter(self.rows, function(row)
+    for _, row in ipairs(self.rows) do
         if row.active then
-            row:Show()
-            return true
-        else
-            row:Hide()
-            return false
+            table.insert(self.activeRows, row)
         end
-    end))
-
-    if #self.activeRows == 0 then
-        return
     end
 
     if #self.activeRows > 1 and sortFunc then
-        -- in place sort to keep reference!
+        -- In-place sort keeps existing references valid
         table.sort(self.activeRows, sortFunc)
     end
 
-    local lastRow = nil
-    for index, row in pairs(self.activeRows) do
-        if self.horizontal then
-            if index == 1 then
-                row:SetPoint("TOPLEFT", self.scrollFrame.content, "TOPLEFT")
-            else
-                if lastRow then
-                    row:SetPoint("TOPLEFT", lastRow.frame, "TOPRIGHT")
-                end
-            end
-        else
-            if index == 1 then
-                row:SetPoint("TOPLEFT", self.scrollFrame.content, "TOPLEFT")
-            else
-                if lastRow then
-                    row:SetPoint("TOPLEFT", lastRow.frame, "BOTTOMLEFT")
-                end
-            end
-        end
-        if self.rowBackdrops and #self.rowBackdrops > 0 then
-            local backdropOptions = self.rowBackdrops[#self.rowBackdrops - (index % #self.rowBackdrops)]
+    -- Store display index so the element initialiser can apply alternating backdrops
+    for index, row in ipairs(self.activeRows) do
+        row._ggui_displayIndex = index
+    end
 
-            GGUI:SetBackdropByBackdropOptions(row.frame, backdropOptions)
-
-            row.originalBackdropOptions = backdropOptions
-        end
-        lastRow = row
+    -- Rebuild the DataProvider.  Flushing and re-inserting the active rows
+    -- triggers the ScrollBoxList to re-render any currently visible elements.
+    self.dataProvider:Flush()
+    for _, row in ipairs(self.activeRows) do
+        self.dataProvider:Insert(row)
     end
 
     if self.autoAdjustHeight then
