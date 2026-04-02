@@ -64,6 +64,9 @@ end
 -- GGUI CONST
 GGUI.CONST = {}
 GGUI.CONST.EMPTY_TEXTURE = "Interface\\containerframe\\bagsitemslot2x"
+GGUI.CONST.SORT_ARROW_UP_ATLAS = "glues-characterSelect-icon-arrowUp"
+GGUI.CONST.SORT_ARROW_DOWN_ATLAS = "glues-characterSelect-icon-arrowDown"
+GGUI.CONST.NOT_SORTED_ATLAS = "glues-characterSelect-icon-minus-disabled"
 
 ---@class GGUI.AnchorPoint
 ---@field anchorParent Region?
@@ -3152,6 +3155,9 @@ end
 
 ---@class GGUI.FrameList : GGUI.Widget
 ---@overload fun(options:GGUI.FrameListConstructorOptions): GGUI.FrameList
+---@field activeSortColumnIndex number? index of the currently sorted column, or nil if none
+---@field activeSortAscending boolean true when the active column sort is ascending
+---@field activeSortFunc (fun(rowA:GGUI.FrameList.Row, rowB:GGUI.FrameList.Row):boolean)? active sort function derived from column header clicks
 GGUI.FrameList = GGUI.Widget:extend()
 
 ---@class GGUI.FrameListConstructorOptions : GGUI.ConstructorOptions
@@ -3179,6 +3185,7 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field private autoAdjustHeightCallback? fun(newHeight: number)
 ---@field disableScrolling? boolean
 ---@field label? string
+---@field savedVariablesTableSortConfig? table a table reference where the sort config should be saved/loaded from, needs to be in format { columnIndex = number, ascending = boolean }
 
 ---@class GGUI.FrameList.SelectionOptions
 ---@field noSelectionColor boolean?
@@ -3194,6 +3201,8 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field tooltipOptions? GGUI.TooltipOptions
 ---@field fontOptions? GGUI.FontOptions
 ---@field onClickCallback? fun(column: Frame, columnIndex: number)
+---@field sortFunc? fun(rowA:GGUI.FrameList.Row, rowB:GGUI.FrameList.Row): boolean optional sort function; if provided the column header becomes clickable and toggles between ascending/descending sort
+---@field customSortArrowOffsetX? number
 
 function GGUI.FrameList:new(options)
     self.isGGUI = true
@@ -3226,6 +3235,9 @@ function GGUI.FrameList:new(options)
     end
     ---@type GGUI.FrameList.Row
     self.selectedRow = nil
+    self.activeSortColumnIndex = nil
+    self.activeSortAscending = true
+    self.activeSortFunc = nil
 
     if not options.columnOptions or #options.columnOptions == 0 then
         GGUI:ThrowError("FrameList needs a least one column! (columnOptions)")
@@ -3286,7 +3298,7 @@ function GGUI.FrameList:new(options)
     self.headerColumns = {}
     local lastHeaderColumn = nil
     for index, columnOption in pairs(options.columnOptions) do
-        local headerColumn = CreateFrame("Frame", nil, header)
+        local headerColumn = CreateFrame("Frame", nil, header, "BackdropTemplate")
         headerColumn:SetSize(columnOption.width, 25)
 
         local columnTooltipOptions = columnOption.tooltipOptions
@@ -3294,6 +3306,100 @@ function GGUI.FrameList:new(options)
         if columnTooltipOptions then
             columnTooltipOptions.anchor = columnTooltipOptions.anchor or "ANCHOR_CURSOR"
             columnTooltipOptions.owner = columnTooltipOptions.owner or headerColumn
+        end
+
+        -- Determine the effective click callback for the header text
+        local columnOnClickCallback
+        if columnOption.sortFunc then
+            local capturedIndex = index
+            local capturedSortFunc = columnOption.sortFunc
+            local capturedCallback = columnOption.onClickCallback
+            -- Pre-create the descending sort function to avoid allocations on each click.
+            -- Reversing the two arguments inverts the caller-supplied ascending comparator.
+            local sortFuncDesc = function(rowA, rowB)
+                return capturedSortFunc(rowB, rowA)
+            end
+            columnOnClickCallback = function()
+                if self.activeSortColumnIndex == capturedIndex then
+                    -- Cycle: asc -> desc -> unsorted
+                    if self.activeSortAscending then
+                        -- Currently ascending -> switch to descending
+                        self.activeSortAscending = false
+                    else
+                        if self.savedVariablesTableSortConfig then
+                            self.savedVariablesTableSortConfig.columnIndex = nil
+                            self.savedVariablesTableSortConfig.ascending = nil
+                        end
+                        -- Currently descending -> clear sort entirely
+                        headerColumn.sortArrowUp:Hide()
+                        headerColumn.sortArrowDown:Hide()
+                        headerColumn.notSortedIndicator:Show()
+                        self.activeSortColumnIndex = nil
+                        self.activeSortAscending = true
+                        self.activeSortFunc = nil
+                        self:UpdateDisplay()
+                        if capturedCallback then
+                            capturedCallback(headerColumn, capturedIndex)
+                        end
+                        return
+                    end
+                else
+                    -- Hide arrows on the previously sorted column
+                    if self.activeSortColumnIndex then
+                        local prevCol = self.headerColumns[self.activeSortColumnIndex]
+                        if prevCol and prevCol.sortArrowUp then
+                            prevCol.sortArrowUp:Hide()
+                            prevCol.sortArrowDown:Hide()
+                            prevCol.notSortedIndicator:Show()
+                        end
+                    end
+                    self.activeSortColumnIndex = capturedIndex
+                    self.activeSortAscending = true
+                end
+                if self.savedVariablesTableSortConfig then
+                    self.savedVariablesTableSortConfig.columnIndex = capturedIndex
+                    self.savedVariablesTableSortConfig.ascending = self.activeSortAscending
+                end
+
+                -- Update the active sort function based on the current direction
+                if self.activeSortAscending then
+                    headerColumn.sortArrowUp:Show()
+                    headerColumn.sortArrowDown:Hide()
+                    headerColumn.notSortedIndicator:Hide()
+                    self.activeSortFunc = capturedSortFunc
+                else
+                    headerColumn.sortArrowUp:Hide()
+                    headerColumn.sortArrowDown:Show()
+                    headerColumn.notSortedIndicator:Hide()
+                    self.activeSortFunc = sortFuncDesc
+                end
+
+                self:UpdateDisplay()
+
+                if capturedCallback then
+                    capturedCallback(headerColumn, capturedIndex)
+                end
+            end
+        else
+            columnOnClickCallback = columnOption.onClickCallback
+        end
+
+        if columnOnClickCallback then
+            headerColumn:SetScript("OnMouseDown", function()
+                columnOnClickCallback(headerColumn, index)
+            end)
+            -- Set a backdrop so that SetBackdropColor has something to colorize
+            headerColumn:SetBackdrop({
+                bgFile = "Interface\\Buttons\\WHITE8x8",
+            })
+            headerColumn:SetBackdropColor(0, 0, 0, 0) -- transparent by default
+            headerColumn:HookScript("OnEnter", function()
+                headerColumn:SetBackdropColor(1, 1, 1, 0.1)
+            end)
+            headerColumn:HookScript("OnLeave", function()
+                headerColumn:SetBackdropColor(0, 0, 0, 0)
+            end)
+            headerColumn:SetMouseClickEnabled(true)
         end
 
         headerColumn.text = GGUI.Text({
@@ -3305,8 +3411,30 @@ function GGUI.FrameList:new(options)
             justifyOptions = columnOption.justifyOptions or { type = "H", align = "LEFT" },
             fontOptions = columnOption.fontOptions,
             tooltipOptions = columnTooltipOptions,
-            onClickCallback = columnOption.onClickCallback,
         })
+
+        -- Create sort direction arrows for sortable columns (hidden by default)
+        if columnOption.sortFunc then
+            local offsetX = columnOption.customSortArrowOffsetX or -2
+            local size = 20
+
+            headerColumn.sortArrowUp = headerColumn:CreateTexture(nil, "OVERLAY")
+            headerColumn.sortArrowUp:SetAtlas(GGUI.CONST.SORT_ARROW_UP_ATLAS)
+            headerColumn.sortArrowUp:SetSize(size, size)
+            headerColumn.sortArrowUp:SetPoint("TOPRIGHT", headerColumn, "TOPRIGHT", offsetX, -2)
+            headerColumn.sortArrowUp:Hide()
+
+            headerColumn.sortArrowDown = headerColumn:CreateTexture(nil, "OVERLAY")
+            headerColumn.sortArrowDown:SetAtlas(GGUI.CONST.SORT_ARROW_DOWN_ATLAS)
+            headerColumn.sortArrowDown:SetSize(size, size)
+            headerColumn.sortArrowDown:SetPoint("BOTTOMRIGHT", headerColumn, "BOTTOMRIGHT", offsetX, -2)
+            headerColumn.sortArrowDown:Hide()
+
+            headerColumn.notSortedIndicator = headerColumn:CreateTexture(nil, "OVERLAY")
+            headerColumn.notSortedIndicator:SetAtlas(GGUI.CONST.NOT_SORTED_ATLAS)
+            headerColumn.notSortedIndicator:SetSize(size, size)
+            headerColumn.notSortedIndicator:SetPoint("RIGHT", headerColumn, "RIGHT", offsetX, -2)
+        end
 
         if index == 1 then
             headerColumn:SetPoint("TOPLEFT", header, "TOPLEFT", options.headerOffsetX, 0)
@@ -3331,6 +3459,34 @@ function GGUI.FrameList:new(options)
     end
 
     GGUI.FrameList.super.new(self, mainFrame)
+
+    if options.savedVariablesTableSortConfig then
+        self.savedVariablesTableSortConfig = options.savedVariablesTableSortConfig or {}
+        local config = options.savedVariablesTableSortConfig
+        if config then
+            if config.columnIndex and options.columnOptions[config.columnIndex] and options.columnOptions[config.columnIndex].sortFunc then
+                self.activeSortColumnIndex = config.columnIndex
+                self.activeSortAscending = config.ascending
+                self.activeSortFunc = config.ascending and options.columnOptions[config.columnIndex].sortFunc or
+                    function(rowA, rowB)
+                        return options.columnOptions[config.columnIndex].sortFunc(rowB, rowA)
+                    end
+
+                local headerColumn = self.headerColumns[config.columnIndex]
+                if headerColumn then
+                    if self.activeSortAscending then
+                        headerColumn.sortArrowUp:Show()
+                        headerColumn.sortArrowDown:Hide()
+                        headerColumn.notSortedIndicator:Hide()
+                    else
+                        headerColumn.sortArrowUp:Hide()
+                        headerColumn.sortArrowDown:Show()
+                        headerColumn.notSortedIndicator:Hide()
+                    end
+                end
+            end
+        end
+    end
 end
 
 ---@param anchorPoints GGUI.AnchorPoint[]
@@ -3753,9 +3909,10 @@ function GGUI.FrameList:UpdateDisplay(sortFunc)
         return
     end
 
-    if #self.activeRows > 1 and sortFunc then
+    local effectiveSortFunc = sortFunc or self.activeSortFunc
+    if #self.activeRows > 1 and effectiveSortFunc then
         -- in place sort to keep reference!
-        table.sort(self.activeRows, sortFunc)
+        table.sort(self.activeRows, effectiveSortFunc)
     end
 
     local lastRow = nil
