@@ -3241,11 +3241,11 @@ function GGUI.FrameList:new(options)
             local scale = UIParent:GetScale()
             local cursorX = GetCursorPosition() / scale
             local delta = cursorX - state.startCursorX
-            -- Left column grows/shrinks by delta; enforce both columns' minWidth
-            local leftMinWidth = state.leftMinWidth
-            local rightMinWidth = state.rightMinWidth
+            -- Left column grows/shrinks by delta; clamp so neither column goes below its minWidth
             local totalWidth = state.leftStartWidth + state.rightStartWidth
-            local newLeftWidth = math.max(leftMinWidth, math.min(totalWidth - rightMinWidth, state.leftStartWidth + delta))
+            local desiredLeftWidth = state.leftStartWidth + delta
+            local maxLeftWidth = totalWidth - state.rightMinWidth  -- right column must keep its minimum
+            local newLeftWidth = math.max(state.leftMinWidth, math.min(maxLeftWidth, desiredLeftWidth))
             local newRightWidth = totalWidth - newLeftWidth
             if newLeftWidth ~= state.currentLeftWidth or newRightWidth ~= state.currentRightWidth then
                 state.currentLeftWidth = newLeftWidth
