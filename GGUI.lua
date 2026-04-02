@@ -66,6 +66,7 @@ GGUI.CONST = {}
 GGUI.CONST.EMPTY_TEXTURE = "Interface\\containerframe\\bagsitemslot2x"
 GGUI.CONST.SORT_ARROW_UP_ATLAS = "glues-characterSelect-icon-arrowUp"
 GGUI.CONST.SORT_ARROW_DOWN_ATLAS = "glues-characterSelect-icon-arrowDown"
+GGUI.CONST.NOT_SORTED_ATLAS = "glues-characterSelect-icon-minus-disabled"
 
 ---@class GGUI.AnchorPoint
 ---@field anchorParent Region?
@@ -3327,6 +3328,7 @@ function GGUI.FrameList:new(options)
                         -- Currently descending -> clear sort entirely
                         headerColumn.sortArrowUp:Hide()
                         headerColumn.sortArrowDown:Hide()
+                        headerColumn.notSortedIndicator:Show()
                         self.activeSortColumnIndex = nil
                         self.activeSortAscending = true
                         self.activeSortFunc = nil
@@ -3343,6 +3345,7 @@ function GGUI.FrameList:new(options)
                         if prevCol and prevCol.sortArrowUp then
                             prevCol.sortArrowUp:Hide()
                             prevCol.sortArrowDown:Hide()
+                            prevCol.notSortedIndicator:Show()
                         end
                     end
                     self.activeSortColumnIndex = capturedIndex
@@ -3353,10 +3356,12 @@ function GGUI.FrameList:new(options)
                 if self.activeSortAscending then
                     headerColumn.sortArrowUp:Show()
                     headerColumn.sortArrowDown:Hide()
+                    headerColumn.notSortedIndicator:Hide()
                     self.activeSortFunc = capturedSortFunc
                 else
                     headerColumn.sortArrowUp:Hide()
                     headerColumn.sortArrowDown:Show()
+                    headerColumn.notSortedIndicator:Hide()
                     self.activeSortFunc = sortFuncDesc
                 end
 
@@ -3380,7 +3385,7 @@ function GGUI.FrameList:new(options)
             })
             headerColumn:SetBackdropColor(0, 0, 0, 0) -- transparent by default
             headerColumn:HookScript("OnEnter", function()
-                headerColumn:SetBackdropColor(1, 1, 1, 0.15)
+                headerColumn:SetBackdropColor(1, 1, 1, 0.1)
             end)
             headerColumn:HookScript("OnLeave", function()
                 headerColumn:SetBackdropColor(0, 0, 0, 0)
@@ -3415,6 +3420,11 @@ function GGUI.FrameList:new(options)
             headerColumn.sortArrowDown:SetSize(size, size)
             headerColumn.sortArrowDown:SetPoint("BOTTOMRIGHT", headerColumn, "BOTTOMRIGHT", offsetX, -2)
             headerColumn.sortArrowDown:Hide()
+
+            headerColumn.notSortedIndicator = headerColumn:CreateTexture(nil, "OVERLAY")
+            headerColumn.notSortedIndicator:SetAtlas(GGUI.CONST.NOT_SORTED_ATLAS)
+            headerColumn.notSortedIndicator:SetSize(size, size)
+            headerColumn.notSortedIndicator:SetPoint("RIGHT", headerColumn, "RIGHT", offsetX, -2)
         end
 
         if index == 1 then
