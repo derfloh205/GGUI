@@ -3318,9 +3318,24 @@ function GGUI.FrameList:new(options)
                 return capturedSortFunc(rowB, rowA)
             end
             columnOnClickCallback = function()
-                -- Toggle direction when clicking the already-active sort column
                 if self.activeSortColumnIndex == capturedIndex then
-                    self.activeSortAscending = not self.activeSortAscending
+                    -- Cycle: asc -> desc -> unsorted
+                    if self.activeSortAscending then
+                        -- Currently ascending -> switch to descending
+                        self.activeSortAscending = false
+                    else
+                        -- Currently descending -> clear sort entirely
+                        headerColumn.sortArrowUp:Hide()
+                        headerColumn.sortArrowDown:Hide()
+                        self.activeSortColumnIndex = nil
+                        self.activeSortAscending = true
+                        self.activeSortFunc = nil
+                        self:UpdateDisplay()
+                        if capturedCallback then
+                            capturedCallback(headerColumn, capturedIndex)
+                        end
+                        return
+                    end
                 else
                     -- Hide arrows on the previously sorted column
                     if self.activeSortColumnIndex then
