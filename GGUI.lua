@@ -68,6 +68,9 @@ GGUI.CONST.SORT_ARROW_UP_ATLAS = "glues-characterSelect-icon-arrowUp"
 GGUI.CONST.SORT_ARROW_DOWN_ATLAS = "glues-characterSelect-icon-arrowDown"
 GGUI.CONST.NOT_SORTED_ATLAS = "glues-characterSelect-icon-minus-disabled"
 
+GGUI.CONST.HIGHLIGHTED_BLUE_ATLAS = "GarrMissionLocation-Maw-ButtonHighlight"
+GGUI.CONST.HIGHTLIGHTED_VERTICAL_EDGE_BLUE_ATLAS = "!editmode-actionbar-highlight-nineslice-edgeleft"
+
 ---@class GGUI.AnchorPoint
 ---@field anchorParent Region?
 ---@field anchorA FramePoint?
@@ -1680,6 +1683,14 @@ function GGUI.Text:new(options)
     end
 end
 
+function GGUI.Text:SetWidth(width)
+    self.frame:SetWidth(width)
+end
+
+function GGUI.Text:SetHeight(height)
+    self.frame:SetHeight(height)
+end
+
 function GGUI.Text:GetText()
     return self.frame:GetText() or ""
 end
@@ -3206,7 +3217,7 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field customSortArrowOffsetX? number
 ---@field resizable? boolean if true the column can be resized by dragging its header edges
 ---@field minWidth? number minimum column width when resizing (default 5)
----@field resizeCallback? fun(columnIndex: number, newWidth: number) called after the column is resized; use it to update row content widths
+---@field resizeCallback? fun(columnFrame: Frame, newWidth: number) called after the column is resized; use it to update row content widths
 
 function GGUI.FrameList:new(options)
     self.isGGUI = true
@@ -3346,8 +3357,12 @@ function GGUI.FrameList:new(options)
     self.headerColumns = {}
     local lastHeaderColumn = nil
     for index, columnOption in pairs(options.columnOptions) do
-        local headerColumn = CreateFrame("Frame", nil, header, "BackdropTemplate")
+        local headerColumn = CreateFrame("Frame", nil, header)
+        headerColumn.highlightAtlas = headerColumn:CreateTexture(nil, "HIGHLIGHT")
+        headerColumn.highlightAtlas:SetAtlas(GGUI.CONST.HIGHLIGHTED_BLUE_ATLAS)
+        headerColumn.highlightAtlas:SetPoint("CENTER", headerColumn, "CENTER")
         headerColumn:SetSize(columnOption.width, 25)
+        headerColumn.highlightAtlas:SetSize(columnOption.width, 25)
 
         local columnTooltipOptions = columnOption.tooltipOptions
 
@@ -3437,15 +3452,12 @@ function GGUI.FrameList:new(options)
                 columnOnClickCallback(headerColumn, index)
             end)
             -- Set a backdrop so that SetBackdropColor has something to colorize
-            headerColumn:SetBackdrop({
-                bgFile = "Interface\\Buttons\\WHITE8x8",
-            })
-            headerColumn:SetBackdropColor(0, 0, 0, 0) -- transparent by default
             headerColumn:HookScript("OnEnter", function()
-                headerColumn:SetBackdropColor(1, 1, 1, 0.1)
+                -- set backdrop to an atlas
+                headerColumn.highlightAtlas:Show()
             end)
             headerColumn:HookScript("OnLeave", function()
-                headerColumn:SetBackdropColor(0, 0, 0, 0)
+                headerColumn.highlightAtlas:Hide()
             end)
             headerColumn:SetMouseClickEnabled(true)
         end
@@ -3555,22 +3567,23 @@ end
 ---@param rightColumnOption GGUI.FrameList.ColumnOption column option for the right column
 function GGUI.FrameList:_AddResizeHandle(leftHeaderColumn, leftColumnIndex, leftColumnOption, rightColumnIndex, rightColumnOption)
     local HANDLE_WIDTH = 6
-    local HANDLE_HIGHLIGHT_ALPHA = 0.4
 
     local handle = CreateFrame("Frame", nil, leftHeaderColumn, "BackdropTemplate")
+    handle.highlightAtlas = handle:CreateTexture(nil, "HIGHLIGHT")
+    handle.highlightAtlas:SetAtlas(GGUI.CONST.HIGHTLIGHTED_VERTICAL_EDGE_BLUE_ATLAS)
+    handle.highlightAtlas:SetPoint("CENTER", handle, "CENTER")
+    handle.highlightAtlas:SetSize(HANDLE_WIDTH + 5, 20)
     handle:SetSize(HANDLE_WIDTH, 25)
     handle:EnableMouse(true)
     handle:SetFrameLevel(leftHeaderColumn:GetFrameLevel() + 10)
-    handle:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8" })
-    handle:SetBackdropColor(1, 1, 1, 0)
     handle:SetPoint("CENTER", leftHeaderColumn, "RIGHT", 0, 0)
 
     handle:HookScript("OnEnter", function()
-        handle:SetBackdropColor(1, 1, 1, HANDLE_HIGHLIGHT_ALPHA)
+        handle.highlightAtlas:Show()
     end)
     handle:HookScript("OnLeave", function()
         if not (GGUI._resizeDragState and GGUI._resizeDragState.handle == handle) then
-            handle:SetBackdropColor(1, 1, 1, 0)
+            handle.highlightAtlas:Hide()
         end
     end)
 
@@ -3622,22 +3635,29 @@ function GGUI.FrameList:_ApplyBoundaryResize(leftColumnIndex, newLeftWidth, righ
     rightHeader:SetWidth(newRightWidth)
     rightHeader.text.frame:SetWidth(newRightWidth)
 
+    if leftHeader.highlightAtlas then
+        leftHeader.highlightAtlas:SetWidth(newLeftWidth)
+    end
+
+    if rightHeader.highlightAtlas then
+        rightHeader.highlightAtlas:SetWidth(newRightWidth)
+    end
+
     for _, row in pairs(self.rows) do
         local leftCol = row.columns[leftColumnIndex]
         if leftCol then
             leftCol:SetWidth(newLeftWidth)
+            if leftOption.resizeCallback then
+                leftOption.resizeCallback(leftCol, newLeftWidth)
+            end
         end
         local rightCol = row.columns[rightColumnIndex]
         if rightCol then
             rightCol:SetWidth(newRightWidth)
+            if rightOption.resizeCallback then
+                rightOption.resizeCallback(rightCol, newRightWidth)
+            end
         end
-    end
-
-    if leftOption.resizeCallback then
-        leftOption.resizeCallback(leftColumnIndex, newLeftWidth)
-    end
-    if rightOption.resizeCallback then
-        rightOption.resizeCallback(rightColumnIndex, newRightWidth)
     end
 end
 
