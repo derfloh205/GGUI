@@ -3158,6 +3158,7 @@ end
 ---@field activeSortColumnIndex number? index of the currently sorted column, or nil if none
 ---@field activeSortAscending boolean true when the active column sort is ascending
 ---@field activeSortFunc (fun(rowA:GGUI.FrameList.Row, rowB:GGUI.FrameList.Row):boolean)? active sort function derived from column header clicks
+---@field header Frame the header row frame containing all column header frames
 GGUI.FrameList = GGUI.Widget:extend()
 
 ---@class GGUI.FrameListConstructorOptions : GGUI.ConstructorOptions
@@ -3221,7 +3222,7 @@ function GGUI.FrameList:new(options)
         trackerFrame:Hide()
         trackerFrame:SetFrameStrata("TOOLTIP")
 
-        trackerFrame:SetScript("OnMouseUp", function(self_tracker, button)
+        trackerFrame:SetScript("OnMouseUp", function(_, button)
             if button == "LeftButton" then
                 if GGUI._resizeDragState then
                     local handle = GGUI._resizeDragState.handle
@@ -3234,7 +3235,7 @@ function GGUI.FrameList:new(options)
             end
         end)
 
-        trackerFrame:SetScript("OnUpdate", function(self_tracker)
+        trackerFrame:SetScript("OnUpdate", function(_)
             local state = GGUI._resizeDragState
             if not state then return end
             local scale = UIParent:GetScale()
@@ -3548,6 +3549,7 @@ end
 ---@param edgeSide "LEFT"|"RIGHT" which edge of hostHeaderColumn the handle sits on
 function GGUI.FrameList:_AddResizeHandle(hostHeaderColumn, columnIndex, columnOption, edgeSide)
     local HANDLE_WIDTH = 6
+    local HANDLE_HIGHLIGHT_ALPHA = 0.4
     local minWidth = columnOption.minWidth or 5
 
     local handle = CreateFrame("Frame", nil, hostHeaderColumn, "BackdropTemplate")
@@ -3564,7 +3566,7 @@ function GGUI.FrameList:_AddResizeHandle(hostHeaderColumn, columnIndex, columnOp
     end
 
     handle:HookScript("OnEnter", function()
-        handle:SetBackdropColor(1, 1, 1, 0.4)
+        handle:SetBackdropColor(1, 1, 1, HANDLE_HIGHLIGHT_ALPHA)
     end)
     handle:HookScript("OnLeave", function()
         if not (GGUI._resizeDragState and GGUI._resizeDragState.handle == handle) then
@@ -3574,7 +3576,7 @@ function GGUI.FrameList:_AddResizeHandle(hostHeaderColumn, columnIndex, columnOp
 
     local capturedFrameList = self
     local capturedColumnIndex = columnIndex
-    handle:SetScript("OnMouseDown", function(self_handle, button)
+    handle:SetScript("OnMouseDown", function(_, button)
         if button ~= "LeftButton" then return end
         local scale = UIParent:GetScale()
         local cursorX = GetCursorPosition() / scale
