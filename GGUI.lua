@@ -3158,6 +3158,7 @@ end
 ---@field activeSortColumnIndex number? index of the currently sorted column, or nil if none
 ---@field activeSortAscending boolean true when the active column sort is ascending
 ---@field activeSortFunc (fun(rowA:GGUI.FrameList.Row, rowB:GGUI.FrameList.Row):boolean)? active sort function derived from column header clicks
+---@field header Frame the header row frame containing all column header frames
 GGUI.FrameList = GGUI.Widget:extend()
 
 ---@class GGUI.FrameListConstructorOptions : GGUI.ConstructorOptions
@@ -3203,12 +3204,58 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field onClickCallback? fun(column: Frame, columnIndex: number)
 ---@field sortFunc? fun(rowA:GGUI.FrameList.Row, rowB:GGUI.FrameList.Row): boolean optional sort function; if provided the column header becomes clickable and toggles between ascending/descending sort
 ---@field customSortArrowOffsetX? number
+---@field resizable? boolean if true the column can be resized by dragging its header edges
+---@field minWidth? number minimum column width when resizing (default 5)
+---@field resizeCallback? fun(columnIndex: number, newWidth: number) called after the column is resized; use it to update row content widths
 
 function GGUI.FrameList:new(options)
     self.isGGUI = true
     ---@type GGUI.FrameListConstructorOptions
     options = options or {}
     options.parent = options.parent or UIParent
+
+    -- One-time creation of the global drag-tracker frame used for column resizing
+    if not GGUI._resizeDragTrackerFrame then
+        local trackerFrame = CreateFrame("Frame", nil, UIParent)
+        trackerFrame:SetAllPoints(UIParent)
+        trackerFrame:EnableMouse(true)
+        trackerFrame:Hide()
+        trackerFrame:SetFrameStrata("TOOLTIP")
+
+        trackerFrame:SetScript("OnMouseUp", function(_, button)
+            if button == "LeftButton" then
+                if GGUI._resizeDragState then
+                    local handle = GGUI._resizeDragState.handle
+                    if handle then
+                        handle:SetBackdropColor(1, 1, 1, 0)
+                    end
+                    GGUI._resizeDragState = nil
+                end
+                trackerFrame:Hide()
+            end
+        end)
+
+        trackerFrame:SetScript("OnUpdate", function(_)
+            local state = GGUI._resizeDragState
+            if not state then return end
+            local scale = UIParent:GetScale()
+            local cursorX = GetCursorPosition() / scale
+            local delta = cursorX - state.startCursorX
+            -- Left column grows/shrinks by delta; clamp so neither column goes below its minWidth
+            local totalWidth = state.leftStartWidth + state.rightStartWidth
+            local desiredLeftWidth = state.leftStartWidth + delta
+            local maxLeftWidth = totalWidth - state.rightMinWidth  -- right column must keep its minimum
+            local newLeftWidth = math.max(state.leftMinWidth, math.min(maxLeftWidth, desiredLeftWidth))
+            local newRightWidth = totalWidth - newLeftWidth
+            if newLeftWidth ~= state.currentLeftWidth or newRightWidth ~= state.currentRightWidth then
+                state.currentLeftWidth = newLeftWidth
+                state.currentRightWidth = newRightWidth
+                state.frameList:_ApplyBoundaryResize(state.leftColumnIndex, newLeftWidth, state.rightColumnIndex, newRightWidth)
+            end
+        end)
+
+        GGUI._resizeDragTrackerFrame = trackerFrame
+    end
     options.anchorParent = options.anchorParent or UIParent
     options.sizeY = options.sizeY or 100
     options.anchorA = options.anchorA or "CENTER"
@@ -3294,6 +3341,7 @@ function GGUI.FrameList:new(options)
     local header = CreateFrame("Frame", nil, mainFrame)
     header:SetPoint("BOTTOMLEFT", mainFrame, "TOPLEFT")
     header:SetSize(rowWidth, 25)
+    self.header = header
 
     self.headerColumns = {}
     local lastHeaderColumn = nil
@@ -3450,6 +3498,17 @@ function GGUI.FrameList:new(options)
         self.headerColumns[index] = headerColumn
     end
 
+    -- Add one resize handle per boundary where BOTH adjacent columns are resizable.
+    -- The handle sits on the RIGHT edge of the left column's header and resizes both columns
+    -- simultaneously to keep the total list width constant.
+    for index = 1, #options.columnOptions - 1 do
+        local leftOption = options.columnOptions[index]
+        local rightOption = options.columnOptions[index + 1]
+        if leftOption.resizable and rightOption.resizable then
+            self:_AddResizeHandle(self.headerColumns[index], index, leftOption, index + 1, rightOption)
+        end
+    end
+
     if options.label then
         self.label = GGUI.Text {
             parent = options.parent,
@@ -3486,6 +3545,99 @@ function GGUI.FrameList:new(options)
                 end
             end
         end
+    end
+end
+
+---@param leftHeaderColumn Frame header column frame for the left column (handle is placed on its right edge)
+---@param leftColumnIndex number index of the left column in the boundary
+---@param leftColumnOption GGUI.FrameList.ColumnOption column option for the left column
+---@param rightColumnIndex number index of the right column in the boundary
+---@param rightColumnOption GGUI.FrameList.ColumnOption column option for the right column
+function GGUI.FrameList:_AddResizeHandle(leftHeaderColumn, leftColumnIndex, leftColumnOption, rightColumnIndex, rightColumnOption)
+    local HANDLE_WIDTH = 6
+    local HANDLE_HIGHLIGHT_ALPHA = 0.4
+
+    local handle = CreateFrame("Frame", nil, leftHeaderColumn, "BackdropTemplate")
+    handle:SetSize(HANDLE_WIDTH, 25)
+    handle:EnableMouse(true)
+    handle:SetFrameLevel(leftHeaderColumn:GetFrameLevel() + 10)
+    handle:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8x8" })
+    handle:SetBackdropColor(1, 1, 1, 0)
+    handle:SetPoint("CENTER", leftHeaderColumn, "RIGHT", 0, 0)
+
+    handle:HookScript("OnEnter", function()
+        handle:SetBackdropColor(1, 1, 1, HANDLE_HIGHLIGHT_ALPHA)
+    end)
+    handle:HookScript("OnLeave", function()
+        if not (GGUI._resizeDragState and GGUI._resizeDragState.handle == handle) then
+            handle:SetBackdropColor(1, 1, 1, 0)
+        end
+    end)
+
+    local capturedFrameList = self
+    local capturedLeftIndex = leftColumnIndex
+    local capturedRightIndex = rightColumnIndex
+    local capturedLeftMinWidth = leftColumnOption.minWidth or 5
+    local capturedRightMinWidth = rightColumnOption.minWidth or 5
+    handle:SetScript("OnMouseDown", function(_, button)
+        if button ~= "LeftButton" then return end
+        local scale = UIParent:GetScale()
+        local cursorX = GetCursorPosition() / scale
+        local leftWidth = capturedFrameList.headerColumns[capturedLeftIndex]:GetWidth()
+        local rightWidth = capturedFrameList.headerColumns[capturedRightIndex]:GetWidth()
+        GGUI._resizeDragState = {
+            handle = handle,
+            frameList = capturedFrameList,
+            leftColumnIndex = capturedLeftIndex,
+            rightColumnIndex = capturedRightIndex,
+            leftMinWidth = capturedLeftMinWidth,
+            rightMinWidth = capturedRightMinWidth,
+            startCursorX = cursorX,
+            leftStartWidth = leftWidth,
+            rightStartWidth = rightWidth,
+            currentLeftWidth = leftWidth,
+            currentRightWidth = rightWidth,
+        }
+        GGUI._resizeDragTrackerFrame:Show()
+    end)
+end
+
+---Apply a boundary resize: update both column widths in headers, all row columns, and call both resize callbacks.
+---@param leftColumnIndex number
+---@param newLeftWidth number
+---@param rightColumnIndex number
+---@param newRightWidth number
+function GGUI.FrameList:_ApplyBoundaryResize(leftColumnIndex, newLeftWidth, rightColumnIndex, newRightWidth)
+    local leftOption = self.columnOptions[leftColumnIndex]
+    local rightOption = self.columnOptions[rightColumnIndex]
+    local leftHeader = self.headerColumns[leftColumnIndex]
+    local rightHeader = self.headerColumns[rightColumnIndex]
+
+    leftOption.width = newLeftWidth
+    rightOption.width = newRightWidth
+
+    leftHeader:SetWidth(newLeftWidth)
+    leftHeader.text.frame:SetWidth(newLeftWidth)
+
+    rightHeader:SetWidth(newRightWidth)
+    rightHeader.text.frame:SetWidth(newRightWidth)
+
+    for _, row in pairs(self.rows) do
+        local leftCol = row.columns[leftColumnIndex]
+        if leftCol then
+            leftCol:SetWidth(newLeftWidth)
+        end
+        local rightCol = row.columns[rightColumnIndex]
+        if rightCol then
+            rightCol:SetWidth(newRightWidth)
+        end
+    end
+
+    if leftOption.resizeCallback then
+        leftOption.resizeCallback(leftColumnIndex, newLeftWidth)
+    end
+    if rightOption.resizeCallback then
+        rightOption.resizeCallback(rightColumnIndex, newRightWidth)
     end
 end
 
