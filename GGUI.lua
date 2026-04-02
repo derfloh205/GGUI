@@ -64,6 +64,8 @@ end
 -- GGUI CONST
 GGUI.CONST = {}
 GGUI.CONST.EMPTY_TEXTURE = "Interface\\containerframe\\bagsitemslot2x"
+GGUI.CONST.SORT_ARROW_UP_ATLAS = "glues-characterSelect-icon-arrowUp"
+GGUI.CONST.SORT_ARROW_DOWN_ATLAS = "glues-characterSelect-icon-arrowDown"
 
 ---@class GGUI.AnchorPoint
 ---@field anchorParent Region?
@@ -3152,6 +3154,9 @@ end
 
 ---@class GGUI.FrameList : GGUI.Widget
 ---@overload fun(options:GGUI.FrameListConstructorOptions): GGUI.FrameList
+---@field activeSortColumnIndex number? index of the currently sorted column, or nil if none
+---@field activeSortAscending boolean true when the active column sort is ascending
+---@field activeSortFunc (fun(rowA:GGUI.FrameList.Row, rowB:GGUI.FrameList.Row):boolean)? active sort function derived from column header clicks
 GGUI.FrameList = GGUI.Widget:extend()
 
 ---@class GGUI.FrameListConstructorOptions : GGUI.ConstructorOptions
@@ -3194,6 +3199,7 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field tooltipOptions? GGUI.TooltipOptions
 ---@field fontOptions? GGUI.FontOptions
 ---@field onClickCallback? fun(column: Frame, columnIndex: number)
+---@field sortFunc? fun(rowA:GGUI.FrameList.Row, rowB:GGUI.FrameList.Row): boolean optional sort function; if provided the column header becomes clickable and toggles between ascending/descending sort
 
 function GGUI.FrameList:new(options)
     self.isGGUI = true
@@ -3226,6 +3232,9 @@ function GGUI.FrameList:new(options)
     end
     ---@type GGUI.FrameList.Row
     self.selectedRow = nil
+    self.activeSortColumnIndex = nil
+    self.activeSortAscending = true
+    self.activeSortFunc = nil
 
     if not options.columnOptions or #options.columnOptions == 0 then
         GGUI:ThrowError("FrameList needs a least one column! (columnOptions)")
@@ -3296,6 +3305,55 @@ function GGUI.FrameList:new(options)
             columnTooltipOptions.owner = columnTooltipOptions.owner or headerColumn
         end
 
+        -- Determine the effective click callback for the header text
+        local textOnClickCallback
+        if columnOption.sortFunc then
+            local capturedIndex = index
+            local capturedSortFunc = columnOption.sortFunc
+            local capturedCallback = columnOption.onClickCallback
+            -- Pre-create the descending sort function to avoid allocations on each click.
+            -- Reversing the two arguments inverts the caller-supplied ascending comparator.
+            local sortFuncDesc = function(rowA, rowB)
+                return capturedSortFunc(rowB, rowA)
+            end
+            textOnClickCallback = function()
+                -- Toggle direction when clicking the already-active sort column
+                if self.activeSortColumnIndex == capturedIndex then
+                    self.activeSortAscending = not self.activeSortAscending
+                else
+                    -- Hide arrows on the previously sorted column
+                    if self.activeSortColumnIndex then
+                        local prevCol = self.headerColumns[self.activeSortColumnIndex]
+                        if prevCol and prevCol.sortArrowUp then
+                            prevCol.sortArrowUp:Hide()
+                            prevCol.sortArrowDown:Hide()
+                        end
+                    end
+                    self.activeSortColumnIndex = capturedIndex
+                    self.activeSortAscending = true
+                end
+
+                -- Update the active sort function based on the current direction
+                if self.activeSortAscending then
+                    headerColumn.sortArrowUp:Show()
+                    headerColumn.sortArrowDown:Hide()
+                    self.activeSortFunc = capturedSortFunc
+                else
+                    headerColumn.sortArrowUp:Hide()
+                    headerColumn.sortArrowDown:Show()
+                    self.activeSortFunc = sortFuncDesc
+                end
+
+                self:UpdateDisplay()
+
+                if capturedCallback then
+                    capturedCallback(headerColumn, capturedIndex)
+                end
+            end
+        else
+            textOnClickCallback = columnOption.onClickCallback
+        end
+
         headerColumn.text = GGUI.Text({
             fixedWidth = columnOption.width,
             fixedHeight = 25,
@@ -3305,8 +3363,23 @@ function GGUI.FrameList:new(options)
             justifyOptions = columnOption.justifyOptions or { type = "H", align = "LEFT" },
             fontOptions = columnOption.fontOptions,
             tooltipOptions = columnTooltipOptions,
-            onClickCallback = columnOption.onClickCallback,
+            onClickCallback = textOnClickCallback,
         })
+
+        -- Create sort direction arrows for sortable columns (hidden by default)
+        if columnOption.sortFunc then
+            headerColumn.sortArrowUp = headerColumn:CreateTexture(nil, "OVERLAY")
+            headerColumn.sortArrowUp:SetAtlas(GGUI.CONST.SORT_ARROW_UP_ATLAS)
+            headerColumn.sortArrowUp:SetSize(10, 10)
+            headerColumn.sortArrowUp:SetPoint("RIGHT", headerColumn, "RIGHT", -2, 0)
+            headerColumn.sortArrowUp:Hide()
+
+            headerColumn.sortArrowDown = headerColumn:CreateTexture(nil, "OVERLAY")
+            headerColumn.sortArrowDown:SetAtlas(GGUI.CONST.SORT_ARROW_DOWN_ATLAS)
+            headerColumn.sortArrowDown:SetSize(10, 10)
+            headerColumn.sortArrowDown:SetPoint("RIGHT", headerColumn, "RIGHT", -2, 0)
+            headerColumn.sortArrowDown:Hide()
+        end
 
         if index == 1 then
             headerColumn:SetPoint("TOPLEFT", header, "TOPLEFT", options.headerOffsetX, 0)
@@ -3753,9 +3826,10 @@ function GGUI.FrameList:UpdateDisplay(sortFunc)
         return
     end
 
-    if #self.activeRows > 1 and sortFunc then
+    local effectiveSortFunc = sortFunc or self.activeSortFunc
+    if #self.activeRows > 1 and effectiveSortFunc then
         -- in place sort to keep reference!
-        table.sort(self.activeRows, sortFunc)
+        table.sort(self.activeRows, effectiveSortFunc)
     end
 
     local lastRow = nil
