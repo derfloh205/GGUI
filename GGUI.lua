@@ -3200,6 +3200,7 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field fontOptions? GGUI.FontOptions
 ---@field onClickCallback? fun(column: Frame, columnIndex: number)
 ---@field sortFunc? fun(rowA:GGUI.FrameList.Row, rowB:GGUI.FrameList.Row): boolean optional sort function; if provided the column header becomes clickable and toggles between ascending/descending sort
+---@field customSortArrowOffsetX? number
 
 function GGUI.FrameList:new(options)
     self.isGGUI = true
@@ -3306,7 +3307,7 @@ function GGUI.FrameList:new(options)
         end
 
         -- Determine the effective click callback for the header text
-        local textOnClickCallback
+        local columnOnClickCallback
         if columnOption.sortFunc then
             local capturedIndex = index
             local capturedSortFunc = columnOption.sortFunc
@@ -3316,7 +3317,7 @@ function GGUI.FrameList:new(options)
             local sortFuncDesc = function(rowA, rowB)
                 return capturedSortFunc(rowB, rowA)
             end
-            textOnClickCallback = function()
+            columnOnClickCallback = function()
                 -- Toggle direction when clicking the already-active sort column
                 if self.activeSortColumnIndex == capturedIndex then
                     self.activeSortAscending = not self.activeSortAscending
@@ -3351,7 +3352,14 @@ function GGUI.FrameList:new(options)
                 end
             end
         else
-            textOnClickCallback = columnOption.onClickCallback
+            columnOnClickCallback = columnOption.onClickCallback
+        end
+
+        if columnOnClickCallback then
+            headerColumn:SetScript("OnMouseDown", function()
+                columnOnClickCallback(headerColumn, index)
+            end)
+            headerColumn:SetMouseClickEnabled(true)
         end
 
         headerColumn.text = GGUI.Text({
@@ -3363,21 +3371,23 @@ function GGUI.FrameList:new(options)
             justifyOptions = columnOption.justifyOptions or { type = "H", align = "LEFT" },
             fontOptions = columnOption.fontOptions,
             tooltipOptions = columnTooltipOptions,
-            onClickCallback = textOnClickCallback,
         })
 
         -- Create sort direction arrows for sortable columns (hidden by default)
         if columnOption.sortFunc then
+            local offsetX = columnOption.customSortArrowOffsetX or -2
+            local size = 20
+
             headerColumn.sortArrowUp = headerColumn:CreateTexture(nil, "OVERLAY")
             headerColumn.sortArrowUp:SetAtlas(GGUI.CONST.SORT_ARROW_UP_ATLAS)
-            headerColumn.sortArrowUp:SetSize(10, 10)
-            headerColumn.sortArrowUp:SetPoint("RIGHT", headerColumn, "RIGHT", -2, 0)
+            headerColumn.sortArrowUp:SetSize(size, size)
+            headerColumn.sortArrowUp:SetPoint("TOPRIGHT", headerColumn, "TOPRIGHT", offsetX, -2)
             headerColumn.sortArrowUp:Hide()
 
             headerColumn.sortArrowDown = headerColumn:CreateTexture(nil, "OVERLAY")
             headerColumn.sortArrowDown:SetAtlas(GGUI.CONST.SORT_ARROW_DOWN_ATLAS)
-            headerColumn.sortArrowDown:SetSize(10, 10)
-            headerColumn.sortArrowDown:SetPoint("RIGHT", headerColumn, "RIGHT", -2, 0)
+            headerColumn.sortArrowDown:SetSize(size, size)
+            headerColumn.sortArrowDown:SetPoint("BOTTOMRIGHT", headerColumn, "BOTTOMRIGHT", offsetX, -2)
             headerColumn.sortArrowDown:Hide()
         end
 
