@@ -3185,6 +3185,7 @@ GGUI.FrameList = GGUI.Widget:extend()
 ---@field private autoAdjustHeightCallback? fun(newHeight: number)
 ---@field disableScrolling? boolean
 ---@field label? string
+---@field savedVariablesTableSortConfig? table a table reference where the sort config should be saved/loaded from, needs to be in format { columnIndex = number, ascending = boolean }
 
 ---@class GGUI.FrameList.SelectionOptions
 ---@field noSelectionColor boolean?
@@ -3325,6 +3326,10 @@ function GGUI.FrameList:new(options)
                         -- Currently ascending -> switch to descending
                         self.activeSortAscending = false
                     else
+                        if self.savedVariablesTableSortConfig then
+                            self.savedVariablesTableSortConfig.columnIndex = nil
+                            self.savedVariablesTableSortConfig.ascending = nil
+                        end
                         -- Currently descending -> clear sort entirely
                         headerColumn.sortArrowUp:Hide()
                         headerColumn.sortArrowDown:Hide()
@@ -3350,6 +3355,10 @@ function GGUI.FrameList:new(options)
                     end
                     self.activeSortColumnIndex = capturedIndex
                     self.activeSortAscending = true
+                end
+                if self.savedVariablesTableSortConfig then
+                    self.savedVariablesTableSortConfig.columnIndex = capturedIndex
+                    self.savedVariablesTableSortConfig.ascending = self.activeSortAscending
                 end
 
                 -- Update the active sort function based on the current direction
@@ -3450,6 +3459,34 @@ function GGUI.FrameList:new(options)
     end
 
     GGUI.FrameList.super.new(self, mainFrame)
+
+    if options.savedVariablesTableSortConfig then
+        self.savedVariablesTableSortConfig = options.savedVariablesTableSortConfig or {}
+        local config = options.savedVariablesTableSortConfig
+        if config then
+            if config.columnIndex and options.columnOptions[config.columnIndex] and options.columnOptions[config.columnIndex].sortFunc then
+                self.activeSortColumnIndex = config.columnIndex
+                self.activeSortAscending = config.ascending
+                self.activeSortFunc = config.ascending and options.columnOptions[config.columnIndex].sortFunc or
+                    function(rowA, rowB)
+                        return options.columnOptions[config.columnIndex].sortFunc(rowB, rowA)
+                    end
+
+                local headerColumn = self.headerColumns[config.columnIndex]
+                if headerColumn then
+                    if self.activeSortAscending then
+                        headerColumn.sortArrowUp:Show()
+                        headerColumn.sortArrowDown:Hide()
+                        headerColumn.notSortedIndicator:Hide()
+                    else
+                        headerColumn.sortArrowUp:Hide()
+                        headerColumn.sortArrowDown:Show()
+                        headerColumn.notSortedIndicator:Hide()
+                    end
+                end
+            end
+        end
+    end
 end
 
 ---@param anchorPoints GGUI.AnchorPoint[]
