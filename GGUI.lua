@@ -3296,7 +3296,7 @@ function GGUI.FrameList:new(options)
     self.headerColumns = {}
     local lastHeaderColumn = nil
     for index, columnOption in pairs(options.columnOptions) do
-        local headerColumn = CreateFrame("Frame", nil, header)
+        local headerColumn = CreateFrame("Frame", nil, header, "BackdropTemplate")
         headerColumn:SetSize(columnOption.width, 25)
 
         local columnTooltipOptions = columnOption.tooltipOptions
@@ -3358,6 +3358,12 @@ function GGUI.FrameList:new(options)
         if columnOnClickCallback then
             headerColumn:SetScript("OnMouseDown", function()
                 columnOnClickCallback(headerColumn, index)
+            end)
+            headerColumn:HookScript("OnEnter", function()
+                headerColumn:SetBackdropColor(1, 1, 1, 0.9)
+            end)
+            headerColumn:HookScript("OnLeave", function()
+                headerColumn:SetBackdropColor(0, 0, 0, 0)
             end)
             headerColumn:SetMouseClickEnabled(true)
         end
