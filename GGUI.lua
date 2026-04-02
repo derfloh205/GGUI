@@ -3359,8 +3359,13 @@ function GGUI.FrameList:new(options)
             headerColumn:SetScript("OnMouseDown", function()
                 columnOnClickCallback(headerColumn, index)
             end)
+            -- Set a backdrop so that SetBackdropColor has something to colorize
+            headerColumn:SetBackdrop({
+                bgFile = "Interface\\Buttons\\WHITE8x8",
+            })
+            headerColumn:SetBackdropColor(0, 0, 0, 0) -- transparent by default
             headerColumn:HookScript("OnEnter", function()
-                headerColumn:SetBackdropColor(1, 1, 1, 0.9)
+                headerColumn:SetBackdropColor(1, 1, 1, 0.15)
             end)
             headerColumn:HookScript("OnLeave", function()
                 headerColumn:SetBackdropColor(0, 0, 0, 0)
