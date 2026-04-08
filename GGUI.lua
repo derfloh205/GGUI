@@ -515,7 +515,7 @@ function GGUI.Frame:new(options)
         frame:ClearAllPoints()
         frame:SetAllPoints(options.fitFrame)
     end
-    
+
     frame:SetFrameStrata(options.frameStrata or options.parent:GetFrameStrata())
     frame:SetFrameLevel(options.frameLevel or (options.parent:GetFrameLevel() + 1))
 
@@ -1952,7 +1952,6 @@ function GGUI.Button:new(options)
                     options.buttonTextureOptions.highlightBlendmode or "ADD")
             end
         else
-
             if options.buttonTextureOptions.normal then
                 button:SetNormalTexture(options.buttonTextureOptions.normal)
             end
@@ -2092,7 +2091,6 @@ function GGUI.Button:SetTexture(textureOptions)
     button:ClearDisabledTexture()
     button:ClearHighlightTexture()
     if textureOptions.isAtlas then
-        
         if textureOptions.normal then
             button:SetNormalAtlas(textureOptions.normal)
         end
@@ -2533,7 +2531,7 @@ function GGUI.ScrollFrame:new(options)
     self.scrollBar = CreateFrame("EventFrame", nil, scrollFrame, "MinimalScrollBar")
     self.scrollBar:SetPoint("TOPLEFT", scrollFrame, "TOPRIGHT", scrollBarOffsetX, 0)
     self.scrollBar:SetPoint("BOTTOMLEFT", scrollFrame, "BOTTOMRIGHT", scrollBarOffsetX, 0)
-    
+
 
     ScrollUtil.InitScrollFrameWithScrollBar(scrollFrame, self.scrollBar);
 
@@ -3215,6 +3213,7 @@ GGUI.FrameList = GGUI.Widget:extend()
 
 ---@class GGUI.FrameList.ColumnOption
 ---@field width? number
+---@field headerScale? number
 ---@field label? string
 ---@field justifyOptions? GGUI.JustifyOptions
 ---@field backdropOptions? GGUI.BackdropOptions
@@ -3243,20 +3242,6 @@ function GGUI.FrameList:new(options)
         trackerFrame:Hide()
         trackerFrame:SetFrameStrata("TOOLTIP")
 
-        -- trackerFrame:SetScript("OnMouseUp", function(_, button)
-        --     print("Mouse up: " .. tostring(button))
-        --     if button == "LeftButton" then
-        --         if GGUI._resizeDragState then
-        --             local handle = GGUI._resizeDragState.handle
-        --             if handle then
-        --                 handle:SetBackdropColor(1, 1, 1, 0)
-        --             end
-        --             GGUI._resizeDragState = nil
-        --         end
-        --         trackerFrame:Hide()
-        --     end
-        -- end)
-
         trackerFrame:SetScript("OnUpdate", function(_)
             local state = GGUI._resizeDragState
             if not state then return end
@@ -3266,13 +3251,14 @@ function GGUI.FrameList:new(options)
             -- Left column grows/shrinks by delta; clamp so neither column goes below its minWidth
             local totalWidth = state.leftStartWidth + state.rightStartWidth
             local desiredLeftWidth = state.leftStartWidth + delta
-            local maxLeftWidth = totalWidth - state.rightMinWidth  -- right column must keep its minimum
+            local maxLeftWidth = totalWidth - state.rightMinWidth -- right column must keep its minimum
             local newLeftWidth = math.max(state.leftMinWidth, math.min(maxLeftWidth, desiredLeftWidth))
             local newRightWidth = totalWidth - newLeftWidth
             if newLeftWidth ~= state.currentLeftWidth or newRightWidth ~= state.currentRightWidth then
                 state.currentLeftWidth = newLeftWidth
                 state.currentRightWidth = newRightWidth
-                state.frameList:_ApplyBoundaryResize(state.leftColumnIndex, newLeftWidth, state.rightColumnIndex, newRightWidth)
+                state.frameList:_ApplyBoundaryResize(state.leftColumnIndex, newLeftWidth, state.rightColumnIndex,
+                    newRightWidth)
             end
         end)
 
@@ -3488,6 +3474,7 @@ function GGUI.FrameList:new(options)
             justifyOptions = columnOption.justifyOptions or { type = "H", align = "LEFT" },
             fontOptions = columnOption.fontOptions,
             tooltipOptions = columnTooltipOptions,
+            scale = columnOption.headerScale or 1,
         })
 
         -- Create sort direction arrows for sortable columns (hidden by default)
@@ -3551,7 +3538,7 @@ function GGUI.FrameList:new(options)
     if self.savedVariablesTableLayoutConfig and self.savedVariablesTableLayoutConfig.activeSortColumnIndex then
         local columnIndex = self.savedVariablesTableLayoutConfig.activeSortColumnIndex
         local ascending = self.savedVariablesTableLayoutConfig.activeSortAscending
-        
+
         if columnIndex and options.columnOptions[columnIndex] and options.columnOptions[columnIndex].sortFunc then
             self.activeSortColumnIndex = columnIndex
             self.activeSortAscending = ascending
@@ -3581,7 +3568,8 @@ end
 ---@param leftColumnOption GGUI.FrameList.ColumnOption column option for the left column
 ---@param rightColumnIndex number index of the right column in the boundary
 ---@param rightColumnOption GGUI.FrameList.ColumnOption column option for the right column
-function GGUI.FrameList:_AddResizeHandle(leftHeaderColumn, leftColumnIndex, leftColumnOption, rightColumnIndex, rightColumnOption)
+function GGUI.FrameList:_AddResizeHandle(leftHeaderColumn, leftColumnIndex, leftColumnOption, rightColumnIndex,
+                                         rightColumnOption)
     local HANDLE_WIDTH = 6
 
     local handle = CreateFrame("Frame", nil, leftHeaderColumn, "BackdropTemplate")
@@ -3631,17 +3619,17 @@ function GGUI.FrameList:_AddResizeHandle(leftHeaderColumn, leftColumnIndex, left
     end)
 
     handle:SetScript("OnMouseUp", function(_, button)
-            if button == "LeftButton" then
-                if GGUI._resizeDragState then
-                    local handle = GGUI._resizeDragState.handle
-                    if handle then
-                        handle:SetBackdropColor(1, 1, 1, 0)
-                    end
-                    GGUI._resizeDragState = nil
+        if button == "LeftButton" then
+            if GGUI._resizeDragState then
+                local handle = GGUI._resizeDragState.handle
+                if handle then
+                    handle:SetBackdropColor(1, 1, 1, 0)
                 end
+                GGUI._resizeDragState = nil
             end
-            GGUI._resizeDragTrackerFrame:Hide()
-        end)
+        end
+        GGUI._resizeDragTrackerFrame:Hide()
+    end)
 end
 
 ---Apply a boundary resize: update both column widths in headers, all row columns, and call both resize callbacks.
