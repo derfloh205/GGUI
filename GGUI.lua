@@ -4107,15 +4107,25 @@ function GGUI.FrameList:UpdateDisplay(sortFunc)
     -- filter and show active rows and hide all inactive
     -- but keep reference!!
     wipe(self.activeRows)
-    tAppendAll(self.activeRows, GUTIL:Filter(self.rows, function(row)
-        if row.active then
-            row:Show()
-            return true
-        else
-            row:Hide()
-            return false
-        end
-    end))
+    tAppendAll(self.activeRows, GUTIL:Filter(self.rows,
+        ---@param row GGUI.FrameList.Row
+        function(row)
+            if row.active then
+                row:Show()
+                if row ~= self.selectedRow then
+                    -- only apply selection color to active rows that are not selected, selected row keeps its color until another row is selected
+                    if row.originalBackdropOptions then
+                        GGUI:SetBackdropByBackdropOptions(row.frame, row.originalBackdropOptions)
+                    else
+                        row.frame:SetBackdropColor(0, 0, 0, 0)
+                    end
+                end
+                return true
+            else
+                row:Hide()
+                return false
+            end
+        end))
 
     if #self.activeRows == 0 then
         return
