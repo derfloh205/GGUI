@@ -1862,6 +1862,7 @@ end
 ---@field hideBackground? boolean
 ---@field tooltipOptions? GGUI.TooltipOptions
 ---@field borderOptions? GGUI.BorderOptions
+---@field globalName? string
 
 ---@class GGUI.FontOptions
 ---@field fontFile? string
@@ -1906,6 +1907,7 @@ function GGUI.Button:new(options)
     self.secure = options.secure or false
     self.macroText = options.macroText or ""
     self.cleanTemplate = options.cleanTemplate or false
+    self.globalName = options.globalName
 
     ---@type string?
     local templates = "UIPanelButtonTemplate" -- Note: this template is wierd with custom highlight textures..
@@ -1922,7 +1924,7 @@ function GGUI.Button:new(options)
         end
     end
 
-    local button = CreateFrame("Button", nil, options.parent, templates)
+    local button = CreateFrame("Button", self.globalName, options.parent, templates)
     GGUI.Button.super.new(self, button)
     button:SetScale(options.scale)
 
