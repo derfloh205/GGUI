@@ -5434,3 +5434,91 @@ function GGUI.FilterButton:new(options)
         end)
     end)
 end
+
+--- GGUI.TutorialButton
+
+---@class GGUI.TutorialButton.ConstructorOptions : GGUI.ConstructorOptions
+---@field label? string
+---@field parent? Frame
+---@field anchorPoints? GGUI.AnchorPoint[]
+---@field anchorParent? Region -- DEPRICATED Use anchorPoints
+---@field anchorA? FramePoint -- DEPRICATED Use anchorPoints
+---@field anchorB? FramePoint -- DEPRICATED Use anchorPoints
+---@field offsetX? number -- DEPRICATED Use anchorPoints
+---@field offsetY? number -- DEPRICATED Use anchorPoints
+---@field sizeX? number default: 200
+---@field sizeY? number default: 50
+---@field scale? number default: 1
+---@field clickCallback? fun(button: GGUI.TutorialButton, mouseButton: MouseButton)
+---@field tooltipOptions? GGUI.TooltipOptions
+---@field glowOnInit? boolean default: false
+
+---@class GGUI.TutorialButton : GGUI.Widget
+---@overload fun(options:GGUI.TutorialButton.ConstructorOptions): GGUI.TutorialButton
+GGUI.TutorialButton = GGUI.Widget:extend()
+
+---@param options GGUI.TutorialButton.ConstructorOptions
+function GGUI.TutorialButton:new(options)
+    options = options or {}
+    options.label = options.label or ""
+    options.anchorA = options.anchorA or "CENTER"
+    options.anchorB = options.anchorB or "CENTER"
+    options.offsetX = options.offsetX or 0
+    options.offsetY = options.offsetY or 0
+    options.sizeX = options.sizeX or 200
+    options.sizeY = options.sizeY or 50
+
+    local button = CreateFrame("Button", nil, options.parent, "TutorialButtonTemplate")
+    GGUI.TutorialButton.super.new(self, button)
+    button:SetText(options.label)
+    button:SetSize(options.sizeX, options.sizeY)
+    button:SetScale(options.scale or 1)
+
+    if options.anchorPoints then
+        self:SetPointsByAnchorPoints(options.anchorPoints)
+    else
+        button:SetPoint(options.anchorA, options.anchorParent, options.anchorB, options.offsetX, options.offsetY)
+    end
+
+    self.clickCallback = options.clickCallback
+    button:RegisterForClicks("AnyUp", "AnyDown")
+    button:SetScript("OnClick", function(_, clickedButton, down)
+        if down and self.clickCallback then
+            self.clickCallback(self, clickedButton)
+        end
+    end)
+
+    self.tooltipOptions = options.tooltipOptions
+    if self.tooltipOptions then
+        GGUI:SetTooltipsByTooltipOptions(button, self)
+    end
+
+    if options.glowOnInit then
+        self:StartGlow()
+    end
+end
+
+--- Start the glow/flash animation on the tutorial button
+function GGUI.TutorialButton:StartGlow()
+    if self.frame.Flash then
+        self.frame.Flash:Show()
+    end
+    if self.frame.flashAnim then
+        self.frame.flashAnim:Play()
+    end
+end
+
+--- Stop the glow/flash animation on the tutorial button
+function GGUI.TutorialButton:StopGlow()
+    if self.frame.flashAnim then
+        self.frame.flashAnim:Stop()
+    end
+    if self.frame.Flash then
+        self.frame.Flash:Hide()
+    end
+end
+
+---@param text string
+function GGUI.TutorialButton:SetText(text)
+    self.frame:SetText(text)
+end
