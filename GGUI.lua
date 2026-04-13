@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 27)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 28)
 if not GGUI then return end -- if version already exists
 
 ---@type GGUI_GUTIL
@@ -5437,6 +5437,37 @@ end
 
 --- GGUI.TutorialButton
 
+---@class GGUI.TutorialButton.HelpPlateRectDefinition
+---@field frame? Frame
+---@field useMainButton? boolean
+---@field x? number
+---@field y? number
+---@field width? number
+---@field height? number
+---@field offsetX? number
+---@field offsetY? number
+---@field extraWidth? number
+---@field extraHeight? number
+---@field includeFrameWidth? boolean
+---@field includeFrameHeight? boolean
+
+---@class GGUI.TutorialButton.HelpPlateStepDefinition
+---@field button? GGUI.TutorialButton.HelpPlateRectDefinition
+---@field highlight? GGUI.TutorialButton.HelpPlateRectDefinition
+---@field ButtonPos? { x:number, y:number }
+---@field HighLightBox? { x:number, y:number, width:number, height:number }
+---@field toolTipDir? string
+---@field toolTipText? string
+---@field ToolTipDir? string
+---@field ToolTipText? string
+
+---@class GGUI.TutorialButton.HelpPlateDefinition
+---@field parent? Frame
+---@field mainButton? Frame
+---@field framePos? { x:number, y:number }
+---@field frameSize? { width:number, height:number }
+---@field steps GGUI.TutorialButton.HelpPlateStepDefinition[]
+
 ---@class GGUI.TutorialButton.ConstructorOptions : GGUI.ConstructorOptions
 ---@field label? string
 ---@field parent? Frame
@@ -5452,10 +5483,164 @@ end
 ---@field clickCallback? fun(button: GGUI.TutorialButton, mouseButton: MouseButton)
 ---@field tooltipOptions? GGUI.TooltipOptions
 ---@field glowOnInit? boolean default: false
+---@field autoToggleMode? "helpPlate"|"helpTip"|"callback" default: inferred by configured help data
+---@field helpPlateInfo? table HelpPlate definition table with FramePos/FrameSize and indexed tiles
+---@field helpPlateDefinition? GGUI.TutorialButton.HelpPlateDefinition Declarative definition for dynamic HelpPlate generation
+---@field rebuildHelpPlateOnShow? boolean default: true when helpPlateDefinition is set, otherwise false
+---@field helpPlateParent? Frame Parent frame passed to HelpPlate.Show
+---@field helpPlateMainButton? Frame Main tutorial button passed to HelpPlate.Show/ShowTutorialTooltip
+---@field helpTipInfo? table HelpTip info table passed to HelpTip:Show
+---@field helpTipParent? Frame Parent frame passed to HelpTip:Show
+---@field helpTipRelativeRegion? Region Relative region passed to HelpTip:Show
 
 ---@class GGUI.TutorialButton : GGUI.Widget
 ---@overload fun(options:GGUI.TutorialButton.ConstructorOptions): GGUI.TutorialButton
 GGUI.TutorialButton = GGUI.Widget:extend()
+
+---@param frame Frame
+---@param relativeTo Frame
+---@return number? x
+---@return number? y
+---@return number? width
+---@return number? height
+local function TutorialButton_GetTopLeftRectRelativeTo(frame, relativeTo)
+    if not frame or not relativeTo then
+        return nil, nil, nil, nil
+    end
+
+    local left = frame:GetLeft()
+    local top = frame:GetTop()
+    local parentLeft = relativeTo:GetLeft()
+    local parentTop = relativeTo:GetTop()
+
+    if not left or not top or not parentLeft or not parentTop then
+        return nil, nil, nil, nil
+    end
+
+    local frameScale = frame:GetEffectiveScale() or 1
+    local parentScale = relativeTo:GetEffectiveScale() or 1
+    if parentScale == 0 then
+        return nil, nil, nil, nil
+    end
+
+    -- Convert both frames into the same (screen) space, then back into parent's space.
+    local x = ((left * frameScale) - (parentLeft * parentScale)) / parentScale
+    local y = ((top * frameScale) - (parentTop * parentScale)) / parentScale
+
+    local width = (frame:GetWidth() or 0) * (frameScale / parentScale)
+    local height = (frame:GetHeight() or 0) * (frameScale / parentScale)
+
+    return x, y, width, height
+end
+
+---@param rectDef GGUI.TutorialButton.HelpPlateRectDefinition?
+---@param parent Frame
+---@param mainButton Frame?
+---@return number? x
+---@return number? y
+---@return number? width
+---@return number? height
+local function TutorialButton_BuildRectFromDefinition(rectDef, parent, mainButton)
+    if not rectDef then
+        return nil, nil, nil, nil
+    end
+
+    local x, y, width, height = nil, nil, nil, nil
+    local targetFrame = rectDef.frame
+    if not targetFrame and rectDef.useMainButton then
+        targetFrame = mainButton
+    end
+
+    if targetFrame then
+        x, y, width, height = TutorialButton_GetTopLeftRectRelativeTo(targetFrame, parent)
+    end
+
+    x = (x or rectDef.x or 0) + (rectDef.offsetX or 0)
+    y = (y or rectDef.y or 0) + (rectDef.offsetY or 0)
+
+    if rectDef.includeFrameWidth and width then
+        x = x + width
+    end
+    if rectDef.includeFrameHeight and height then
+        y = y + height
+    end
+
+    width = rectDef.width or width
+    height = rectDef.height or height
+
+    if width and rectDef.extraWidth then
+        width = width + rectDef.extraWidth
+    end
+    if height and rectDef.extraHeight then
+        height = height + rectDef.extraHeight
+    end
+
+    return x, y, width, height
+end
+
+---@param definition GGUI.TutorialButton.HelpPlateDefinition?
+---@param fallbackParent Frame?
+---@param fallbackMainButton Frame?
+---@return table? helpPlateInfo
+---@return Frame? parent
+---@return Frame? mainButton
+local function TutorialButton_BuildHelpPlateInfoFromDefinition(definition, fallbackParent, fallbackMainButton)
+    if not definition then
+        return nil, fallbackParent, fallbackMainButton
+    end
+
+    local parent = definition.parent or fallbackParent
+    if not parent then
+        return nil, fallbackParent, fallbackMainButton
+    end
+
+    local framePos = definition.framePos or { x = 0, y = 0 }
+    local frameSize = definition.frameSize or {
+        width = parent:GetWidth() or 900,
+        height = parent:GetHeight() or 520,
+    }
+
+    local info = {
+        FramePos = { x = framePos.x or 0, y = framePos.y or 0 },
+        FrameSize = { width = frameSize.width or 900, height = frameSize.height or 520 },
+    }
+
+    local mainButton = definition.mainButton or fallbackMainButton
+
+    for index, step in ipairs(definition.steps or {}) do
+        local buttonX, buttonY = nil, nil
+        if step.ButtonPos then
+            buttonX = step.ButtonPos.x
+            buttonY = step.ButtonPos.y
+        else
+            buttonX, buttonY = TutorialButton_BuildRectFromDefinition(step.button, parent, mainButton)
+        end
+
+        local highLightBox = step.HighLightBox
+        if not highLightBox and step.highlight then
+            local hx, hy, hw, hh = TutorialButton_BuildRectFromDefinition(step.highlight, parent, mainButton)
+            if hx and hy and hw and hh then
+                highLightBox = {
+                    x = hx,
+                    y = hy,
+                    width = hw,
+                    height = hh,
+                }
+            end
+        end
+
+        if buttonX and buttonY and highLightBox then
+            info[index] = {
+                ButtonPos = { x = buttonX, y = buttonY },
+                HighLightBox = highLightBox,
+                ToolTipDir = step.ToolTipDir or step.toolTipDir or "LEFT",
+                ToolTipText = step.ToolTipText or step.toolTipText or "",
+            }
+        end
+    end
+
+    return info, parent, mainButton
+end
 
 ---@param options GGUI.TutorialButton.ConstructorOptions
 function GGUI.TutorialButton:new(options)
@@ -5468,11 +5653,49 @@ function GGUI.TutorialButton:new(options)
     options.sizeX = options.sizeX or 200
     options.sizeY = options.sizeY or 50
 
-    local button = CreateFrame("Button", nil, options.parent, "TutorialButtonTemplate")
+    -- Try MainHelpPlateButton first (Blizzard's standard help button template from Blizzard_HelpPlate addon)
+    local button = nil
+    local ok, maybeButton = pcall(CreateFrame, "Button", nil, options.parent, "MainHelpPlateButton")
+    if ok and maybeButton then
+        button = maybeButton
+    else
+        -- Fallback to plain button if Blizzard_HelpPlate addon not loaded
+        button = CreateFrame("Button", nil, options.parent)
+
+        -- Add minimal visual styling so button is visible
+        local normalTex = button:CreateTexture(nil, "BACKGROUND")
+        normalTex:SetTexture("Interface\\common\\help-i")
+        normalTex:SetSize(options.sizeX, options.sizeY)
+        normalTex:SetAllPoints(button)
+        button:SetNormalTexture(normalTex)
+
+        -- Add backdrop so button is definitely visible
+        button:SetBackdrop({ bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background", tile = true, tileSize = 32 })
+        button:SetBackdropColor(0.2, 0.2, 0.2, 0.8)
+        button:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
+
+        local highlightTex = button:CreateTexture(nil, "HIGHLIGHT")
+        highlightTex:SetTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
+        highlightTex:SetBlendMode("ADD")
+        highlightTex:SetAllPoints(button)
+        button:SetHighlightTexture(highlightTex)
+    end
+
     GGUI.TutorialButton.super.new(self, button)
+
+    -- Ensure button is visible and interactive even if sibling frames overlap it.
+    button:EnableMouse(true)
+    button:SetFrameStrata("TOOLTIP")
+    button:SetToplevel(true)
+    button:SetFrameLevel((options.parent and options.parent:GetFrameLevel() or 0) + 200)
+    button:Raise()
+
     button:SetText(options.label)
     button:SetSize(options.sizeX, options.sizeY)
     button:SetScale(options.scale or 1)
+    -- MainHelpPlateButton template uses large hit insets for 64x64. When downsized
+    -- (e.g. 25x25), those insets can collapse the clickable region to zero.
+    button:SetHitRectInsets(0, 0, 0, 0)
 
     if options.anchorPoints then
         self:SetPointsByAnchorPoints(options.anchorPoints)
@@ -5481,10 +5704,61 @@ function GGUI.TutorialButton:new(options)
     end
 
     self.clickCallback = options.clickCallback
-    button:RegisterForClicks("AnyUp", "AnyDown")
-    button:SetScript("OnClick", function(_, clickedButton, down)
-        if down and self.clickCallback then
-            self.clickCallback(self, clickedButton)
+    self.helpPlateInfo = options.helpPlateInfo
+    self.helpPlateDefinition = options.helpPlateDefinition
+    self.rebuildHelpPlateOnShowExplicit = options.rebuildHelpPlateOnShow ~= nil
+    self.rebuildHelpPlateOnShow = options.rebuildHelpPlateOnShow
+    if self.rebuildHelpPlateOnShow == nil then
+        self.rebuildHelpPlateOnShow = self.helpPlateDefinition ~= nil
+    end
+    self.helpPlateParent = options.helpPlateParent
+    self.helpPlateMainButton = options.helpPlateMainButton
+    self.helpTipInfo = options.helpTipInfo
+    self.helpTipParent = options.helpTipParent
+    self.helpTipRelativeRegion = options.helpTipRelativeRegion
+    self.autoToggleMode = options.autoToggleMode
+
+    if not self.autoToggleMode then
+        if self.helpPlateInfo or self.helpPlateDefinition then
+            self.autoToggleMode = "helpPlate"
+        elseif self.helpTipInfo then
+            self.autoToggleMode = "helpTip"
+        else
+            self.autoToggleMode = "callback"
+        end
+    end
+
+    if self.helpPlateDefinition then
+        self:BuildHelpPlateInfoFromDefinition()
+    end
+
+    button:RegisterForClicks("AnyUp")
+    button:HookScript("OnEnter", function(btn)
+        btn:SetAlpha(1)
+    end)
+    button:HookScript("OnLeave", function(btn)
+        btn:SetAlpha(0.85)
+    end)
+    button:HookScript("OnMouseDown", function(btn)
+        btn:SetScale((options.scale or 1) * 0.96)
+    end)
+    button:HookScript("OnMouseUp", function(btn)
+        btn:SetScale(options.scale or 1)
+    end)
+    button:HookScript("OnClick", function(_, clickedButton)
+        local handled = false
+        if self.clickCallback then
+            handled = self.clickCallback(self, clickedButton) == true
+        end
+
+        if handled then
+            return
+        end
+
+        if self.autoToggleMode == "helpPlate" then
+            self:ToggleHelpPlate()
+        elseif self.autoToggleMode == "helpTip" then
+            self:ToggleHelpTip()
         end
     end)
 
@@ -5496,10 +5770,18 @@ function GGUI.TutorialButton:new(options)
     if options.glowOnInit then
         self:StartGlow()
     end
+
+    -- Default idle alpha so hover feedback is obvious.
+    button:SetAlpha(0.85)
 end
 
 --- Start the glow/flash animation on the tutorial button
 function GGUI.TutorialButton:StartGlow()
+    if self.frame.ConfigureForTutorial then
+        self.frame:ConfigureForTutorial()
+        return
+    end
+
     if self.frame.Flash then
         self.frame.Flash:Show()
     end
@@ -5510,6 +5792,10 @@ end
 
 --- Stop the glow/flash animation on the tutorial button
 function GGUI.TutorialButton:StopGlow()
+    if self.frame.HideTutorial then
+        self.frame:HideTutorial()
+    end
+
     if self.frame.flashAnim then
         self.frame.flashAnim:Stop()
     end
@@ -5521,4 +5807,144 @@ end
 ---@param text string
 function GGUI.TutorialButton:SetText(text)
     self.frame:SetText(text)
+end
+
+---@param helpPlateInfo table
+---@param parent Frame?
+---@param mainButton Frame?
+function GGUI.TutorialButton:SetHelpPlateContext(helpPlateInfo, parent, mainButton)
+    self.helpPlateInfo = helpPlateInfo
+    self.helpPlateParent = parent or self.helpPlateParent
+    self.helpPlateMainButton = mainButton or self.helpPlateMainButton
+end
+
+---@param helpPlateDefinition GGUI.TutorialButton.HelpPlateDefinition
+---@param parent Frame?
+---@param mainButton Frame?
+function GGUI.TutorialButton:SetHelpPlateDefinition(helpPlateDefinition, parent, mainButton)
+    self.helpPlateDefinition = helpPlateDefinition
+    -- If this setting was not explicitly provided by the caller, definition-based
+    -- tutorials should rebuild on each show to reflect live frame geometry.
+    if not self.rebuildHelpPlateOnShowExplicit then
+        self.rebuildHelpPlateOnShow = true
+    end
+    self.helpPlateParent = parent or self.helpPlateParent
+    self.helpPlateMainButton = mainButton or self.helpPlateMainButton
+    self:BuildHelpPlateInfoFromDefinition()
+end
+
+---@return table? helpPlateInfo
+function GGUI.TutorialButton:BuildHelpPlateInfoFromDefinition()
+    if not self.helpPlateDefinition then
+        return nil
+    end
+
+    local info, parent, mainButton = TutorialButton_BuildHelpPlateInfoFromDefinition(
+        self.helpPlateDefinition,
+        self.helpPlateParent or self.frame:GetParent(),
+        self.helpPlateMainButton or self.frame)
+
+    if info then
+        self:SetHelpPlateContext(info, parent, mainButton)
+    end
+
+    return info
+end
+
+---@param helpTipInfo table
+---@param parent Frame?
+---@param relativeRegion Region?
+function GGUI.TutorialButton:SetHelpTipContext(helpTipInfo, parent, relativeRegion)
+    self.helpTipInfo = helpTipInfo
+    self.helpTipParent = parent or self.helpTipParent
+    self.helpTipRelativeRegion = relativeRegion or self.helpTipRelativeRegion
+end
+
+---@param userToggled? boolean
+function GGUI.TutorialButton:ShowHelpPlate(userToggled)
+    if self.helpPlateDefinition and (self.rebuildHelpPlateOnShow or not self.helpPlateInfo) then
+        self:BuildHelpPlateInfoFromDefinition()
+    end
+
+    if not (HelpPlate and HelpPlate.Show and self.helpPlateInfo) then
+        return
+    end
+
+    local parent = self.helpPlateParent or self.frame:GetParent()
+    local mainButton = self.helpPlateMainButton or self.frame
+    HelpPlate.Show(self.helpPlateInfo, parent, mainButton)
+
+    if userToggled ~= nil and userToggled then
+        self:StopGlow()
+    end
+end
+
+---@param userToggled? boolean
+function GGUI.TutorialButton:HideHelpPlate(userToggled)
+    if HelpPlate and HelpPlate.Hide then
+        HelpPlate.Hide(userToggled and true or false)
+    end
+end
+
+---@return boolean
+function GGUI.TutorialButton:IsHelpPlateShowing()
+    if HelpPlate and HelpPlate.IsShowingHelpInfo and self.helpPlateInfo then
+        return HelpPlate.IsShowingHelpInfo(self.helpPlateInfo)
+    end
+    return false
+end
+
+---@param userToggled? boolean
+function GGUI.TutorialButton:ToggleHelpPlate(userToggled)
+    if self:IsHelpPlateShowing() then
+        self:HideHelpPlate(userToggled)
+    else
+        self:ShowHelpPlate(userToggled)
+    end
+end
+
+function GGUI.TutorialButton:ShowTutorialTooltip()
+    if HelpPlate and HelpPlate.ShowTutorialTooltip and self.helpPlateInfo then
+        local mainButton = self.helpPlateMainButton or self.frame
+        HelpPlate.ShowTutorialTooltip(self.helpPlateInfo, mainButton)
+    end
+end
+
+function GGUI.TutorialButton:HideTutorialTooltip()
+    if HelpPlate and HelpPlate.HideTooltip then
+        HelpPlate.HideTooltip()
+    end
+end
+
+function GGUI.TutorialButton:ShowHelpTip()
+    if not (HelpTip and HelpTip.Show and self.helpTipInfo) then
+        return nil
+    end
+    local parent = self.helpTipParent or self.frame
+    local relativeRegion = self.helpTipRelativeRegion or self.frame
+    return HelpTip:Show(parent, self.helpTipInfo, relativeRegion)
+end
+
+function GGUI.TutorialButton:HideHelpTip()
+    if HelpTip and HelpTip.Hide and self.helpTipInfo then
+        local parent = self.helpTipParent or self.frame
+        HelpTip:Hide(parent, self.helpTipInfo.text)
+    end
+end
+
+---@return boolean
+function GGUI.TutorialButton:IsHelpTipShowing()
+    if HelpTip and HelpTip.IsShowing and self.helpTipInfo then
+        local parent = self.helpTipParent or self.frame
+        return HelpTip:IsShowing(parent, self.helpTipInfo.text)
+    end
+    return false
+end
+
+function GGUI.TutorialButton:ToggleHelpTip()
+    if self:IsHelpTipShowing() then
+        self:HideHelpTip()
+    else
+        self:ShowHelpTip()
+    end
 end
