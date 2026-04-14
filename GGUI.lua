@@ -110,12 +110,20 @@ function GGUI:MakeFrameCloseable(frame, onCloseCallback, closeButtonOptions)
     closeButtonOptions.anchorParent = closeButtonOptions.anchorParent or frame
     closeButtonOptions.anchorA = closeButtonOptions.anchorA or "TOP"
     closeButtonOptions.anchorB = closeButtonOptions.anchorB or "TOPRIGHT"
-    closeButtonOptions.sizeX = closeButtonOptions.sizeX or 25
+    closeButtonOptions.sizeX = closeButtonOptions.sizeX or 20
     closeButtonOptions.sizeY = closeButtonOptions.sizeY or 20
     closeButtonOptions.offsetX = closeButtonOptions.offsetX or -20
     closeButtonOptions.offsetY = closeButtonOptions.offsetY or -10
     closeButtonOptions.anchorPoints = closeButtonOptions.anchorPoints
-    closeButtonOptions.label = closeButtonOptions.label or "X"
+    closeButtonOptions.cleanTemplate = true
+    closeButtonOptions.buttonTextureOptions = {
+        isAtlas = true,
+        normal = "uitools-icon-close",
+        pushed = "uitools-icon-close",
+        highlight = "uitools-icon-close",
+        disabled = "uitools-icon-close",
+        highlightBlendmode = "ADD",
+    }
     closeButtonOptions.clickCallback = function()
         frame:Hide()
         if onCloseCallback then
@@ -702,10 +710,17 @@ function GGUI:MakeFrameCollapsable(gFrame)
         anchorB = "TOPRIGHT",
         offsetX = offsetX,
         offsetY = -10,
-        label = " - ",
-        sizeX = 12,
+        cleanTemplate = true,
+        buttonTextureOptions = {
+            isAtlas = true,
+            normal = "uitools-icon-minimize",
+            pushed = "uitools-icon-minimize",
+            highlight = "uitools-icon-minimize",
+            disabled = "uitools-icon-minimize",
+            highlightBlendmode = "ADD",
+        },
+        sizeX = 20,
         sizeY = 20,
-        adjustWidth = true,
         clickCallback = function()
             if gFrame.collapsed then
                 gFrame:Decollapse()
@@ -721,7 +736,6 @@ function GGUI.Frame:Collapse()
         self.collapsed = true
         -- make smaller and hide content, only show frameTitle
         self.frame:SetSize(self.originalX, 40)
-        self.frame.collapseButton:SetText("+")
         self.frame.content:Hide()
         if self.frame.scrollFrame then
             self.frame.scrollFrame:Hide()
@@ -739,7 +753,6 @@ function GGUI.Frame:Decollapse()
     if self.collapseable and self.frame.collapseButton then
         -- restore
         self.collapsed = false
-        self.frame.collapseButton:SetText("-")
         self.frame:SetSize(self.originalX, self.originalY)
         self.frame.content:Show()
         if self.frame.scrollFrame then
