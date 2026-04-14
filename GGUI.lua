@@ -5477,8 +5477,6 @@ end
 ---@field anchorB? FramePoint -- DEPRICATED Use anchorPoints
 ---@field offsetX? number -- DEPRICATED Use anchorPoints
 ---@field offsetY? number -- DEPRICATED Use anchorPoints
----@field sizeX? number default: 200
----@field sizeY? number default: 50
 ---@field scale? number default: 1
 ---@field clickCallback? fun(button: GGUI.TutorialButton, mouseButton: MouseButton)
 ---@field tooltipOptions? GGUI.TooltipOptions
@@ -5650,36 +5648,9 @@ function GGUI.TutorialButton:new(options)
     options.anchorB = options.anchorB or "CENTER"
     options.offsetX = options.offsetX or 0
     options.offsetY = options.offsetY or 0
-    options.sizeX = options.sizeX or 200
-    options.sizeY = options.sizeY or 50
 
     -- Try MainHelpPlateButton first (Blizzard's standard help button template from Blizzard_HelpPlate addon)
-    local button = nil
-    local ok, maybeButton = pcall(CreateFrame, "Button", nil, options.parent, "MainHelpPlateButton")
-    if ok and maybeButton then
-        button = maybeButton
-    else
-        -- Fallback to plain button if Blizzard_HelpPlate addon not loaded
-        button = CreateFrame("Button", nil, options.parent)
-
-        -- Add minimal visual styling so button is visible
-        local normalTex = button:CreateTexture(nil, "BACKGROUND")
-        normalTex:SetTexture("Interface\\common\\help-i")
-        normalTex:SetSize(options.sizeX, options.sizeY)
-        normalTex:SetAllPoints(button)
-        button:SetNormalTexture(normalTex)
-
-        -- Add backdrop so button is definitely visible
-        button:SetBackdrop({ bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background", tile = true, tileSize = 32 })
-        button:SetBackdropColor(0.2, 0.2, 0.2, 0.8)
-        button:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
-
-        local highlightTex = button:CreateTexture(nil, "HIGHLIGHT")
-        highlightTex:SetTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
-        highlightTex:SetBlendMode("ADD")
-        highlightTex:SetAllPoints(button)
-        button:SetHighlightTexture(highlightTex)
-    end
+    local button = CreateFrame("Button", nil, options.parent, "MainHelpPlateButton")
 
     GGUI.TutorialButton.super.new(self, button)
 
@@ -5691,8 +5662,11 @@ function GGUI.TutorialButton:new(options)
     button:Raise()
 
     button:SetText(options.label)
-    button:SetSize(options.sizeX, options.sizeY)
+    -- since the button and its internal ring , glow and other textuers are all designed for 64x64, we can scale down the whole button to keep the intended look while allowing for smaller sizes
     button:SetScale(options.scale or 1)
+    -- also adapt textures to scale
+    --button.I:SetScale(options.scale or 1)
+    --button.Ring:SetScale(options.scale or 1)
     -- MainHelpPlateButton template uses large hit insets for 64x64. When downsized
     -- (e.g. 25x25), those insets can collapse the clickable region to zero.
     button:SetHitRectInsets(0, 0, 0, 0)
