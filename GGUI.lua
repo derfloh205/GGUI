@@ -222,25 +222,29 @@ function GGUI:SetTooltipsByTooltipOptions(frame, optionsOwner)
 
         GameTooltip:SetOwner(tooltipOptions.owner or frame, tooltipOptions.anchor);
 
+
         if tooltipOptions.spellID then
             local _, currentSpellID = GameTooltip:GetSpell()
-
             if currentSpellID ~= tooltipOptions.spellID then
-                -- to not set it again and hide the tooltip..
                 GameTooltip:SetSpellByID(tooltipOptions.spellID)
             end
         elseif tooltipOptions.itemID then
             GameTooltip:SetItemByID(tooltipOptions.itemID)
         elseif tooltipOptions.itemLink then
             GameTooltip:SetHyperlink(tooltipOptions.itemLink)
-        elseif tooltipOptions.text then
-            GameTooltip:SetText(tooltipOptions.text, nil, nil, nil, nil,
-                tooltipOptions.textWrap)
-        elseif tooltipOptions.frame then
-            if tooltipOptions.frameUpdateCallback then
-                tooltipOptions.frameUpdateCallback(tooltipOptions.frame)
+        else
+            local text = tooltipOptions.text
+            if tooltipOptions.textCallback then
+                text = tooltipOptions.textCallback()
             end
-            GameTooltip_InsertFrame(GameTooltip, tooltipOptions.frame)
+            if text then
+                GameTooltip:SetText(text, nil, nil, nil, nil, tooltipOptions.textWrap)
+            elseif tooltipOptions.frame then
+                if tooltipOptions.frameUpdateCallback then
+                    tooltipOptions.frameUpdateCallback(tooltipOptions.frame)
+                end
+                GameTooltip_InsertFrame(GameTooltip, tooltipOptions.frame)
+            end
         end
 
         if tooltipOptions.scale then
