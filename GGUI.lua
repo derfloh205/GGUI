@@ -5486,6 +5486,7 @@ end
 ---@field steps GGUI.TutorialButton.HelpPlateStepDefinition[]
 
 ---@class GGUI.TutorialButton.ConstructorOptions : GGUI.ConstructorOptions
+---@field hide? boolean
 ---@field label? string
 ---@field parent? Frame
 ---@field anchorPoints? GGUI.AnchorPoint[]
@@ -5665,6 +5666,7 @@ function GGUI.TutorialButton:new(options)
     options.anchorB = options.anchorB or "CENTER"
     options.offsetX = options.offsetX or 0
     options.offsetY = options.offsetY or 0
+    options.hide = options.hide or false
 
     -- Try MainHelpPlateButton first (Blizzard's standard help button template from Blizzard_HelpPlate addon)
     local button = CreateFrame("Button", nil, options.parent, "MainHelpPlateButton")
@@ -5679,6 +5681,7 @@ function GGUI.TutorialButton:new(options)
     button:Raise()
 
     button:SetText(options.label)
+    button:SetShown(not options.hide)
     -- since the button and its internal ring , glow and other textuers are all designed for 64x64, we can scale down the whole button to keep the intended look while allowing for smaller sizes
     button:SetScale(options.scale or 1)
     -- also adapt textures to scale
