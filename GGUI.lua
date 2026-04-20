@@ -5356,6 +5356,7 @@ function GGUI.ToggleButton:new(options)
 
     options.buttonTextureOptions = {
         normal = "128-RedButton-UP",
+        disabled = "128-RedButton-Disable",
         isAtlas = true,
     }
 
@@ -5386,6 +5387,11 @@ function GGUI.ToggleButton:new(options)
     end)
 
     self:SetToggle(self.isOn)
+end
+
+function GGUI.ToggleButton:SetEnabled(enabled)
+    self.button:SetEnabled(enabled)
+    self.button:EnableMouse(enabled)
 end
 
 ---@param toggle boolean
