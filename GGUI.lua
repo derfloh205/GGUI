@@ -446,6 +446,7 @@ end
 ---@field tooltipOptions? GGUI.TooltipOptions
 ---@field hide? boolean
 ---@field raiseOnInteraction? boolean
+---@field clickThrough? boolean
 
 ---@class GGUI.BackdropOptions
 ---@field backdropInfo? backdropInfo
@@ -504,6 +505,7 @@ function GGUI.Frame:new(options)
     self.onCollapseOpenCallback = options.onCollapseOpenCallback
     self.closeOnClickOutside = options.closeOnClickOutside or false
     self.onCloseCallback = options.onCloseCallback
+    self.clickThrough = options.clickThrough or false
 
     GGUI:DebugTable(options, options, "Frame Options")
 
@@ -521,6 +523,13 @@ function GGUI.Frame:new(options)
     frame.hookFrame = hookFrame
     hookFrame:SetSize(options.sizeX, options.sizeY)
     frame:SetSize(options.sizeX, options.sizeY)
+
+    if not self.clickThrough then
+        frame:SetPropagateMouseClicks(false)
+        frame:SetPropagateMouseMotion(false)
+        hookFrame:SetPropagateMouseClicks(false)
+        hookFrame:SetPropagateMouseMotion(false)
+    end
     if not options.fitFrame then
         frame:SetScale(options.scale)
     else
