@@ -5341,6 +5341,7 @@ end
 ---@field optionsTable? table
 ---@field optionsKey? any
 ---@field onToggleCallback? fun(button: GGUI.ToggleButton, newValue: boolean)
+---@field label? string
 ---@field labelOn? string
 ---@field labelOff? string
 
@@ -5353,12 +5354,14 @@ function GGUI.ToggleButton:new(options)
     -- lock states on click
     self.isOn = options.isOn == nil -- default true
 
-    options.label = (self.isOn and options.labelOn) or options.labelOff or options.label
     options.buttonTextureOptions = {
         normal = "128-RedButton-UP",
         isAtlas = true,
     }
 
+    self.adjustWidthX = options.sizeX or 5
+    self.adjustWidth = options.adjustWidth or false
+    self.label = options.label or ""
     self.labelOn = options.labelOn
     self.labelOff = options.labelOff
     GGUI.ToggleButton.super.new(self, options)
@@ -5398,7 +5401,8 @@ function GGUI.ToggleButton:SetToggle(toggle, userInput)
         end
 
         if self.button:GetFontString() then
-            self:SetText(self.labelOn)
+            local label = self.labelOn or self.label
+            self:SetText(label, self.adjustWidthX, self.adjustWidth)
         end
     else
         self.button:DesaturateHierarchy(1)
@@ -5407,7 +5411,8 @@ function GGUI.ToggleButton:SetToggle(toggle, userInput)
             self.labelTexture:SetDesatured(true)
         end
         if self.button:GetFontString() then
-            self:SetText(self.labelOff)
+            local label = self.labelOff or self.label
+            self:SetText(label, self.adjustWidthX, self.adjustWidth)
         end
     end
 
