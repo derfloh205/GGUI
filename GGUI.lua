@@ -447,6 +447,7 @@ end
 ---@field hide? boolean
 ---@field raiseOnInteraction? boolean
 ---@field clickThrough? boolean
+---@field closeOnEscape? boolean Needs a global name to work
 
 ---@class GGUI.BackdropOptions
 ---@field backdropInfo? backdropInfo
@@ -523,6 +524,10 @@ function GGUI.Frame:new(options)
     frame.hookFrame = hookFrame
     hookFrame:SetSize(options.sizeX, options.sizeY)
     frame:SetSize(options.sizeX, options.sizeY)
+
+    if options.closeOnEscape then
+        tinsert(UISpecialFrames, frame:GetName())
+    end
 
     if not self.clickThrough then
         frame:SetPropagateMouseClicks(false)
