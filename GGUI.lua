@@ -165,17 +165,24 @@ end
 ---@param anchor TooltipAnchor
 function GGUI:SetItemTooltip(frame, itemLink, owner, anchor)
     local function onEnter()
-        local _, ItemLink = GameTooltip:GetItem()
+        local _, currentItemLink = GameTooltip:GetItem()
+
+        if GameTooltip:IsOwned(owner) and currentItemLink == itemLink and GameTooltip:IsShown() then
+            return
+        end
+
         GameTooltip:SetOwner(owner, anchor);
 
-        if ItemLink ~= itemLink then
+        if currentItemLink ~= itemLink then
             -- to not set it again and hide the tooltip..
             GameTooltip:SetHyperlink(itemLink)
         end
         GameTooltip:Show();
     end
     local function onLeave()
-        GameTooltip:Hide();
+        if GameTooltip:IsOwned(owner) then
+            GameTooltip:Hide();
+        end
     end
     if itemLink then
         frame:SetScript("OnEnter", onEnter)
@@ -257,7 +264,10 @@ function GGUI:SetTooltipsByTooltipOptions(frame, optionsOwner)
     end
     local function handleTooltipOnLeave()
         if not optionsOwner.tooltipOptions then return end
-        GameTooltip:Hide();
+        local tooltipOwner = optionsOwner.tooltipOptions.owner or frame
+        if GameTooltip:IsOwned(tooltipOwner) then
+            GameTooltip:Hide();
+        end
     end
 
     frame:HookScript("OnEnter", function()
