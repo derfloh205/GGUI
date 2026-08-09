@@ -1,5 +1,5 @@
 ---@class GGUI-2.1
-local GGUI = LibStub:NewLibrary("GGUI-2.1", 28)
+local GGUI = LibStub:NewLibrary("GGUI-2.1", 29)
 if not GGUI then return end -- if version already exists
 
 ---@type GGUI_GUTIL
@@ -716,6 +716,22 @@ function GGUI.Frame:EnableHyperLinksForFrameAndChilds()
     GGUI:EnableHyperLinksForFrameAndChilds(self.frame)
 end
 
+---@param atlas string
+---@return GGUI.ButtonTextureOptions
+local function CreateUIToolsIconTextureOptions(atlas)
+    return {
+        isAtlas = true,
+        normal = atlas,
+        pushed = atlas,
+        highlight = atlas,
+        disabled = atlas,
+        highlightBlendmode = "ADD",
+    }
+end
+
+local COLLAPSE_BUTTON_EXPAND_TEXTURE = CreateUIToolsIconTextureOptions("uitools-icon-minimize")
+local COLLAPSE_BUTTON_COLLAPSE_TEXTURE = CreateUIToolsIconTextureOptions("uitools-icon-plus")
+
 ---@param gFrame GGUI.Frame
 function GGUI:MakeFrameCollapsable(gFrame)
     local frame = gFrame.frame
@@ -729,14 +745,7 @@ function GGUI:MakeFrameCollapsable(gFrame)
         offsetX = offsetX,
         offsetY = -10,
         cleanTemplate = true,
-        buttonTextureOptions = {
-            isAtlas = true,
-            normal = "uitools-icon-minimize",
-            pushed = "uitools-icon-minimize",
-            highlight = "uitools-icon-minimize",
-            disabled = "uitools-icon-minimize",
-            highlightBlendmode = "ADD",
-        },
+        buttonTextureOptions = COLLAPSE_BUTTON_EXPAND_TEXTURE,
         sizeX = 20,
         sizeY = 20,
         clickCallback = function()
@@ -754,6 +763,7 @@ function GGUI.Frame:Collapse()
         self.collapsed = true
         -- make smaller and hide content, only show frameTitle
         self.frame:SetSize(self.originalX, 40)
+        self.frame.collapseButton:SetTexture(COLLAPSE_BUTTON_COLLAPSE_TEXTURE)
         self.frame.content:Hide()
         if self.frame.scrollFrame then
             self.frame.scrollFrame:Hide()
@@ -771,6 +781,7 @@ function GGUI.Frame:Decollapse()
     if self.collapseable and self.frame.collapseButton then
         -- restore
         self.collapsed = false
+        self.frame.collapseButton:SetTexture(COLLAPSE_BUTTON_EXPAND_TEXTURE)
         self.frame:SetSize(self.originalX, self.originalY)
         self.frame.content:Show()
         if self.frame.scrollFrame then
